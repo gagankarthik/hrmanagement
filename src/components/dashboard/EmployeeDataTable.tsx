@@ -318,7 +318,7 @@ export default function EmployeeDataTable({
                       {employee.state}
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-700 dark:text-slate-300">
-                      {employee.hireDate ? format(new Date(employee.hireDate), 'MMM d, yyyy') : '-'}
+                      {employee.hireDate ? format(new Date(employee.hireDate), 'MM/dd/yyyy') : '-'}
                     </td>
                     <td className="px-4 py-4">
                       {'status' in employee ? (

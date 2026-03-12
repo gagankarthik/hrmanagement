@@ -34,19 +34,38 @@ export default function AnalyticsCharts() {
       .slice(0, 6);
   }, [employees]);
 
-  // Calculate monthly hiring trend (mock data for demo)
-  const hiringTrend = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonth = new Date().getMonth();
+  // Calculate client distribution
+  const clientDistribution = useMemo(() => {
+    const distribution: Record<string, number> = {};
+    employees.forEach((emp) => {
+      const client = emp.client || ('endClient' in emp ? emp.endClient : '') || 'No Client';
+      if (client) {
+        distribution[client] = (distribution[client] || 0) + 1;
+      }
+    });
 
-    return months.slice(0, currentMonth + 1).map((month, idx) => ({
-      month,
-      count: Math.floor(Math.random() * 15) + 5,
-    }));
-  }, []);
+    return Object.entries(distribution)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [employees]);
 
-  const maxHiring = Math.max(...hiringTrend.map((h) => h.count)) || 1;
+  // Calculate vendor distribution
+  const vendorDistribution = useMemo(() => {
+    const distribution: Record<string, number> = {};
+    employees.forEach((emp) => {
+      const vendor = emp.vendorName || 'No Vendor';
+      distribution[vendor] = (distribution[vendor] || 0) + 1;
+    });
+
+    return Object.entries(distribution)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [employees]);
+
   const maxState = stateDistribution.length > 0 ? stateDistribution[0][1] : 1;
+  const maxHiring = stats.hiringTrendByMonth.length > 0
+    ? Math.max(...stats.hiringTrendByMonth.map((h) => h.count)) || 1
+    : 1;
 
   // Colors for pie chart segments
   const typeColors = {
@@ -155,14 +174,128 @@ export default function AnalyticsCharts() {
         </div>
       </div>
 
-      {/* Hiring Trend - Bar Chart */}
+      {/* Revenue Status Distribution */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
-          Hiring Trend (2024)
+          Revenue Status (B/NB)
         </h3>
 
+        <div className="flex items-center gap-8">
+          {/* Donut Chart for Revenue */}
+          <div className="relative h-40 w-40 flex-shrink-0">
+            <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="20"
+                className="text-slate-100 dark:text-slate-800"
+              />
+              {(() => {
+                const revenueTotal = (stats.billableCount + stats.nonBillableCount) || 1;
+                const billablePercent = (stats.billableCount / revenueTotal) * 100;
+                const circumference = 2 * Math.PI * 40;
+                const billableDash = (billablePercent / 100) * circumference;
+
+                return (
+                  <>
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="20"
+                      strokeDasharray={`${billableDash} ${circumference}`}
+                      className="text-emerald-500"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="20"
+                      strokeDasharray={`${circumference - billableDash} ${circumference}`}
+                      strokeDashoffset={-billableDash}
+                      className="text-orange-500"
+                    />
+                  </>
+                );
+              })()}
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats.billableCount + stats.nonBillableCount}
+              </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">Total</span>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex-1 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                <span className="text-sm text-slate-600 dark:text-slate-400">Billable (B)</span>
+              </div>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                {stats.billableCount}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-orange-500" />
+                <span className="text-sm text-slate-600 dark:text-slate-400">Non-Billable (NB)</span>
+              </div>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                {stats.nonBillableCount}
+              </span>
+            </div>
+            <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Subcontractors (Active)</span>
+                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                  {stats.activeSubcontractors}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Subcontractors (Inactive)</span>
+                <span className="text-sm font-semibold text-slate-500">
+                  {stats.inactiveSubcontractors}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hiring Trend - Bar Chart with W2 and Offshore */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
+        <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
+          Hiring Trend (Last 12 Months)
+        </h3>
+
+        <div className="mb-4 flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-indigo-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">Total</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-blue-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">W2</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-pink-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">Offshore</span>
+          </div>
+        </div>
+
         <div className="flex h-48 items-end gap-2">
-          {hiringTrend.map((item, idx) => (
+          {stats.hiringTrendByMonth.map((item) => (
             <div
               key={item.month}
               className="flex flex-1 flex-col items-center gap-2"
@@ -170,16 +303,97 @@ export default function AnalyticsCharts() {
               <span className="text-xs font-medium text-slate-900 dark:text-white">
                 {item.count}
               </span>
-              <div
-                className="w-full rounded-t-lg bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all duration-300 hover:from-indigo-700 hover:to-indigo-500"
-                style={{
-                  height: `${(item.count / maxHiring) * 100}%`,
-                  minHeight: '8px',
-                }}
-              />
-              <span className="text-xs text-slate-500 dark:text-slate-400">{item.month}</span>
+              <div className="flex w-full gap-0.5">
+                {/* W2 bar */}
+                <div
+                  className="flex-1 rounded-t-lg bg-blue-500 transition-all duration-300"
+                  style={{
+                    height: `${(item.w2 / maxHiring) * 100}%`,
+                    minHeight: item.w2 > 0 ? '8px' : '0px',
+                  }}
+                />
+                {/* Offshore bar */}
+                <div
+                  className="flex-1 rounded-t-lg bg-pink-500 transition-all duration-300"
+                  style={{
+                    height: `${(item.offshore / maxHiring) * 100}%`,
+                    minHeight: item.offshore > 0 ? '8px' : '0px',
+                  }}
+                />
+                {/* Others bar */}
+                <div
+                  className="flex-1 rounded-t-lg bg-indigo-400 transition-all duration-300"
+                  style={{
+                    height: `${((item.count - item.w2 - item.offshore) / maxHiring) * 100}%`,
+                    minHeight: (item.count - item.w2 - item.offshore) > 0 ? '8px' : '0px',
+                  }}
+                />
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{item.month.split(' ')[0]}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Client Distribution */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Top Clients
+          </h3>
+          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+            {stats.uniqueClients} unique
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {clientDistribution.length > 0 ? clientDistribution.map(([client, count]) => (
+            <div key={client} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{client}</span>
+                <span className="font-medium text-slate-900 dark:text-white">{count}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"
+                  style={{ width: `${(count / (clientDistribution[0]?.[1] || 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+          )) : (
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">No client data available</p>
+          )}
+        </div>
+      </div>
+
+      {/* Vendor Distribution */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Top Vendors
+          </h3>
+          <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+            {stats.uniqueVendors} unique
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {vendorDistribution.length > 0 ? vendorDistribution.map(([vendor, count]) => (
+            <div key={vendor} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-400 truncate max-w-[200px]">{vendor}</span>
+                <span className="font-medium text-slate-900 dark:text-white">{count}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-500"
+                  style={{ width: `${(count / (vendorDistribution[0]?.[1] || 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+          )) : (
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">No vendor data available</p>
+          )}
         </div>
       </div>
 

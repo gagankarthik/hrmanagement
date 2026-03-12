@@ -7,12 +7,15 @@ export interface BaseEmployee {
   hireDate: string;
   dor: string; // Date of Resignation/Release
   address: string;
+  city: string;
   state: string;
+  pincode: string;
   contactNo: string;
   personalEmail: string;
   workAuthorization: string;
   expiryDate: string;
   vendorName: string;
+  client: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,10 +27,12 @@ export interface W2Employee extends BaseEmployee {
   officeEmail: string;
   endClient: string;
   salaryType: 'Hourly' | 'Annual';
-  pay: number;
+  pay?: number;
   medicalBenefit: boolean;
   benefit401k: boolean;
   status: 'Active' | 'Terminated';
+  revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
+  subcontractorStatus?: 'Active' | 'Inactive';
 }
 
 // Contract Employee
@@ -35,6 +40,9 @@ export interface ContractEmployee extends BaseEmployee {
   type: 'Contract';
   contractorName: string;
   endClient: string;
+  status: 'Active' | 'Terminated';
+  revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
+  subcontractorStatus?: 'Active' | 'Inactive';
 }
 
 // 1099 Employee - Independent Contractors
@@ -44,22 +52,24 @@ export interface Employee1099 extends BaseEmployee {
   officeEmail: string;
   endClient: string;
   salaryType: 'Hourly' | 'Annual';
-  pay: number;
+  pay?: number;
   status: 'Active' | 'Terminated';
+  revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
+  subcontractorStatus?: 'Active' | 'Inactive';
 }
 
 // Offshore Employee
 export interface OffshoreEmployee extends BaseEmployee {
   type: 'Offshore';
-  city: string;
   vonageNo: string;
   officeEmail: string;
-  salary: number;
-  medicalReimbursement: number;
+  salary?: number;
+  medicalReimbursement?: number;
   payrollEntity: 'LLP' | 'Pvt Ltd';
   employmentType: 'Contract' | 'Full Time';
-  client: string;
   status: 'Active' | 'Terminated';
+  revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
+  subcontractorStatus?: 'Active' | 'Inactive';
 }
 
 // Union type for all employees
@@ -86,6 +96,17 @@ export interface DashboardStats {
   activeCount: number;
   terminatedCount: number;
   expiringAuthorizations: number;
+  // Revenue status counts
+  billableCount: number;
+  nonBillableCount: number;
+  // Subcontractor counts
+  activeSubcontractors: number;
+  inactiveSubcontractors: number;
+  // Client and Vendor counts
+  uniqueClients: number;
+  uniqueVendors: number;
+  // Hiring trends by month
+  hiringTrendByMonth: { month: string; count: number; w2: number; offshore: number }[];
 }
 
 // Form field configuration
@@ -137,21 +158,32 @@ export const W2_FIELDS: FormField[] = [
   { name: 'rehireDate', label: 'Rehire Date', type: 'date', required: false },
   { name: 'dor', label: 'Date of Resignation', type: 'date', required: false },
   { name: 'address', label: 'Address', type: 'text', required: true, placeholder: 'Street Address' },
+  { name: 'city', label: 'City', type: 'text', required: true, placeholder: 'City' },
   { name: 'state', label: 'State', type: 'text', required: true, placeholder: 'State' },
+  { name: 'pincode', label: 'Pincode', type: 'text', required: true, placeholder: 'Pincode' },
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: true, placeholder: '+1 (555) 000-0000' },
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: true, placeholder: 'personal@email.com' },
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: true, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: true, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'vendorName', label: 'Vendor Name', type: 'text', required: false, placeholder: 'Vendor Company' },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'salaryType', label: 'Salary Type', type: 'select', required: true, options: [
+  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
+  { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
     { value: 'Annual', label: 'Annual' },
   ]},
-  { name: 'pay', label: 'Pay', type: 'number', required: true, placeholder: '0.00' },
+  { name: 'pay', label: 'Pay', type: 'number', required: false, placeholder: '0.00' },
   { name: 'medicalBenefit', label: 'Medical Benefit', type: 'checkbox', required: false },
   { name: 'benefit401k', label: '401k Benefit', type: 'checkbox', required: false },
+  { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: true, options: [
+    { value: 'B', label: 'Billable (B)' },
+    { value: 'NB', label: 'Non-Billable (NB)' },
+  ]},
+  { name: 'subcontractorStatus', label: 'Subcontractor Status', type: 'select', required: false, options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' },
+  ]},
   { name: 'status', label: 'Status', type: 'select', required: true, options: [
     { value: 'Active', label: 'Active' },
     { value: 'Terminated', label: 'Terminated' },
@@ -165,14 +197,29 @@ export const CONTRACT_FIELDS: FormField[] = [
   { name: 'hireDate', label: 'Hire Date', type: 'date', required: true },
   { name: 'dor', label: 'Date of Release', type: 'date', required: false },
   { name: 'address', label: 'Address', type: 'text', required: true, placeholder: 'Street Address' },
+  { name: 'city', label: 'City', type: 'text', required: true, placeholder: 'City' },
   { name: 'state', label: 'State', type: 'text', required: true, placeholder: 'State' },
+  { name: 'pincode', label: 'Pincode', type: 'text', required: true, placeholder: 'Pincode' },
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: true, placeholder: 'personal@email.com' },
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: true, placeholder: '+1 (555) 000-0000' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: true, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'vendorName', label: 'Vendor Name', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
   { name: 'contractorName', label: 'Contractor Name', type: 'text', required: true, placeholder: 'Contractor' },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
+  { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: true, options: [
+    { value: 'B', label: 'Billable (B)' },
+    { value: 'NB', label: 'Non-Billable (NB)' },
+  ]},
+  { name: 'subcontractorStatus', label: 'Subcontractor Status', type: 'select', required: false, options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' },
+  ]},
+  { name: 'status', label: 'Status', type: 'select', required: true, options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Terminated', label: 'Terminated' },
+  ]},
 ];
 
 export const EMPLOYEE_1099_FIELDS: FormField[] = [
@@ -183,19 +230,30 @@ export const EMPLOYEE_1099_FIELDS: FormField[] = [
   { name: 'rehireDate', label: 'Rehire Date', type: 'date', required: false },
   { name: 'dor', label: 'Date of Release', type: 'date', required: false },
   { name: 'address', label: 'Address', type: 'text', required: true, placeholder: 'Street Address' },
+  { name: 'city', label: 'City', type: 'text', required: true, placeholder: 'City' },
   { name: 'state', label: 'State', type: 'text', required: true, placeholder: 'State' },
+  { name: 'pincode', label: 'Pincode', type: 'text', required: true, placeholder: 'Pincode' },
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: true, placeholder: '+1 (555) 000-0000' },
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: true, placeholder: 'personal@email.com' },
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: false, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: true, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'vendorName', label: 'Vendor Name', type: 'text', required: false, placeholder: 'Vendor Company' },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'salaryType', label: 'Salary Type', type: 'select', required: true, options: [
+  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
+  { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
     { value: 'Annual', label: 'Annual' },
   ]},
-  { name: 'pay', label: 'Pay', type: 'number', required: true, placeholder: '0.00' },
+  { name: 'pay', label: 'Pay', type: 'number', required: false, placeholder: '0.00' },
+  { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: true, options: [
+    { value: 'B', label: 'Billable (B)' },
+    { value: 'NB', label: 'Non-Billable (NB)' },
+  ]},
+  { name: 'subcontractorStatus', label: 'Subcontractor Status', type: 'select', required: false, options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' },
+  ]},
   { name: 'status', label: 'Status', type: 'select', required: true, options: [
     { value: 'Active', label: 'Active' },
     { value: 'Terminated', label: 'Terminated' },
@@ -211,14 +269,16 @@ export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'address', label: 'Address', type: 'text', required: true, placeholder: 'Street Address' },
   { name: 'city', label: 'City', type: 'text', required: true, placeholder: 'City' },
   { name: 'state', label: 'State', type: 'text', required: true, placeholder: 'State' },
+  { name: 'pincode', label: 'Pincode', type: 'text', required: true, placeholder: 'Pincode' },
   { name: 'vonageNo', label: 'Vonage Number', type: 'tel', required: false, placeholder: '+1 (555) 000-0000' },
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: true, placeholder: '+91 00000 00000' },
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: true, placeholder: 'personal@email.com' },
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: true, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'text', required: false, placeholder: 'N/A' },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'vendorName', label: 'Vendor Name', type: 'text', required: false, placeholder: 'Vendor Company' },
-  { name: 'salary', label: 'Salary (Monthly)', type: 'number', required: true, placeholder: '0.00' },
+  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'salary', label: 'Salary (Monthly)', type: 'number', required: false, placeholder: '0.00' },
   { name: 'medicalReimbursement', label: 'Medical Reimbursement', type: 'number', required: false, placeholder: '0.00' },
   { name: 'payrollEntity', label: 'Payroll Entity', type: 'select', required: true, options: [
     { value: 'LLP', label: 'LLP' },
@@ -228,7 +288,14 @@ export const OFFSHORE_FIELDS: FormField[] = [
     { value: 'Contract', label: 'Contract' },
     { value: 'Full Time', label: 'Full Time' },
   ]},
-  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
+  { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: true, options: [
+    { value: 'B', label: 'Billable (B)' },
+    { value: 'NB', label: 'Non-Billable (NB)' },
+  ]},
+  { name: 'subcontractorStatus', label: 'Subcontractor Status', type: 'select', required: false, options: [
+    { value: 'Active', label: 'Active' },
+    { value: 'Inactive', label: 'Inactive' },
+  ]},
   { name: 'status', label: 'Status', type: 'select', required: true, options: [
     { value: 'Active', label: 'Active' },
     { value: 'Terminated', label: 'Terminated' },

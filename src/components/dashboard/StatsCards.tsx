@@ -9,7 +9,10 @@ import {
   Globe,
   Briefcase,
   AlertTriangle,
-  TrendingUp,
+  DollarSign,
+  Building2,
+  Truck,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -22,8 +25,9 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo' | 'teal' | 'pink';
+  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo' | 'teal' | 'pink' | 'emerald' | 'amber';
   onClick?: () => void;
+  subtitle?: string;
 }
 
 const colorClasses = {
@@ -37,6 +41,11 @@ const colorClasses = {
     icon: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400',
     text: 'text-emerald-600 dark:text-emerald-400',
   },
+  emerald: {
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50',
+    icon: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400',
+    text: 'text-emerald-600 dark:text-emerald-400',
+  },
   purple: {
     bg: 'bg-purple-50 dark:bg-purple-950/50',
     icon: 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400',
@@ -46,6 +55,11 @@ const colorClasses = {
     bg: 'bg-orange-50 dark:bg-orange-950/50',
     icon: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400',
     text: 'text-orange-600 dark:text-orange-400',
+  },
+  amber: {
+    bg: 'bg-amber-50 dark:bg-amber-950/50',
+    icon: 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-400',
+    text: 'text-amber-600 dark:text-amber-400',
   },
   red: {
     bg: 'bg-red-50 dark:bg-red-950/50',
@@ -69,7 +83,7 @@ const colorClasses = {
   },
 };
 
-function StatCard({ title, value, icon: Icon, trend, color, onClick }: StatCardProps) {
+function StatCard({ title, value, icon: Icon, color, onClick, subtitle }: StatCardProps) {
   const colors = colorClasses[color];
 
   return (
@@ -85,19 +99,8 @@ function StatCard({ title, value, icon: Icon, trend, color, onClick }: StatCardP
         <div className="space-y-2">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
           <p className="text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
-          {trend && (
-            <div
-              className={cn(
-                'flex items-center gap-1 text-sm font-medium',
-                trend.isPositive ? 'text-emerald-600' : 'text-red-600'
-              )}
-            >
-              <TrendingUp
-                className={cn('h-4 w-4', !trend.isPositive && 'rotate-180')}
-              />
-              <span>{trend.value}%</span>
-              <span className="text-slate-500 dark:text-slate-400">vs last month</span>
-            </div>
+          {subtitle && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
           )}
         </div>
         <div className={cn('rounded-xl p-3', colors.icon)}>
@@ -161,6 +164,7 @@ export default function StatsCards() {
           value={stats.expiringAuthorizations}
           icon={AlertTriangle}
           color="orange"
+          subtitle="Next 30 days"
         />
       </div>
 
@@ -193,6 +197,52 @@ export default function StatsCards() {
           icon={Globe}
           color="pink"
           onClick={() => handleFilterByType('Offshore')}
+        />
+      </div>
+
+      {/* Revenue & Business Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Billable (B)"
+          value={stats.billableCount}
+          icon={DollarSign}
+          color="emerald"
+          subtitle="Revenue generating"
+        />
+        <StatCard
+          title="Non-Billable (NB)"
+          value={stats.nonBillableCount}
+          icon={DollarSign}
+          color="amber"
+          subtitle="Support/Internal"
+        />
+        <StatCard
+          title="Unique Clients"
+          value={stats.uniqueClients}
+          icon={Building2}
+          color="blue"
+        />
+        <StatCard
+          title="Unique Vendors"
+          value={stats.uniqueVendors}
+          icon={Truck}
+          color="purple"
+        />
+      </div>
+
+      {/* Subcontractor Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Active Subcontractors"
+          value={stats.activeSubcontractors}
+          icon={UserCog}
+          color="green"
+        />
+        <StatCard
+          title="Inactive Subcontractors"
+          value={stats.inactiveSubcontractors}
+          icon={UserCog}
+          color="red"
         />
       </div>
     </div>

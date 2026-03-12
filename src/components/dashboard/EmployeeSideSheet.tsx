@@ -59,7 +59,7 @@ function FieldRow({ label, value, type = 'text' }: FieldRowProps) {
 
   if (type === 'date' && typeof value === 'string') {
     try {
-      displayValue = format(new Date(value), 'MMM d, yyyy');
+      displayValue = format(new Date(value), 'MM/dd/yyyy');
     } catch {
       displayValue = value;
     }
@@ -174,8 +174,9 @@ export default function EmployeeSideSheet({ employee, isOpen, onClose }: Employe
             {/* Location */}
             <FieldGroup title="Location" icon={<MapPin className="h-4 w-4 text-indigo-500" />}>
               <FieldRow label="Address" value={employee.address} />
-              {'city' in employee && <FieldRow label="City" value={employee.city} />}
+              <FieldRow label="City" value={employee.city} />
               <FieldRow label="State" value={employee.state} />
+              <FieldRow label="Pincode" value={employee.pincode} />
             </FieldGroup>
 
             {/* Employment Details */}
@@ -201,11 +202,17 @@ export default function EmployeeSideSheet({ employee, isOpen, onClose }: Employe
 
             {/* Client & Vendor */}
             <FieldGroup title="Client & Vendor" icon={<Building2 className="h-4 w-4 text-indigo-500" />}>
-              {employee.vendorName && <FieldRow label="Vendor Name" value={employee.vendorName} />}
+              <FieldRow label="Client" value={employee.client} />
+              <FieldRow label="Vendor" value={employee.vendorName} />
               {'endClient' in employee && <FieldRow label="End Client" value={employee.endClient} />}
-              {'client' in employee && <FieldRow label="Client" value={employee.client} />}
               {'contractorName' in employee && (
                 <FieldRow label="Contractor Name" value={employee.contractorName} />
+              )}
+              {'revenueStatus' in employee && (
+                <FieldRow label="Revenue Status" value={employee.revenueStatus === 'B' ? 'Billable' : 'Non-Billable'} />
+              )}
+              {'subcontractorStatus' in employee && employee.subcontractorStatus && (
+                <FieldRow label="Subcontractor Status" value={employee.subcontractorStatus} />
               )}
             </FieldGroup>
 
@@ -215,7 +222,7 @@ export default function EmployeeSideSheet({ employee, isOpen, onClose }: Employe
                 {'salaryType' in employee && <FieldRow label="Salary Type" value={employee.salaryType} />}
                 {'pay' in employee && <FieldRow label="Pay" value={employee.pay} type="currency" />}
                 {'salary' in employee && <FieldRow label="Monthly Salary" value={employee.salary} type="currency" />}
-                {'medicalReimbursement' in employee && employee.medicalReimbursement > 0 && (
+                {'medicalReimbursement' in employee && employee.medicalReimbursement && employee.medicalReimbursement > 0 && (
                   <FieldRow label="Medical Reimbursement" value={employee.medicalReimbursement} type="currency" />
                 )}
                 {'payrollEntity' in employee && (
