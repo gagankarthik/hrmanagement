@@ -18,7 +18,7 @@ const client = new DynamoDBClient({
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'HRManagement-Employees';
+const TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_NAME || 'HRManagement-Employees';
 
 // GET - Fetch all employees or by type
 export async function GET(request: NextRequest) {
