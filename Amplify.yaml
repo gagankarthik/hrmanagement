@@ -12,7 +12,7 @@ frontend:
         # Public AWS Config
         - echo "NEXT_PUBLIC_AWS_REGION=$NEXT_PUBLIC_AWS_REGION" >> .env.production
         # DynamoDB Table
-        - echo "DYNAMODB_TABLE_NAME=$DYNAMODB_TABLE_NAME" >> .env.production
+        - echo "NEXT_PUBLIC_DYNAMODB_TABLE_NAME=$NEXT_PUBLIC_DYNAMODB_TABLE_NAME" >> .env.production
         # Cognito Configuration
         - echo "NEXT_PUBLIC_AWS_USER_POOL_ID=$NEXT_PUBLIC_AWS_USER_POOL_ID" >> .env.production
         - echo "NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=$NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID" >> .env.production
