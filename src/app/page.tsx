@@ -29,8 +29,8 @@ export default function Home() {
               <a href="#" className="transition hover:text-indigo-700 dark:hover:text-indigo-400">Pricing</a>
             </nav>
             <div className="flex gap-3">
-              <button className="rounded-full border border-slate-300/70 bg-white/50 px-5 py-2 text-sm font-medium shadow-sm transition hover:bg-white dark:border-slate-600 dark:bg-black/30 dark:text-slate-200 dark:hover:bg-black/60">Sign in</button>
-              <button className="flex items-center gap-1 rounded-full bg-indigo-800 px-5 py-2 text-sm font-medium text-white shadow-md transition hover:bg-indigo-900 dark:bg-indigo-600 dark:hover:bg-indigo-700"><span>Demo</span><i className="fa-solid fa-arrow-right text-xs"></i></button>
+              <a href="/login" className="rounded-full border border-slate-300/70 bg-white/50 px-5 py-2 text-sm font-medium shadow-sm transition hover:bg-white dark:border-slate-600 dark:bg-black/30 dark:text-slate-200 dark:hover:bg-black/60">Sign in</a>
+              <a href="/dashboard" className="flex items-center gap-1 rounded-full bg-indigo-800 px-5 py-2 text-sm font-medium text-white shadow-md transition hover:bg-indigo-900 dark:bg-indigo-600 dark:hover:bg-indigo-700"><span>Demo</span><i className="fa-solid fa-arrow-right text-xs"></i></a>
             </div>
           </div>
         </div>
@@ -51,7 +51,7 @@ export default function Home() {
             </h1>
             <p className="max-w-lg text-lg text-slate-600 dark:text-slate-400">From contracts to culture — a type-safe, beautifully crafted HR system that teams love. Static typing meets delightful UX.</p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="flex items-center gap-3 rounded-2xl bg-indigo-800 px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-200/60 transition hover:bg-indigo-900 dark:bg-indigo-600 dark:shadow-indigo-900/30 dark:hover:bg-indigo-700"><span>See live dashboard</span> <i className="fa-regular fa-eye"></i></button>
+              <a href="/dashboard" className="flex items-center gap-3 rounded-2xl bg-indigo-800 px-8 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-200/60 transition hover:bg-indigo-900 dark:bg-indigo-600 dark:shadow-indigo-900/30 dark:hover:bg-indigo-700"><span>See live dashboard</span> <i className="fa-regular fa-eye"></i></a>
               <button className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-8 py-4 text-lg font-semibold text-slate-800 shadow-lg backdrop-blur-sm transition hover:bg-white dark:border-slate-700 dark:bg-black/50 dark:text-slate-200 dark:hover:bg-black/80"><i className="fa-regular fa-circle-check text-indigo-600 dark:text-indigo-400"></i>Why choose us</button>
             </div>
             {/* micro stats */}
