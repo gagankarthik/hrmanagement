@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   ChevronDown,
+  Building2,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
@@ -26,6 +28,8 @@ interface NavItem {
 const navigation: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Employees', href: '/dashboard/employees', icon: Users },
+  { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
+  { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
   { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
   { label: 'Reports', href: '/dashboard/reports', icon: FileBarChart },
 ];

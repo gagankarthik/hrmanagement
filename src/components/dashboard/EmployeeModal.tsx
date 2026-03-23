@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
 import {
   Employee,
   EmployeeType,
@@ -38,6 +40,8 @@ export default function EmployeeModal({
   defaultType = 'W2',
 }: EmployeeModalProps) {
   const { createEmployee, updateEmployee } = useEmployees();
+  const { clients } = useClients();
+  const { vendors } = useVendors();
   const [selectedType, setSelectedType] = useState<EmployeeType>(defaultType);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,8 +59,22 @@ export default function EmployeeModal({
     }
   }, [mode, employee, selectedType]);
 
-  // Get fields for selected type
-  const fields = getFieldsByType(selectedType);
+  // Get fields for selected type and populate client/vendor options
+  const fields = getFieldsByType(selectedType).map(field => {
+    if (field.name === 'clientId') {
+      return {
+        ...field,
+        options: clients.map(c => ({ value: c.id, label: c.name }))
+      };
+    }
+    if (field.name === 'vendorId') {
+      return {
+        ...field,
+        options: vendors.map(v => ({ value: v.id, label: v.name }))
+      };
+    }
+    return field;
+  });
 
   const handleInputChange = (field: FormField, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field.name]: value }));

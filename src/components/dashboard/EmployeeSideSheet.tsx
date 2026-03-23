@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import { X, Mail, Phone, MapPin, Calendar, Briefcase, Building2, CreditCard, Shield, Clock } from 'lucide-react';
+import { X, Mail, Phone, MapPin, Calendar, Briefcase, Building2, CreditCard, Shield, Clock, FileText } from 'lucide-react';
 import { Employee } from '@/types/employee';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -101,7 +103,18 @@ function FieldRow({ label, value, type = 'text' }: FieldRowProps) {
 }
 
 export default function EmployeeSideSheet({ employee, isOpen, onClose }: EmployeeSideSheetProps) {
+  const { clients } = useClients();
+  const { vendors } = useVendors();
+
   if (!employee) return null;
+
+  // Resolve client and vendor names
+  const clientName = employee.clientId
+    ? clients.find(c => c.id === employee.clientId)?.name
+    : employee.client;
+  const vendorName = employee.vendorId
+    ? vendors.find(v => v.id === employee.vendorId)?.name
+    : employee.vendorName;
 
   return (
     <>
@@ -192,18 +205,20 @@ export default function EmployeeSideSheet({ employee, isOpen, onClose }: Employe
               )}
             </FieldGroup>
 
-            {/* Work Authorization */}
-            <FieldGroup title="Work Authorization" icon={<Shield className="h-4 w-4 text-indigo-500" />}>
-              <FieldRow label="Authorization Type" value={employee.workAuthorization} />
-              {employee.expiryDate && (
-                <FieldRow label="Expiry Date" value={employee.expiryDate} type="date" />
-              )}
-            </FieldGroup>
+            {/* Work Authorization - Hide expiry for Offshore */}
+            {employee.type !== 'Offshore' && (
+              <FieldGroup title="Work Authorization" icon={<Shield className="h-4 w-4 text-indigo-500" />}>
+                <FieldRow label="Authorization Type" value={employee.workAuthorization} />
+                {'expiryDate' in employee && employee.expiryDate && (
+                  <FieldRow label="Expiry Date" value={employee.expiryDate} type="date" />
+                )}
+              </FieldGroup>
+            )}
 
             {/* Client & Vendor */}
             <FieldGroup title="Client & Vendor" icon={<Building2 className="h-4 w-4 text-indigo-500" />}>
-              <FieldRow label="Client" value={employee.client} />
-              <FieldRow label="Vendor" value={employee.vendorName} />
+              <FieldRow label="Client" value={clientName} />
+              <FieldRow label="Vendor" value={vendorName} />
               {'endClient' in employee && <FieldRow label="End Client" value={employee.endClient} />}
               {'contractorName' in employee && (
                 <FieldRow label="Contractor Name" value={employee.contractorName} />
@@ -215,6 +230,16 @@ export default function EmployeeSideSheet({ employee, isOpen, onClose }: Employe
                 <FieldRow label="Subcontractor Status" value={employee.subcontractorStatus} />
               )}
             </FieldGroup>
+
+            {/* PAN/PF Numbers - Offshore only */}
+            {employee.type === 'Offshore' && 'panNumber' in employee && (
+              <FieldGroup title="Tax & Provident Fund" icon={<FileText className="h-4 w-4 text-indigo-500" />}>
+                <FieldRow label="PAN Number" value={employee.panNumber} />
+                {'pfNumber' in employee && employee.pfNumber && (
+                  <FieldRow label="PF Number" value={employee.pfNumber} />
+                )}
+              </FieldGroup>
+            )}
 
             {/* Compensation */}
             {('pay' in employee || 'salary' in employee) && (

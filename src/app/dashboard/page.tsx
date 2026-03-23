@@ -283,7 +283,7 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [filteredEmployees]);
 
-  // Get upcoming expirations
+  // Get upcoming expirations - Exclude Offshore employees
   const upcomingExpirations = useMemo(() => {
     const now = new Date();
     const ninetyDaysFromNow = new Date();
@@ -291,11 +291,17 @@ export default function DashboardPage() {
 
     return filteredEmployees
       .filter((emp) => {
-        if (!emp.expiryDate) return false;
+        // Exclude Offshore employees from expiry tracking
+        if (emp.type === 'Offshore') return false;
+        if (!('expiryDate' in emp) || !emp.expiryDate) return false;
         const expiry = new Date(emp.expiryDate);
         return expiry > now && expiry <= ninetyDaysFromNow;
       })
-      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())
+      .sort((a, b) => {
+        const aDate = 'expiryDate' in a ? new Date(a.expiryDate) : new Date();
+        const bDate = 'expiryDate' in b ? new Date(b.expiryDate) : new Date();
+        return aDate.getTime() - bDate.getTime();
+      })
       .slice(0, 5);
   }, [filteredEmployees]);
 

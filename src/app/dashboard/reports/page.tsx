@@ -51,12 +51,14 @@ export default function ReportsPage() {
       }
     });
 
-    // Expiring authorizations in next 90 days
+    // Expiring authorizations in next 90 days - Exclude Offshore employees
     const now = new Date();
     const ninetyDaysFromNow = new Date();
     ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
     const expiringAuth = employees.filter((emp) => {
-      if (!emp.expiryDate) return false;
+      // Exclude Offshore employees from expiry tracking
+      if (emp.type === 'Offshore') return false;
+      if (!('expiryDate' in emp) || !emp.expiryDate) return false;
       const expiry = new Date(emp.expiryDate);
       return expiry > now && expiry <= ninetyDaysFromNow;
     });

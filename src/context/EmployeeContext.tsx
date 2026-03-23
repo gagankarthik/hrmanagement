@@ -90,7 +90,9 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     const expiringCount = employees.filter((emp) => {
-      if (!emp.expiryDate) return false;
+      // Exclude Offshore employees from expiry tracking
+      if (emp.type === 'Offshore') return false;
+      if (!('expiryDate' in emp) || !emp.expiryDate) return false;
       const expiry = new Date(emp.expiryDate);
       return expiry > now && expiry <= thirtyDaysFromNow;
     }).length;

@@ -13,9 +13,12 @@ export interface BaseEmployee {
   contactNo: string;
   personalEmail: string;
   workAuthorization: string;
-  expiryDate: string;
-  vendorName: string;
-  client: string;
+  // Updated to use entity IDs instead of text
+  clientId: string;
+  vendorId: string;
+  // Legacy fields for backward compatibility during migration
+  client?: string;
+  vendorName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +29,7 @@ export interface W2Employee extends BaseEmployee {
   rehireDate: string;
   officeEmail: string;
   endClient: string;
+  expiryDate: string; // Authorization expiry for W2
   salaryType: 'Hourly' | 'Annual';
   pay?: number;
   medicalBenefit: boolean;
@@ -40,6 +44,7 @@ export interface ContractEmployee extends BaseEmployee {
   type: 'Contract';
   contractorName: string;
   endClient: string;
+  expiryDate: string; // Authorization expiry for Contract
   status: 'Active' | 'Terminated';
   revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
   subcontractorStatus?: 'Active' | 'Inactive';
@@ -51,6 +56,7 @@ export interface Employee1099 extends BaseEmployee {
   rehireDate: string;
   officeEmail: string;
   endClient: string;
+  expiryDate: string; // Authorization expiry for 1099
   salaryType: 'Hourly' | 'Annual';
   pay?: number;
   status: 'Active' | 'Terminated';
@@ -67,9 +73,12 @@ export interface OffshoreEmployee extends BaseEmployee {
   medicalReimbursement?: number;
   payrollEntity: 'LLP' | 'Pvt Ltd';
   employmentType: 'Contract' | 'Full Time';
+  panNumber: string; // PAN Number - India tax ID
+  pfNumber?: string; // PF Number - Provident Fund number (optional)
   status: 'Active' | 'Terminated';
   revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
   subcontractorStatus?: 'Active' | 'Inactive';
+  // No expiryDate for Offshore employees
 }
 
 // Union type for all employees
@@ -166,8 +175,8 @@ export const W2_FIELDS: FormField[] = [
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: false, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: false, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
+  { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
   { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
@@ -201,8 +210,8 @@ export const CONTRACT_FIELDS: FormField[] = [
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: false, placeholder: '+1 (555) 000-0000' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: false, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
+  { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
   { name: 'contractorName', label: 'Contractor Name', type: 'text', required: false, placeholder: 'Contractor' },
   { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
@@ -235,8 +244,8 @@ export const EMPLOYEE_1099_FIELDS: FormField[] = [
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: false, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'select', required: false, options: WORK_AUTHORIZATION_OPTIONS },
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
+  { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
   { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
@@ -272,9 +281,10 @@ export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: false, placeholder: 'personal@email.com' },
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: false, placeholder: 'work@company.com' },
   { name: 'workAuthorization', label: 'Work Authorization', type: 'text', required: false, placeholder: 'N/A' },
-  { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
-  { name: 'client', label: 'Client', type: 'text', required: false, placeholder: 'Client Company' },
-  { name: 'vendorName', label: 'Vendor', type: 'text', required: false, placeholder: 'Vendor Company' },
+  { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
+  { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
+  { name: 'panNumber', label: 'PAN Number', type: 'text', required: false, placeholder: 'ABCDE1234F' },
+  { name: 'pfNumber', label: 'PF Number', type: 'text', required: false, placeholder: 'PF Number (Optional)' },
   { name: 'salary', label: 'Salary (Monthly)', type: 'number', required: false, placeholder: '0.00' },
   { name: 'medicalReimbursement', label: 'Medical Reimbursement', type: 'number', required: false, placeholder: '0.00' },
   { name: 'payrollEntity', label: 'Payroll Entity', type: 'select', required: false, options: [
