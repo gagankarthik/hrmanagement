@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, ArrowLeft, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
 import {
   EmployeeType,
   FormField,
@@ -22,6 +24,8 @@ const employeeTypes: { value: EmployeeType; label: string; description: string }
 export default function OnboardPage() {
   const router = useRouter();
   const { createEmployee } = useEmployees();
+  const { clients, isLoading: clientsLoading, fetchClients } = useClients();
+  const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedType, setSelectedType] = useState<EmployeeType | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
@@ -29,7 +33,32 @@ export default function OnboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const fields = selectedType ? getFieldsByType(selectedType) : [];
+  // Fetch clients and vendors on mount
+  useEffect(() => {
+    fetchClients();
+    fetchVendors();
+  }, [fetchClients, fetchVendors]);
+
+  // Populate client and vendor options
+  const fields = useMemo(() => {
+    if (!selectedType) return [];
+
+    return getFieldsByType(selectedType).map(field => {
+      if (field.name === 'clientId') {
+        const options = clients
+          .filter(c => c && c.id && c.name)
+          .map(c => ({ value: c.id, label: c.name }));
+        return { ...field, options };
+      }
+      if (field.name === 'vendorId') {
+        const options = vendors
+          .filter(v => v && v.id && v.name)
+          .map(v => ({ value: v.id, label: v.name }));
+        return { ...field, options };
+      }
+      return field;
+    });
+  }, [selectedType, clients, vendors]);
 
   const handleTypeSelect = (type: EmployeeType) => {
     setSelectedType(type);
@@ -105,13 +134,24 @@ export default function OnboardPage() {
 
     switch (field.type) {
       case 'select':
+        const isLoadingData = (field.name === 'clientId' && clientsLoading) ||
+                             (field.name === 'vendorId' && vendorsLoading);
+        const hasNoData = field.options && field.options.length === 0;
+
         return (
           <select
             value={String(value)}
             onChange={(e) => handleInputChange(field, e.target.value)}
+            disabled={isLoadingData}
             className={baseInputClasses}
           >
-            <option value="">Select {field.label}</option>
+            <option value="">
+              {isLoadingData
+                ? `Loading ${field.label.toLowerCase()}...`
+                : hasNoData
+                ? `No ${field.label.toLowerCase()} available`
+                : `Select ${field.label}`}
+            </option>
             {field.options?.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}

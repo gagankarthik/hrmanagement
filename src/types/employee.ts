@@ -12,10 +12,9 @@ export interface BaseEmployee {
   pincode: string;
   contactNo: string;
   personalEmail: string;
-  workAuthorization: string;
-  // Updated to use entity IDs instead of text
-  clientId: string;
-  vendorId: string;
+  // Updated to use entity IDs instead of text (optional)
+  clientId?: string;
+  vendorId?: string;
   // Legacy fields for backward compatibility during migration
   client?: string;
   vendorName?: string;
@@ -28,7 +27,7 @@ export interface W2Employee extends BaseEmployee {
   type: 'W2';
   rehireDate: string;
   officeEmail: string;
-  endClient: string;
+  workAuthorization: string;
   expiryDate: string; // Authorization expiry for W2
   salaryType: 'Hourly' | 'Annual';
   pay?: number;
@@ -43,7 +42,7 @@ export interface W2Employee extends BaseEmployee {
 export interface ContractEmployee extends BaseEmployee {
   type: 'Contract';
   contractorName: string;
-  endClient: string;
+  workAuthorization: string;
   expiryDate: string; // Authorization expiry for Contract
   status: 'Active' | 'Terminated';
   revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
@@ -55,7 +54,7 @@ export interface Employee1099 extends BaseEmployee {
   type: '1099';
   rehireDate: string;
   officeEmail: string;
-  endClient: string;
+  workAuthorization: string;
   expiryDate: string; // Authorization expiry for 1099
   salaryType: 'Hourly' | 'Annual';
   pay?: number;
@@ -73,6 +72,7 @@ export interface OffshoreEmployee extends BaseEmployee {
   medicalReimbursement?: number;
   payrollEntity: 'LLP' | 'Pvt Ltd';
   employmentType: 'Contract' | 'Full Time';
+  aadharNumber: string; // Aadhar Number - India unique identification number
   panNumber: string; // PAN Number - India tax ID
   pfNumber?: string; // PF Number - Provident Fund number (optional)
   status: 'Active' | 'Terminated';
@@ -177,7 +177,6 @@ export const W2_FIELDS: FormField[] = [
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
   { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
   { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
     { value: 'Annual', label: 'Annual' },
@@ -213,7 +212,6 @@ export const CONTRACT_FIELDS: FormField[] = [
   { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
   { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
   { name: 'contractorName', label: 'Contractor Name', type: 'text', required: false, placeholder: 'Contractor' },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
     { value: 'B', label: 'Billable (B)' },
     { value: 'NB', label: 'Non-Billable (NB)' },
@@ -246,7 +244,6 @@ export const EMPLOYEE_1099_FIELDS: FormField[] = [
   { name: 'expiryDate', label: 'Authorization Expiry', type: 'date', required: false },
   { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
   { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
-  { name: 'endClient', label: 'End Client', type: 'text', required: false, placeholder: 'End Client Company' },
   { name: 'salaryType', label: 'Salary Type', type: 'select', required: false, options: [
     { value: 'Hourly', label: 'Hourly' },
     { value: 'Annual', label: 'Annual' },
@@ -280,9 +277,9 @@ export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'contactNo', label: 'Contact Number', type: 'tel', required: false, placeholder: '+91 00000 00000' },
   { name: 'personalEmail', label: 'Personal Email', type: 'email', required: false, placeholder: 'personal@email.com' },
   { name: 'officeEmail', label: 'Office Email', type: 'email', required: false, placeholder: 'work@company.com' },
-  { name: 'workAuthorization', label: 'Work Authorization', type: 'text', required: false, placeholder: 'N/A' },
   { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
   { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
+  { name: 'aadharNumber', label: 'Aadhar Number', type: 'text', required: false, placeholder: 'XXXX-XXXX-XXXX' },
   { name: 'panNumber', label: 'PAN Number', type: 'text', required: false, placeholder: 'ABCDE1234F' },
   { name: 'pfNumber', label: 'PF Number', type: 'text', required: false, placeholder: 'PF Number (Optional)' },
   { name: 'salary', label: 'Salary (Monthly)', type: 'number', required: false, placeholder: '0.00' },
@@ -334,7 +331,6 @@ export const W2_COLUMNS: TableColumn[] = [
   { key: 'state', label: 'State', sortable: true },
   { key: 'officeEmail', label: 'Email', sortable: false },
   { key: 'workAuthorization', label: 'Work Auth', sortable: true },
-  { key: 'endClient', label: 'Client', sortable: true },
   { key: 'pay', label: 'Pay', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
 ];
@@ -347,7 +343,6 @@ export const CONTRACT_COLUMNS: TableColumn[] = [
   { key: 'personalEmail', label: 'Email', sortable: false },
   { key: 'workAuthorization', label: 'Work Auth', sortable: true },
   { key: 'contractorName', label: 'Contractor', sortable: true },
-  { key: 'endClient', label: 'Client', sortable: true },
 ];
 
 export const EMPLOYEE_1099_COLUMNS: TableColumn[] = [
@@ -357,7 +352,6 @@ export const EMPLOYEE_1099_COLUMNS: TableColumn[] = [
   { key: 'state', label: 'State', sortable: true },
   { key: 'personalEmail', label: 'Email', sortable: false },
   { key: 'workAuthorization', label: 'Work Auth', sortable: true },
-  { key: 'endClient', label: 'Client', sortable: true },
   { key: 'pay', label: 'Pay', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
 ];

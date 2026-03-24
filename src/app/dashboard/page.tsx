@@ -165,7 +165,6 @@ export default function DashboardPage() {
     const clients = new Set<string>();
     employees.forEach((emp) => {
       if (emp.client) clients.add(emp.client);
-      if ('endClient' in emp && emp.endClient) clients.add(emp.endClient);
     });
     return Array.from(clients).sort();
   }, [employees]);
@@ -181,7 +180,7 @@ export default function DashboardPage() {
   const clientData = useMemo(() => {
     const distribution: Record<string, { employees: Employee[]; clientId?: string }> = {};
     employees.forEach((emp) => {
-      const client = emp.client || ('endClient' in emp ? emp.endClient : '');
+      const client = emp.client || '';
       if (client) {
         if (!distribution[client]) distribution[client] = { employees: [], clientId: emp.clientId };
         distribution[client].employees.push(emp);
@@ -260,7 +259,7 @@ export default function DashboardPage() {
         if ('revenueStatus' in emp && emp.revenueStatus !== selectedRevenue) return false;
       }
       if (selectedClient !== 'all') {
-        const empClient = emp.client || ('endClient' in emp ? emp.endClient : '');
+        const empClient = emp.client || '';
         if (empClient !== selectedClient) return false;
       }
       if (selectedVendor !== 'all') {

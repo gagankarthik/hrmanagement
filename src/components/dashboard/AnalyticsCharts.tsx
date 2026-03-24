@@ -21,12 +21,14 @@ export default function AnalyticsCharts() {
       .slice(0, 8);
   }, [employees]);
 
-  // Calculate work authorization distribution
+  // Calculate work authorization distribution (excluding Offshore employees)
   const authDistribution = useMemo(() => {
     const distribution: Record<string, number> = {};
     employees.forEach((emp) => {
-      const auth = emp.workAuthorization || 'Not Specified';
-      distribution[auth] = (distribution[auth] || 0) + 1;
+      if (emp.type !== 'Offshore' && 'workAuthorization' in emp) {
+        const auth = emp.workAuthorization || 'Not Specified';
+        distribution[auth] = (distribution[auth] || 0) + 1;
+      }
     });
 
     return Object.entries(distribution)
@@ -38,7 +40,7 @@ export default function AnalyticsCharts() {
   const clientDistribution = useMemo(() => {
     const distribution: Record<string, number> = {};
     employees.forEach((emp) => {
-      const client = emp.client || ('endClient' in emp ? emp.endClient : '') || 'No Client';
+      const client = emp.client || 'No Client';
       if (client) {
         distribution[client] = (distribution[client] || 0) + 1;
       }

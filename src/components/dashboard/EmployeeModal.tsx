@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -40,12 +40,20 @@ export default function EmployeeModal({
   defaultType = 'W2',
 }: EmployeeModalProps) {
   const { createEmployee, updateEmployee } = useEmployees();
-  const { clients } = useClients();
-  const { vendors } = useVendors();
+  const { clients, isLoading: clientsLoading, fetchClients } = useClients();
+  const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
   const [selectedType, setSelectedType] = useState<EmployeeType>(defaultType);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Ensure clients and vendors are loaded when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchClients();
+      fetchVendors();
+    }
+  }, [isOpen, fetchClients, fetchVendors]);
 
   // Initialize form data
   useEffect(() => {
@@ -60,21 +68,42 @@ export default function EmployeeModal({
   }, [mode, employee, selectedType]);
 
   // Get fields for selected type and populate client/vendor options
-  const fields = getFieldsByType(selectedType).map(field => {
-    if (field.name === 'clientId') {
-      return {
-        ...field,
-        options: clients.map(c => ({ value: c.id, label: c.name }))
-      };
-    }
-    if (field.name === 'vendorId') {
-      return {
-        ...field,
-        options: vendors.map(v => ({ value: v.id, label: v.name }))
-      };
-    }
-    return field;
-  });
+  const fields = useMemo(() => {
+    console.log('[EmployeeModal] Computing fields:', {
+      selectedType,
+      clientsCount: clients.length,
+      vendorsCount: vendors.length,
+      clientsData: clients,
+      vendorsData: vendors,
+      mode
+    });
+
+    return getFieldsByType(selectedType).map(field => {
+      if (field.name === 'clientId') {
+        // Filter out any clients without required fields
+        const options = clients
+          .filter(c => c && c.id && c.name)
+          .map(c => ({ value: c.id, label: c.name }));
+        console.log('[EmployeeModal] Client options:', options);
+        return {
+          ...field,
+          options
+        };
+      }
+      if (field.name === 'vendorId') {
+        // Filter out any vendors without required fields
+        const options = vendors
+          .filter(v => v && v.id && v.name)
+          .map(v => ({ value: v.id, label: v.name }));
+        console.log('[EmployeeModal] Vendor options:', options);
+        return {
+          ...field,
+          options
+        };
+      }
+      return field;
+    });
+  }, [selectedType, clients, vendors]);
 
   const handleInputChange = (field: FormField, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field.name]: value }));
@@ -163,14 +192,43 @@ export default function EmployeeModal({
 
     switch (field.type) {
       case 'select':
+        const isLoadingData = (field.name === 'clientId' && clientsLoading) ||
+                             (field.name === 'vendorId' && vendorsLoading);
+        const hasNoData = field.options && field.options.length === 0;
+
+        // Debug logging in render
+        if (field.name === 'clientId' || field.name === 'vendorId') {
+          console.log(`[renderField] Rendering ${field.name}:`, {
+            fieldName: field.name,
+            optionsCount: field.options?.length || 0,
+            isLoadingData,
+            hasNoData,
+            firstThreeOptions: field.options?.slice(0, 3)
+          });
+        }
+
+        // Generate unique key to force re-render when options change
+        const selectKey = field.name === 'clientId'
+          ? `${field.name}-${clients.length}`
+          : field.name === 'vendorId'
+          ? `${field.name}-${vendors.length}`
+          : field.name;
+
         return (
           <select
+            key={selectKey}
             value={String(value ?? '')}
             onChange={(e) => handleInputChange(field, e.target.value)}
-            disabled={isDisabled}
+            disabled={isDisabled || isLoadingData}
             className={baseInputClasses}
           >
-            <option value="">Select {field.label}</option>
+            <option value="">
+              {isLoadingData
+                ? `Loading ${field.label.toLowerCase()}...`
+                : hasNoData
+                ? `No ${field.label.toLowerCase()} available`
+                : `Select ${field.label}`}
+            </option>
             {field.options?.map((option, index) => (
               <option key={option.value || `option-${index}`} value={option.value}>
                 {option.label}
@@ -300,23 +358,33 @@ export default function EmployeeModal({
 
             {/* Form Fields */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {fields.map((field) => (
-                <div
-                  key={field.name}
-                  className={cn(
-                    field.type === 'checkbox' && 'flex items-end'
-                  )}
-                >
-                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {field.label}
-                    {field.required && <span className="ml-1 text-red-500">*</span>}
-                  </label>
-                  {renderField(field)}
-                  {errors[field.name] && (
-                    <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
-                  )}
-                </div>
-              ))}
+              {fields.map((field) => {
+                // Debug log for client/vendor fields
+                if (field.name === 'clientId' || field.name === 'vendorId') {
+                  console.log(`[fields.map] Mapping ${field.name}:`, {
+                    name: field.name,
+                    optionsCount: field.options?.length || 0
+                  });
+                }
+
+                return (
+                  <div
+                    key={field.name}
+                    className={cn(
+                      field.type === 'checkbox' && 'flex items-end'
+                    )}
+                  >
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {field.label}
+                      {field.required && <span className="ml-1 text-red-500">*</span>}
+                    </label>
+                    {renderField(field)}
+                    {errors[field.name] && (
+                      <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

@@ -73,7 +73,6 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
           employee.position,
           employee.personalEmail,
           'officeEmail' in employee ? employee.officeEmail : '',
-          'endClient' in employee ? employee.endClient : '',
           'client' in employee ? employee.client : '',
           employee.vendorName,
         ];
@@ -110,7 +109,6 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     const vendorSet = new Set<string>();
     employees.forEach((emp) => {
       if (emp.client) clientSet.add(emp.client);
-      if ('endClient' in emp && emp.endClient) clientSet.add(emp.endClient);
       if (emp.vendorName) vendorSet.add(emp.vendorName);
     });
 

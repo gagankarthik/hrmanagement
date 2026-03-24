@@ -155,13 +155,6 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
         </button>
         <div className="flex gap-2">
           <button
-            onClick={() => router.push(`/dashboard/employees?edit=${employeeId}`)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            <Edit className="w-4 h-4" />
-            Edit
-          </button>
-          <button
             onClick={handleDelete}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
           >
@@ -427,6 +420,13 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
               Tax & Provident Fund
             </h2>
             <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-slate-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Aadhar Number</p>
+                  <p className="font-medium">{employee.aadharNumber}</p>
+                </div>
+              </div>
               <div className="flex items-start gap-3">
                 <FileText className="w-5 h-5 text-slate-400 mt-0.5" />
                 <div>

@@ -27,11 +27,13 @@ export default function ReportsPage() {
       stateDistribution[state] = (stateDistribution[state] || 0) + 1;
     });
 
-    // Work authorization distribution
+    // Work authorization distribution (excluding Offshore employees)
     const authDistribution: Record<string, number> = {};
     employees.forEach((emp) => {
-      const auth = emp.workAuthorization || 'Not Specified';
-      authDistribution[auth] = (authDistribution[auth] || 0) + 1;
+      if (emp.type !== 'Offshore' && 'workAuthorization' in emp) {
+        const auth = emp.workAuthorization || 'Not Specified';
+        authDistribution[auth] = (authDistribution[auth] || 0) + 1;
+      }
     });
 
     // Position distribution
@@ -105,7 +107,7 @@ export default function ReportsPage() {
       Position: emp.position,
       State: emp.state,
       'Hire Date': emp.hireDate,
-      'Work Authorization': emp.workAuthorization,
+      'Work Authorization': ('workAuthorization' in emp && emp.workAuthorization) ? emp.workAuthorization : 'N/A',
       'Expiry Date': ('expiryDate' in emp && emp.expiryDate) ? emp.expiryDate : 'N/A',
       Email: emp.personalEmail,
       Status: 'status' in emp ? emp.status : 'N/A',
