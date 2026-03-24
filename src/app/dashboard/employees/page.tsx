@@ -5,11 +5,11 @@ import { Users, Plus } from 'lucide-react';
 import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
 import EmployeeModal from '@/components/dashboard/EmployeeModal';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
-import EmployeeSideSheet from '@/components/dashboard/EmployeeSideSheet';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Employee, EmployeeType } from '@/types/employee';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 type TabType = 'all' | EmployeeType;
 
@@ -23,6 +23,7 @@ const tabs: { id: TabType; label: string; color: string }[] = [
 
 export default function EmployeesPage() {
   const { employees, isLoading, stats } = useEmployees();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
   // Filter employees based on active tab
@@ -61,15 +62,6 @@ export default function EmployeesPage() {
     employee: null,
   });
 
-  // Side sheet state for viewing employee details
-  const [sideSheet, setSideSheet] = useState<{
-    isOpen: boolean;
-    employee: Employee | null;
-  }>({
-    isOpen: false,
-    employee: null,
-  });
-
   const handleEditEmployee = (employee: Employee) => {
     setModalState({
       isOpen: true,
@@ -79,10 +71,7 @@ export default function EmployeesPage() {
   };
 
   const handleViewEmployee = (employee: Employee) => {
-    setSideSheet({
-      isOpen: true,
-      employee,
-    });
+    router.push(`/dashboard/employees/${employee.id}`);
   };
 
   const handleDeleteEmployee = (employee: Employee) => {
@@ -101,13 +90,6 @@ export default function EmployeesPage() {
 
   const closeDeleteModal = () => {
     setDeleteModal({
-      isOpen: false,
-      employee: null,
-    });
-  };
-
-  const closeSideSheet = () => {
-    setSideSheet({
       isOpen: false,
       employee: null,
     });
@@ -205,13 +187,6 @@ export default function EmployeesPage() {
         isOpen={deleteModal.isOpen}
         onClose={closeDeleteModal}
         employee={deleteModal.employee}
-      />
-
-      {/* Employee Details Side Sheet */}
-      <EmployeeSideSheet
-        isOpen={sideSheet.isOpen}
-        onClose={closeSideSheet}
-        employee={sideSheet.employee}
       />
     </div>
   );

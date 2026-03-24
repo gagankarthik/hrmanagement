@@ -62,10 +62,10 @@ export default function EmployeeDataTable({
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (emp) =>
-          emp.name.toLowerCase().includes(query) ||
-          emp.position.toLowerCase().includes(query) ||
-          emp.personalEmail.toLowerCase().includes(query) ||
-          emp.state.toLowerCase().includes(query)
+          emp.name?.toLowerCase().includes(query) ||
+          emp.position?.toLowerCase().includes(query) ||
+          emp.personalEmail?.toLowerCase().includes(query) ||
+          emp.state?.toLowerCase().includes(query)
       );
     }
 

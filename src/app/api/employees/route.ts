@@ -43,6 +43,10 @@ export async function GET(request: NextRequest) {
     } else {
       command = new ScanCommand({
         TableName: TABLE_NAME,
+        FilterExpression: 'begins_with(PK, :pkPrefix)',
+        ExpressionAttributeValues: {
+          ':pkPrefix': 'EMP#',
+        },
       });
     }
 

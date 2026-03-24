@@ -171,8 +171,8 @@ export default function EmployeeModal({
             className={baseInputClasses}
           >
             <option value="">Select {field.label}</option>
-            {field.options?.map((option) => (
-              <option key={option.value} value={option.value}>
+            {field.options?.map((option, index) => (
+              <option key={option.value || `option-${index}`} value={option.value}>
                 {option.label}
               </option>
             ))}

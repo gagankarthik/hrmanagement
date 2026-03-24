@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import { Package, Plus, Pencil, Trash2, Users } from 'lucide-react';
 import VendorModal from '@/components/dashboard/VendorModal';
-import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { useVendors } from '@/context/VendorContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Vendor } from '@/types/vendor';
+import { useRouter } from 'next/navigation';
 
 export default function VendorsPage() {
   const { vendors, isLoading, deleteVendor } = useVendors();
   const { employees } = useEmployees();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   const [modalState, setModalState] = useState<{
@@ -22,25 +23,19 @@ export default function VendorsPage() {
     mode: 'create',
   });
 
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    vendor: Vendor | null;
-  }>({
-    isOpen: false,
-    vendor: null,
-  });
-
   // Get employee count for each vendor
   const getEmployeeCount = (vendorId: string): number => {
     return employees.filter((emp) => emp.vendorId === vendorId || emp.vendorName === vendors.find(v => v.id === vendorId)?.name).length;
   };
 
-  // Filter vendors based on search
-  const filteredVendors = vendors.filter((vendor) =>
-    vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vendor.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vendor.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter vendors based on search - ensure all vendors have valid IDs
+  const filteredVendors = vendors
+    .filter((vendor) => vendor && vendor.id) // Filter out vendors without IDs
+    .filter((vendor) =>
+      vendor.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleEdit = (vendor: Vendor) => {
     setModalState({
@@ -50,18 +45,10 @@ export default function VendorsPage() {
     });
   };
 
-  const handleDelete = (vendor: Vendor) => {
-    setDeleteModal({
-      isOpen: true,
-      vendor,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (deleteModal.vendor) {
+  const handleDelete = async (vendor: Vendor) => {
+    if (confirm(`Are you sure you want to delete ${vendor.name}? This action cannot be undone.`)) {
       try {
-        await deleteVendor(deleteModal.vendor.id);
-        setDeleteModal({ isOpen: false, vendor: null });
+        await deleteVendor(vendor.id);
       } catch (error) {
         console.error('Error deleting vendor:', error);
       }
@@ -177,8 +164,12 @@ export default function VendorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredVendors.map((vendor) => (
-                <tr key={vendor.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              {filteredVendors.map((vendor, index) => (
+                <tr
+                  key={vendor.id || `vendor-${index}`}
+                  onClick={() => router.push(`/dashboard/vendors/${vendor.id}`)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900 dark:text-white">{vendor.name}</div>
                   </td>
@@ -206,7 +197,7 @@ export default function VendorsPage() {
                       {vendor.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEdit(vendor)}
@@ -237,14 +228,6 @@ export default function VendorsPage() {
         onClose={() => setModalState({ isOpen: false, mode: 'create' })}
         mode={modalState.mode}
         vendor={modalState.vendor}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, vendor: null })}
-        onConfirm={confirmDelete}
-        title="Delete Vendor"
-        message={`Are you sure you want to delete ${deleteModal.vendor?.name}? This action cannot be undone.`}
       />
     </div>
   );

@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import { Building2, Plus, Pencil, Trash2, Users } from 'lucide-react';
 import ClientModal from '@/components/dashboard/ClientModal';
-import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { useClients } from '@/context/ClientContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Client } from '@/types/client';
+import { useRouter } from 'next/navigation';
 
 export default function ClientsPage() {
   const { clients, isLoading, deleteClient } = useClients();
   const { employees } = useEmployees();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   const [modalState, setModalState] = useState<{
@@ -22,25 +23,19 @@ export default function ClientsPage() {
     mode: 'create',
   });
 
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    client: Client | null;
-  }>({
-    isOpen: false,
-    client: null,
-  });
-
   // Get employee count for each client
   const getEmployeeCount = (clientId: string): number => {
     return employees.filter((emp) => emp.clientId === clientId || emp.client === clients.find(c => c.id === clientId)?.name).length;
   };
 
-  // Filter clients based on search
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter clients based on search - ensure all clients have valid IDs
+  const filteredClients = clients
+    .filter((client) => client && client.id) // Filter out clients without IDs
+    .filter((client) =>
+      client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleEdit = (client: Client) => {
     setModalState({
@@ -50,18 +45,10 @@ export default function ClientsPage() {
     });
   };
 
-  const handleDelete = (client: Client) => {
-    setDeleteModal({
-      isOpen: true,
-      client,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (deleteModal.client) {
+  const handleDelete = async (client: Client) => {
+    if (confirm(`Are you sure you want to delete ${client.name}? This action cannot be undone.`)) {
       try {
-        await deleteClient(deleteModal.client.id);
-        setDeleteModal({ isOpen: false, client: null });
+        await deleteClient(client.id);
       } catch (error) {
         console.error('Error deleting client:', error);
       }
@@ -177,8 +164,12 @@ export default function ClientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              {filteredClients.map((client, index) => (
+                <tr
+                  key={client.id || `client-${index}`}
+                  onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
                   </td>
@@ -206,7 +197,7 @@ export default function ClientsPage() {
                       {client.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEdit(client)}
@@ -237,14 +228,6 @@ export default function ClientsPage() {
         onClose={() => setModalState({ isOpen: false, mode: 'create' })}
         mode={modalState.mode}
         client={modalState.client}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, client: null })}
-        onConfirm={confirmDelete}
-        title="Delete Client"
-        message={`Are you sure you want to delete ${deleteModal.client?.name}? This action cannot be undone.`}
       />
     </div>
   );

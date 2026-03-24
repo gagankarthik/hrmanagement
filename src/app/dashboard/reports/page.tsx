@@ -106,7 +106,7 @@ export default function ReportsPage() {
       State: emp.state,
       'Hire Date': emp.hireDate,
       'Work Authorization': emp.workAuthorization,
-      'Expiry Date': emp.expiryDate || 'N/A',
+      'Expiry Date': ('expiryDate' in emp && emp.expiryDate) ? emp.expiryDate : 'N/A',
       Email: emp.personalEmail,
       Status: 'status' in emp ? emp.status : 'N/A',
     }));
@@ -331,6 +331,7 @@ export default function ReportsPage() {
               </thead>
               <tbody className="divide-y divide-amber-200 dark:divide-amber-800">
                 {reportData.expiringAuth.map((emp) => {
+                  if (!('expiryDate' in emp) || !emp.expiryDate) return null;
                   const daysLeft = Math.ceil(
                     (new Date(emp.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                   );

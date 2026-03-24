@@ -22,10 +22,10 @@ const TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_NAME || 'HRManagement-
 // GET - Fetch single client by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
 
     const command = new GetCommand({
       TableName: TABLE_NAME,
@@ -61,10 +61,10 @@ export async function GET(
 // PUT - Update client
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const body = await request.json();
     const now = new Date().toISOString();
 
@@ -101,10 +101,10 @@ export async function PUT(
 // DELETE - Delete client
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
 
     const command = new DeleteCommand({
       TableName: TABLE_NAME,
