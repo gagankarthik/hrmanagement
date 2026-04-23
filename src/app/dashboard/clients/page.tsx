@@ -1,228 +1,229 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Building2, Plus, Pencil, Trash2, Users } from 'lucide-react';
+import {
+  Building2, Plus, Pencil, Trash2, Users, Search,
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight
+} from 'lucide-react';
 import ClientModal from '@/components/dashboard/ClientModal';
 import { useClients } from '@/context/ClientContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Client } from '@/types/client';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function ClientsPage() {
   const { clients, isLoading, deleteClient } = useClients();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    mode: 'create' | 'edit';
-    client?: Client;
-  }>({
-    isOpen: false,
-    mode: 'create',
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
+  const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; client?: Client }>({
+    isOpen: false, mode: 'create',
   });
 
-  // Get employee count for each client
-  const getEmployeeCount = (clientId: string): number => {
-    return employees.filter((emp) => emp.clientId === clientId || emp.client === clients.find(c => c.id === clientId)?.name).length;
-  };
+  const getEmployeeCount = (clientId: string, clientName: string): number =>
+    employees.filter((emp) => {
+      const inAssignments = emp.clientAssignments?.some((a) => a.clientId === clientId);
+      return inAssignments || emp.clientId === clientId || emp.client === clientName;
+    }).length;
 
-  // Filter clients based on search - ensure all clients have valid IDs
-  const filteredClients = clients
-    .filter((client) => client && client.id) // Filter out clients without IDs
-    .filter((client) =>
-      client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const validClients = clients.filter((c) => c && c.id);
 
-  const handleEdit = (client: Client) => {
-    setModalState({
-      isOpen: true,
-      mode: 'edit',
-      client,
-    });
-  };
+  const filteredClients = validClients.filter((c) => {
+    const matchSearch =
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStatus = statusFilter === 'all' || c.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
-  const handleDelete = async (client: Client) => {
-    if (confirm(`Are you sure you want to delete ${client.name}? This action cannot be undone.`)) {
-      try {
-        await deleteClient(client.id);
-      } catch (error) {
-        console.error('Error deleting client:', error);
-      }
+  const totalActive = validClients.filter((c) => c.status === 'Active').length;
+  const totalInactive = validClients.filter((c) => c.status === 'Inactive').length;
+
+  const handleDelete = async (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    if (confirm(`Delete "${client.name}"? This cannot be undone.`)) {
+      try { await deleteClient(client.id); } catch {}
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading clients...</p>
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-9 w-9 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-blue-600" />
-            Clients
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your client organizations
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900">Clients</h1>
+          <p className="mt-0.5 text-sm text-slate-500">Manage client organizations and relationships</p>
         </div>
         <button
           onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-200 transition-all hover:bg-emerald-700 hover:shadow-md"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="h-4 w-4" />
           Add Client
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Total Clients</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{clients.length}</p>
-        </div>
-        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Active Clients</p>
-          <p className="text-2xl font-bold text-green-600">{clients.filter(c => c.status === 'Active').length}</p>
-        </div>
-        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Inactive Clients</p>
-          <p className="text-2xl font-bold text-gray-600">{clients.filter(c => c.status === 'Inactive').length}</p>
-        </div>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Total Clients', value: validClients.length, icon: Building2, color: 'bg-blue-50 text-blue-600', iconBg: 'bg-blue-100' },
+          { label: 'Active', value: totalActive, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600', iconBg: 'bg-emerald-100' },
+          { label: 'Inactive', value: totalInactive, icon: XCircle, color: 'bg-slate-50 text-slate-500', iconBg: 'bg-slate-100' },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl', s.iconBg)}>
+              <s.icon className={cn('h-5 w-5', s.color.split(' ')[1])} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-900">{s.value}</p>
+              <p className="text-xs font-medium text-slate-500">{s.label}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Search */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <input
-          type="text"
-          placeholder="Search clients by name, contact person, or email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-        />
-      </div>
+      {/* Table Card */}
+      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+        {/* Toolbar */}
+        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+            />
+          </div>
+          <div className="flex gap-2">
+            {(['all', 'Active', 'Inactive'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  statusFilter === s
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                )}
+              >
+                {s === 'all' ? 'All' : s}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Client List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         {filteredClients.length === 0 ? (
-          <div className="p-12 text-center">
-            <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No clients found
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <Building2 className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="mt-4 text-base font-semibold text-slate-900">
+              {searchQuery ? 'No clients match your search' : 'No clients yet'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {searchQuery ? 'Try adjusting your search' : 'Get started by adding your first client'}
+            <p className="mt-1 text-sm text-slate-500">
+              {searchQuery ? 'Try different search terms' : 'Add your first client to get started'}
             </p>
             {!searchQuery && (
               <button
                 onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
-                <Plus className="w-5 h-5" />
-                Add Client
+                <Plus className="h-4 w-4" /> Add Client
               </button>
             )}
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Client Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Contact Person
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Phone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Employees
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredClients.map((client, index) => (
-                <tr
-                  key={client.id || `client-${index}`}
-                  onClick={() => router.push(`/dashboard/clients/${client.id}`)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                    {client.contactPerson || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                    {client.email || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                    {client.phone || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
-                      <Users className="w-3 h-3" />
-                      {getEmployeeCount(client.id)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      client.status === 'Active'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
-                    }`}>
-                      {client.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(client)}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(client)}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+          <div className="divide-y divide-slate-50">
+            {/* Table header */}
+            <div className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr_80px_100px_80px] gap-3 px-5 py-3">
+              {['Client', 'Contact', 'Email', 'Phone', 'Employees', 'Status', ''].map((h) => (
+                <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</span>
               ))}
-            </tbody>
-          </table>
+            </div>
+            {filteredClients.map((client, idx) => {
+              const empCount = getEmployeeCount(client.id, client.name);
+              return (
+                <div
+                  key={client.id ?? idx}
+                  onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                  className="grid cursor-pointer grid-cols-[2fr_1.5fr_1.5fr_1fr_80px_100px_80px] items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
+                >
+                  {/* Name + avatar */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white">
+                      {client.name?.charAt(0) ?? '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">{client.name}</p>
+                      {client.address && (
+                        <p className="flex items-center gap-1 truncate text-xs text-slate-400">
+                          <MapPin className="h-3 w-3" />{client.address}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <span className="truncate text-sm text-slate-600">{client.contactPerson || '—'}</span>
+                  <span className="flex items-center gap-1 truncate text-sm text-slate-600">
+                    {client.email ? <><Mail className="h-3 w-3 flex-shrink-0 text-slate-400" />{client.email}</> : '—'}
+                  </span>
+                  <span className="flex items-center gap-1 text-sm text-slate-600">
+                    {client.phone ? <><Phone className="h-3 w-3 flex-shrink-0 text-slate-400" />{client.phone}</> : '—'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                    <Users className="h-3 w-3" />{empCount}
+                  </span>
+                  <span className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
+                    client.status === 'Active'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
+                  )}>
+                    {client.status === 'Active'
+                      ? <CheckCircle2 className="h-3 w-3" />
+                      : <XCircle className="h-3 w-3" />}
+                    {client.status}
+                  </span>
+                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => setModalState({ isOpen: true, mode: 'edit', client })}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => handleDelete(e, client)}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <ChevronRight className="h-4 w-4 text-slate-300" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
+
+        <div className="border-t border-slate-100 px-5 py-3">
+          <p className="text-xs text-slate-400">
+            Showing {filteredClients.length} of {validClients.length} clients
+          </p>
+        </div>
       </div>
 
-      {/* Modals */}
       <ClientModal
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ isOpen: false, mode: 'create' })}
