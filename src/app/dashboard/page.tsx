@@ -31,6 +31,8 @@ import {
 import StatsCards from '@/components/dashboard/StatsCards';
 import AnalyticsCharts from '@/components/dashboard/AnalyticsCharts';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
 import { format } from 'date-fns';
 import { EmployeeType, Employee } from '@/types/employee';
 import { cn } from '@/lib/utils';
@@ -152,6 +154,8 @@ function HorizontalBarChart({ data, color }: { data: { label: string; value: num
 
 export default function DashboardPage() {
   const { employees, isLoading, stats } = useEmployees();
+  const { clients } = useClients();
+  const { vendors } = useVendors();
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<EmployeeType | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<'Active' | 'Terminated' | 'all'>('all');
@@ -162,51 +166,81 @@ export default function DashboardPage() {
   const [chartView, setChartView] = useState<'pie' | 'bar'>('pie');
 
   const uniqueClients = useMemo(() => {
-    const clients = new Set<string>();
+    const clientIds = new Set<string>();
     employees.forEach((emp) => {
-      if (emp.client) clients.add(emp.client);
+      if (emp.clientAssignments?.length) {
+        emp.clientAssignments.forEach((a) => { if (a.clientId) clientIds.add(a.clientId); });
+      } else if (emp.clientId) {
+        clientIds.add(emp.clientId);
+      }
     });
-    return Array.from(clients).sort();
-  }, [employees]);
+    return Array.from(clientIds)
+      .map((id) => ({ id, name: clients.find((c) => c.id === id)?.name || id }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [employees, clients]);
 
   const uniqueVendors = useMemo(() => {
-    const vendors = new Set<string>();
+    const vendorIds = new Set<string>();
     employees.forEach((emp) => {
-      if (emp.vendorName) vendors.add(emp.vendorName);
+      if (emp.vendorAssignments?.length) {
+        emp.vendorAssignments.forEach((a) => { if (a.vendorId) vendorIds.add(a.vendorId); });
+      } else if (emp.vendorId) {
+        vendorIds.add(emp.vendorId);
+      }
     });
-    return Array.from(vendors).sort();
-  }, [employees]);
+    return Array.from(vendorIds)
+      .map((id) => ({ id, name: vendors.find((v) => v.id === id)?.name || id }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [employees, vendors]);
 
   const clientData = useMemo(() => {
-    const distribution: Record<string, { employees: Employee[]; clientId?: string }> = {};
+    const distribution: Record<string, { employees: Employee[]; clientId: string; name: string }> = {};
     employees.forEach((emp) => {
-      const client = emp.client || '';
-      if (client) {
-        if (!distribution[client]) distribution[client] = { employees: [], clientId: emp.clientId };
-        distribution[client].employees.push(emp);
-        if (emp.clientId) distribution[client].clientId = emp.clientId;
+      const clientIds = emp.clientAssignments?.map((a) => a.clientId).filter(Boolean)
+        || (emp.clientId ? [emp.clientId] : []);
+      clientIds.forEach((clientId) => {
+        const client = clients.find((c) => c.id === clientId);
+        const name = client?.name || emp.client || clientId;
+        if (!distribution[clientId]) distribution[clientId] = { employees: [], clientId, name };
+        if (!distribution[clientId].employees.find((e) => e.id === emp.id)) {
+          distribution[clientId].employees.push(emp);
+        }
+      });
+      // Legacy text-only employees
+      if (clientIds.length === 0 && emp.client) {
+        const key = `legacy-${emp.client}`;
+        if (!distribution[key]) distribution[key] = { employees: [], clientId: '', name: emp.client };
+        distribution[key].employees.push(emp);
       }
     });
-    return Object.entries(distribution)
-      .map(([name, data]) => ({ name, ...data }))
+    return Object.values(distribution)
       .sort((a, b) => b.employees.length - a.employees.length)
       .slice(0, 6);
-  }, [employees]);
+  }, [employees, clients]);
 
   const vendorData = useMemo(() => {
-    const distribution: Record<string, { employees: Employee[]; vendorId?: string }> = {};
+    const distribution: Record<string, { employees: Employee[]; vendorId: string; name: string }> = {};
     employees.forEach((emp) => {
-      if (emp.vendorName) {
-        if (!distribution[emp.vendorName]) distribution[emp.vendorName] = { employees: [], vendorId: emp.vendorId };
-        distribution[emp.vendorName].employees.push(emp);
-        if (emp.vendorId) distribution[emp.vendorName].vendorId = emp.vendorId;
+      const vendorIds = emp.vendorAssignments?.map((a) => a.vendorId).filter(Boolean)
+        || (emp.vendorId ? [emp.vendorId] : []);
+      vendorIds.forEach((vendorId) => {
+        const vendor = vendors.find((v) => v.id === vendorId);
+        const name = vendor?.name || emp.vendorName || vendorId;
+        if (!distribution[vendorId]) distribution[vendorId] = { employees: [], vendorId, name };
+        if (!distribution[vendorId].employees.find((e) => e.id === emp.id)) {
+          distribution[vendorId].employees.push(emp);
+        }
+      });
+      if (vendorIds.length === 0 && emp.vendorName) {
+        const key = `legacy-${emp.vendorName}`;
+        if (!distribution[key]) distribution[key] = { employees: [], vendorId: '', name: emp.vendorName };
+        distribution[key].employees.push(emp);
       }
     });
-    return Object.entries(distribution)
-      .map(([name, data]) => ({ name, ...data }))
+    return Object.values(distribution)
       .sort((a, b) => b.employees.length - a.employees.length)
       .slice(0, 6);
-  }, [employees]);
+  }, [employees, vendors]);
 
   // Enhanced analytics data
   const typeDistribution = useMemo(() => {
@@ -259,11 +293,14 @@ export default function DashboardPage() {
         if ('revenueStatus' in emp && emp.revenueStatus !== selectedRevenue) return false;
       }
       if (selectedClient !== 'all') {
-        const empClient = emp.client || '';
-        if (empClient !== selectedClient) return false;
+        const empClientIds = emp.clientAssignments?.map((a) => a.clientId).filter(Boolean)
+          || (emp.clientId ? [emp.clientId] : []);
+        if (!empClientIds.includes(selectedClient) && emp.client !== selectedClient) return false;
       }
       if (selectedVendor !== 'all') {
-        if (emp.vendorName !== selectedVendor) return false;
+        const empVendorIds = emp.vendorAssignments?.map((a) => a.vendorId).filter(Boolean)
+          || (emp.vendorId ? [emp.vendorId] : []);
+        if (!empVendorIds.includes(selectedVendor) && emp.vendorName !== selectedVendor) return false;
       }
       return true;
     });
@@ -478,8 +515,8 @@ export default function DashboardPage() {
                 className="h-10 min-w-[140px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
               >
                 <option value="all">All Clients</option>
-                {uniqueClients.map((client) => (
-                  <option key={client} value={client}>{client}</option>
+                {uniqueClients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -491,8 +528,8 @@ export default function DashboardPage() {
                 className="h-10 min-w-[140px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
               >
                 <option value="all">All Vendors</option>
-                {uniqueVendors.map((vendor) => (
-                  <option key={vendor} value={vendor}>{vendor}</option>
+                {uniqueVendors.map((v) => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
               </select>
             </div>
@@ -539,7 +576,7 @@ export default function DashboardPage() {
           )}
           {selectedClient !== 'all' && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1.5 text-sm font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-              Client: {selectedClient}
+              Client: {uniqueClients.find((c) => c.id === selectedClient)?.name || selectedClient}
               <button onClick={() => setSelectedClient('all')} className="rounded-full p-0.5 hover:bg-purple-200 dark:hover:bg-purple-800">
                 <X className="h-3 w-3" />
               </button>
@@ -547,7 +584,7 @@ export default function DashboardPage() {
           )}
           {selectedVendor !== 'all' && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1.5 text-sm font-medium text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">
-              Vendor: {selectedVendor}
+              Vendor: {uniqueVendors.find((v) => v.id === selectedVendor)?.name || selectedVendor}
               <button onClick={() => setSelectedVendor('all')} className="rounded-full p-0.5 hover:bg-pink-200 dark:hover:bg-pink-800">
                 <X className="h-3 w-3" />
               </button>
@@ -729,7 +766,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {clientData.length > 0 ? clientData.map((client) => (
               <button
-                key={client.name}
+                key={client.clientId || client.name}
                 onClick={() => handleClientClick(client.clientId, client.name)}
                 className="group flex w-full items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 text-left transition-all hover:border-blue-200 hover:bg-blue-50 hover:shadow-md dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-700 dark:hover:bg-blue-900/20"
               >
@@ -772,7 +809,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {vendorData.length > 0 ? vendorData.map((vendor) => (
               <button
-                key={vendor.name}
+                key={vendor.vendorId || vendor.name}
                 onClick={() => handleVendorClick(vendor.vendorId, vendor.name)}
                 className="group flex w-full items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-4 text-left transition-all hover:border-purple-200 hover:bg-purple-50 hover:shadow-md dark:border-slate-700 dark:bg-slate-800 dark:hover:border-purple-700 dark:hover:bg-purple-900/20"
               >

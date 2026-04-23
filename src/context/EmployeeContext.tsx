@@ -104,12 +104,24 @@ export function EmployeeProvider({ children }: { children: React.ReactNode }) {
     const activeSubcontractors = employees.filter((e) => 'subcontractorStatus' in e && e.subcontractorStatus === 'Active').length;
     const inactiveSubcontractors = employees.filter((e) => 'subcontractorStatus' in e && e.subcontractorStatus === 'Inactive').length;
 
-    // Calculate unique clients and vendors
+    // Calculate unique clients and vendors (ID-based)
     const clientSet = new Set<string>();
     const vendorSet = new Set<string>();
     employees.forEach((emp) => {
-      if (emp.client) clientSet.add(emp.client);
-      if (emp.vendorName) vendorSet.add(emp.vendorName);
+      if (emp.clientAssignments?.length) {
+        emp.clientAssignments.forEach((a) => { if (a.clientId) clientSet.add(a.clientId); });
+      } else if (emp.clientId) {
+        clientSet.add(emp.clientId);
+      } else if (emp.client) {
+        clientSet.add(emp.client);
+      }
+      if (emp.vendorAssignments?.length) {
+        emp.vendorAssignments.forEach((a) => { if (a.vendorId) vendorSet.add(a.vendorId); });
+      } else if (emp.vendorId) {
+        vendorSet.add(emp.vendorId);
+      } else if (emp.vendorName) {
+        vendorSet.add(emp.vendorName);
+      }
     });
 
     // Calculate hiring trends by month (last 12 months)

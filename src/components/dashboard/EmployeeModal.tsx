@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
@@ -11,10 +11,8 @@ import {
   EmployeeType,
   FormField,
   getFieldsByType,
-  W2Employee,
-  ContractEmployee,
-  Employee1099,
-  OffshoreEmployee,
+  EmployeeClientAssignment,
+  EmployeeVendorAssignment,
 } from '@/types/employee';
 
 interface EmployeeModalProps {
@@ -60,10 +58,23 @@ export default function EmployeeModal({
     if (mode === 'edit' || mode === 'view') {
       if (employee) {
         setSelectedType(employee.type);
-        setFormData({ ...employee });
+        const data: Record<string, unknown> = { ...employee };
+        // Convert legacy single clientId → clientAssignments array
+        if (!data.clientAssignments) {
+          data.clientAssignments = data.clientId
+            ? [{ clientId: data.clientId, startDate: '', endDate: '' }]
+            : [];
+        }
+        // Convert legacy single vendorId → vendorAssignments array
+        if (!data.vendorAssignments) {
+          data.vendorAssignments = data.vendorId
+            ? [{ vendorId: data.vendorId, startDate: '', endDate: '' }]
+            : [];
+        }
+        setFormData(data);
       }
     } else {
-      setFormData({ type: selectedType });
+      setFormData({ type: selectedType, clientAssignments: [], vendorAssignments: [] });
     }
   }, [mode, employee, selectedType]);
 
@@ -156,9 +167,33 @@ export default function EmployeeModal({
     setIsSubmitting(true);
 
     try {
+      // Derive primary clientId/vendorId from active assignments
+      const clientAssignments = (formData.clientAssignments as EmployeeClientAssignment[] || [])
+        .filter((a) => a.clientId);
+      const now = new Date();
+      const activeClient = clientAssignments.find(
+        (a) => !a.endDate || new Date(a.endDate) >= now
+      );
+      const primaryClientId = activeClient?.clientId
+        || clientAssignments[clientAssignments.length - 1]?.clientId
+        || '';
+
+      const vendorAssignments = (formData.vendorAssignments as EmployeeVendorAssignment[] || [])
+        .filter((a) => a.vendorId);
+      const activeVendor = vendorAssignments.find(
+        (a) => !a.endDate || new Date(a.endDate) >= now
+      );
+      const primaryVendorId = activeVendor?.vendorId
+        || vendorAssignments[vendorAssignments.length - 1]?.vendorId
+        || '';
+
       const employeeData = {
         ...formData,
         type: selectedType,
+        clientAssignments,
+        vendorAssignments,
+        clientId: primaryClientId || (formData.clientId as string) || '',
+        vendorId: primaryVendorId || (formData.vendorId as string) || '',
       };
 
       if (mode === 'create') {
@@ -356,35 +391,219 @@ export default function EmployeeModal({
               </div>
             )}
 
-            {/* Form Fields */}
+            {/* Form Fields (excluding clientId/vendorId — handled via assignment sections below) */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {fields.map((field) => {
-                // Debug log for client/vendor fields
-                if (field.name === 'clientId' || field.name === 'vendorId') {
-                  console.log(`[fields.map] Mapping ${field.name}:`, {
-                    name: field.name,
-                    optionsCount: field.options?.length || 0
-                  });
-                }
+              {fields.filter((f) => f.name !== 'clientId' && f.name !== 'vendorId').map((field) => (
+                <div
+                  key={field.name}
+                  className={cn(field.type === 'checkbox' && 'flex items-end')}
+                >
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {field.label}
+                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                  </label>
+                  {renderField(field)}
+                  {errors[field.name] && (
+                    <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
+                  )}
+                </div>
+              ))}
+            </div>
 
-                return (
-                  <div
-                    key={field.name}
-                    className={cn(
-                      field.type === 'checkbox' && 'flex items-end'
-                    )}
+            {/* Client Assignments */}
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Client Assignments
+                </h4>
+                {mode !== 'view' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = [...((formData.clientAssignments as EmployeeClientAssignment[]) || [])];
+                      list.push({ clientId: '', startDate: '', endDate: '' });
+                      setFormData((prev) => ({ ...prev, clientAssignments: list }));
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400"
                   >
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {field.label}
-                      {field.required && <span className="ml-1 text-red-500">*</span>}
-                    </label>
-                    {renderField(field)}
-                    {errors[field.name] && (
-                      <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
-                    )}
-                  </div>
-                );
-              })}
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Client
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {((formData.clientAssignments as EmployeeClientAssignment[]) || []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    {mode === 'view' ? 'No client assignments' : 'No clients added. Click "Add Client" to assign one.'}
+                  </p>
+                ) : (
+                  ((formData.clientAssignments as EmployeeClientAssignment[]) || []).map((assignment, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="grid flex-1 grid-cols-3 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Client</label>
+                          <select
+                            value={assignment.clientId || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.clientAssignments as EmployeeClientAssignment[]))];
+                              list[idx] = { ...list[idx], clientId: e.target.value };
+                              setFormData((prev) => ({ ...prev, clientAssignments: list }));
+                            }}
+                            disabled={mode === 'view' || clientsLoading}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          >
+                            <option value="">{clientsLoading ? 'Loading...' : 'Select Client'}</option>
+                            {clients.filter((c) => c?.id && c?.name).map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+                          <input
+                            type="date"
+                            value={assignment.startDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.clientAssignments as EmployeeClientAssignment[]))];
+                              list[idx] = { ...list[idx], startDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, clientAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                          <input
+                            type="date"
+                            value={assignment.endDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.clientAssignments as EmployeeClientAssignment[]))];
+                              list[idx] = { ...list[idx], endDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, clientAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      {mode !== 'view' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = ((formData.clientAssignments as EmployeeClientAssignment[])).filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, clientAssignments: list }));
+                          }}
+                          className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Vendor Assignments */}
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Vendor Assignments
+                </h4>
+                {mode !== 'view' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = [...((formData.vendorAssignments as EmployeeVendorAssignment[]) || [])];
+                      list.push({ vendorId: '', startDate: '', endDate: '' });
+                      setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-100 dark:bg-purple-950/50 dark:text-purple-400"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Vendor
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {((formData.vendorAssignments as EmployeeVendorAssignment[]) || []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    {mode === 'view' ? 'No vendor assignments' : 'No vendors added. Click "Add Vendor" to assign one.'}
+                  </p>
+                ) : (
+                  ((formData.vendorAssignments as EmployeeVendorAssignment[]) || []).map((assignment, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="grid flex-1 grid-cols-3 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vendor</label>
+                          <select
+                            value={assignment.vendorId || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.vendorAssignments as EmployeeVendorAssignment[]))];
+                              list[idx] = { ...list[idx], vendorId: e.target.value };
+                              setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view' || vendorsLoading}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          >
+                            <option value="">{vendorsLoading ? 'Loading...' : 'Select Vendor'}</option>
+                            {vendors.filter((v) => v?.id && v?.name).map((v) => (
+                              <option key={v.id} value={v.id}>{v.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+                          <input
+                            type="date"
+                            value={assignment.startDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.vendorAssignments as EmployeeVendorAssignment[]))];
+                              list[idx] = { ...list[idx], startDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                          <input
+                            type="date"
+                            value={assignment.endDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.vendorAssignments as EmployeeVendorAssignment[]))];
+                              list[idx] = { ...list[idx], endDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      {mode !== 'view' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = ((formData.vendorAssignments as EmployeeVendorAssignment[])).filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                          }}
+                          className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 

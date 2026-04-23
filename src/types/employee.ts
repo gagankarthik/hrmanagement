@@ -1,3 +1,15 @@
+export interface EmployeeClientAssignment {
+  clientId: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface EmployeeVendorAssignment {
+  vendorId: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 // Base employee interface with common fields
 export interface BaseEmployee {
   id: string;
@@ -12,10 +24,13 @@ export interface BaseEmployee {
   pincode: string;
   contactNo: string;
   personalEmail: string;
-  // Updated to use entity IDs instead of text (optional)
+  // Primary client/vendor IDs (derived from active assignment)
   clientId?: string;
   vendorId?: string;
-  // Legacy fields for backward compatibility during migration
+  // Multi-assignment support
+  clientAssignments?: EmployeeClientAssignment[];
+  vendorAssignments?: EmployeeVendorAssignment[];
+  // Legacy fields for backward compatibility
   client?: string;
   vendorName?: string;
   createdAt: string;

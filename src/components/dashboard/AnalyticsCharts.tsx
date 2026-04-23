@@ -3,9 +3,13 @@
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
 
 export default function AnalyticsCharts() {
   const { employees, stats } = useEmployees();
+  const { clients } = useClients();
+  const { vendors } = useVendors();
 
   // Calculate distribution by state
   const stateDistribution = useMemo(() => {
@@ -36,33 +40,47 @@ export default function AnalyticsCharts() {
       .slice(0, 6);
   }, [employees]);
 
-  // Calculate client distribution
+  // Calculate client distribution (ID-based with name lookup)
   const clientDistribution = useMemo(() => {
     const distribution: Record<string, number> = {};
     employees.forEach((emp) => {
-      const client = emp.client || 'No Client';
-      if (client) {
-        distribution[client] = (distribution[client] || 0) + 1;
+      const clientIds = emp.clientAssignments?.map((a) => a.clientId).filter(Boolean)
+        || (emp.clientId ? [emp.clientId] : []);
+      if (clientIds.length > 0) {
+        clientIds.forEach((id) => {
+          const name = clients.find((c) => c.id === id)?.name || emp.client || id;
+          distribution[name] = (distribution[name] || 0) + 1;
+        });
+      } else if (emp.client) {
+        distribution[emp.client] = (distribution[emp.client] || 0) + 1;
       }
     });
 
     return Object.entries(distribution)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6);
-  }, [employees]);
+  }, [employees, clients]);
 
-  // Calculate vendor distribution
+  // Calculate vendor distribution (ID-based with name lookup)
   const vendorDistribution = useMemo(() => {
     const distribution: Record<string, number> = {};
     employees.forEach((emp) => {
-      const vendor = emp.vendorName || 'No Vendor';
-      distribution[vendor] = (distribution[vendor] || 0) + 1;
+      const vendorIds = emp.vendorAssignments?.map((a) => a.vendorId).filter(Boolean)
+        || (emp.vendorId ? [emp.vendorId] : []);
+      if (vendorIds.length > 0) {
+        vendorIds.forEach((id) => {
+          const name = vendors.find((v) => v.id === id)?.name || emp.vendorName || id;
+          distribution[name] = (distribution[name] || 0) + 1;
+        });
+      } else if (emp.vendorName) {
+        distribution[emp.vendorName] = (distribution[emp.vendorName] || 0) + 1;
+      }
     });
 
     return Object.entries(distribution)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6);
-  }, [employees]);
+  }, [employees, vendors]);
 
   const maxState = stateDistribution.length > 0 ? stateDistribution[0][1] : 1;
   const maxHiring = stats.hiringTrendByMonth.length > 0
