@@ -1,238 +1,115 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useVendors } from '@/context/VendorContext';
 import { Vendor, VendorFormData } from '@/types/vendor';
 
-interface VendorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  mode: 'create' | 'edit';
-  vendor?: Vendor;
-}
+const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50';
+const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
 
-export default function VendorModal({
-  isOpen,
-  onClose,
-  mode,
-  vendor,
-}: VendorModalProps) {
+export default function VendorModal({ isOpen, onClose, mode, vendor }: {
+  isOpen: boolean; onClose: () => void; mode: 'create' | 'edit'; vendor?: Vendor;
+}) {
   const { createVendor, updateVendor } = useVendors();
-  const [formData, setFormData] = useState<VendorFormData>({
-    name: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    address: '',
-    status: 'Active',
-  });
+  const [form, setForm] = useState<VendorFormData>({ name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (mode === 'edit' && vendor) {
-      setFormData({
-        name: vendor.name,
-        contactPerson: vendor.contactPerson || '',
-        email: vendor.email || '',
-        phone: vendor.phone || '',
-        address: vendor.address || '',
-        status: vendor.status,
-      });
-    } else {
-      setFormData({
-        name: '',
-        contactPerson: '',
-        email: '',
-        phone: '',
-        address: '',
-        status: 'Active',
-      });
-    }
+    setForm(mode === 'edit' && vendor
+      ? { name: vendor.name, contactPerson: vendor.contactPerson || '', email: vendor.email || '', phone: vendor.phone || '', address: vendor.address || '', status: vendor.status }
+      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' }
+    );
+    setErrors({});
   }, [mode, vendor, isOpen]);
 
-  const handleInputChange = (field: keyof VendorFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+  const set = (k: keyof VendorFormData, v: string) => {
+    setForm((p) => ({ ...p, [k]: v }));
+    if (errors[k]) setErrors((p) => { const e = { ...p }; delete e[k]; return e; });
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name || formData.name.trim() === '') {
-      newErrors.name = 'Vendor name is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    if (!form.name?.trim()) { setErrors({ name: 'Vendor name is required' }); return; }
+    setSubmitting(true);
     try {
-      if (mode === 'create') {
-        await createVendor(formData);
-      } else if (mode === 'edit' && vendor) {
-        await updateVendor(vendor.id, formData);
-      }
+      mode === 'create' ? await createVendor(form) : await updateVendor(vendor!.id, form);
       onClose();
-    } catch (error) {
-      console.error('Error saving vendor:', error);
-      setErrors({ submit: 'Failed to save vendor. Please try again.' });
+    } catch {
+      setErrors({ _: 'Failed to save. Please try again.' });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {mode === 'create' ? 'Add New Vendor' : 'Edit Vendor'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100">
+            <Package className="h-4.5 w-4.5 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-slate-900">
+              {mode === 'create' ? 'Add Vendor' : 'Edit Vendor'}
+            </h2>
+            <p className="text-xs text-slate-400">{mode === 'create' ? 'Create a new vendor record' : 'Update vendor details'}</p>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {errors.submit && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+        <form onSubmit={submit} className="px-6 py-5 space-y-4">
+          {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
+
+          <div>
+            <label className={label}>Vendor Name <span className="text-red-500">*</span></label>
+            <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Acme Staffing Inc."
+              className={cn(field, errors.name && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
+            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={label}>Contact Person</label>
+              <input type="text" value={form.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} placeholder="Full name" className={field} />
             </div>
-          )}
-
-          {/* Vendor Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vendor Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className={cn(
-                'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                'dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-                errors.name && 'border-red-500 dark:border-red-500'
-              )}
-              placeholder="Enter vendor name"
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
-            )}
+            <div>
+              <label className={label}>Status</label>
+              <select value={form.status} onChange={(e) => set('status', e.target.value as 'Active' | 'Inactive')} className={field}>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+            <div>
+              <label className={label}>Email</label>
+              <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="contact@vendor.com" className={field} />
+            </div>
+            <div>
+              <label className={label}>Phone</label>
+              <input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className={field} />
+            </div>
           </div>
 
-          {/* Contact Person */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Contact Person
-            </label>
-            <input
-              type="text"
-              value={formData.contactPerson}
-              onChange={(e) => handleInputChange('contactPerson', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="Enter contact person name"
-            />
+            <label className={label}>Address</label>
+            <textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className={cn(field, 'resize-none')} />
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="contact@vendor.com"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="+1 (555) 000-0000"
-            />
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Address
-            </label>
-            <textarea
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              placeholder="Enter full address"
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value as 'Active' | 'Inactive')}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              disabled={isSubmitting}
-            >
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <button type="button" onClick={onClose} disabled={submitting}
+              className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Vendor' : 'Save Changes'}
+            <button type="submit" disabled={submitting}
+              className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50">
+              {submitting ? 'Saving…' : mode === 'create' ? 'Create Vendor' : 'Save Changes'}
             </button>
           </div>
         </form>

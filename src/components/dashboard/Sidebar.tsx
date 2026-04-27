@@ -4,120 +4,54 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  Package,
-  UserPlus,
-  BarChart3,
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
-  Layers,
+  LayoutDashboard, Users, Building2, Package,
+  UserPlus, BarChart3, LogOut, Menu, X, Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  exact?: boolean;
-  accentColor: string;
-  activeBg: string;
-  hoverBg: string;
-}
-
-const navigation: NavItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    exact: true,
-    accentColor: 'text-indigo-400',
-    activeBg: 'bg-indigo-500/20 border-l-2 border-indigo-400',
-    hoverBg: 'hover:bg-indigo-500/10',
-  },
-  {
-    label: 'Employees',
-    href: '/dashboard/employees',
-    icon: Users,
-    accentColor: 'text-blue-400',
-    activeBg: 'bg-blue-500/20 border-l-2 border-blue-400',
-    hoverBg: 'hover:bg-blue-500/10',
-  },
-  {
-    label: 'Clients',
-    href: '/dashboard/clients',
-    icon: Building2,
-    accentColor: 'text-emerald-400',
-    activeBg: 'bg-emerald-500/20 border-l-2 border-emerald-400',
-    hoverBg: 'hover:bg-emerald-500/10',
-  },
-  {
-    label: 'Vendors',
-    href: '/dashboard/vendors',
-    icon: Package,
-    accentColor: 'text-purple-400',
-    activeBg: 'bg-purple-500/20 border-l-2 border-purple-400',
-    hoverBg: 'hover:bg-purple-500/10',
-  },
-  {
-    label: 'Onboard',
-    href: '/dashboard/onboard',
-    icon: UserPlus,
-    accentColor: 'text-orange-400',
-    activeBg: 'bg-orange-500/20 border-l-2 border-orange-400',
-    hoverBg: 'hover:bg-orange-500/10',
-  },
-  {
-    label: 'Reports',
-    href: '/dashboard/reports',
-    icon: BarChart3,
-    accentColor: 'text-rose-400',
-    activeBg: 'bg-rose-500/20 border-l-2 border-rose-400',
-    hoverBg: 'hover:bg-rose-500/10',
-  },
+const nav = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
+  { label: 'Employees', href: '/dashboard/employees', icon: Users },
+  { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
+  { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
+  { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
+  { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
 
-  const isActive = (item: NavItem) => {
-    if (item.exact) return pathname === item.href;
-    return pathname.startsWith(item.href);
-  };
+  const isActive = (item: typeof nav[0]) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+
+  const initials = (user?.name ?? user?.email ?? 'U')
+    .split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="flex h-full flex-col" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)' }}>
+    <div className="flex h-full flex-col bg-white border-r border-slate-200">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
-          <Layers className="h-5 w-5 text-white" />
+      <div className="flex h-16 items-center gap-2.5 border-b border-slate-100 px-5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600">
+          <Layers className="h-4.5 w-4.5 text-white" />
         </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-base font-bold text-white">ZenHR</h1>
-          <p className="text-xs text-slate-400">Workforce Management</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-slate-900 leading-none">ZenHR</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Workforce Platform</p>
         </div>
         {onClose && (
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
-          >
-            <X className="h-5 w-5" />
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden">
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Navigation
-        </p>
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Menu</p>
         <div className="space-y-0.5">
-          {navigation.map((item) => {
+          {nav.map((item) => {
             const active = isActive(item);
             return (
               <Link
@@ -125,36 +59,28 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
+                  'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   active
-                    ? cn('text-white', item.activeBg)
-                    : cn('text-slate-400 hover:text-white', item.hoverBg)
+                    ? 'bg-indigo-50 text-indigo-700 border-l-[3px] border-indigo-600 pl-[9px]'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 )}
               >
-                <item.icon
-                  className={cn(
-                    'h-4.5 w-4.5 flex-shrink-0 transition-colors',
-                    active ? item.accentColor : 'text-slate-500 group-hover:text-slate-300'
-                  )}
-                />
-                <span className="flex-1 leading-none">{item.label}</span>
-                {active && (
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-                )}
+                <item.icon className={cn('h-4 w-4 shrink-0', active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600')} />
+                {item.label}
               </Link>
             );
           })}
         </div>
       </nav>
 
-      {/* User Profile */}
-      <div className="border-t border-white/10 p-3">
-        <div className="mb-2 flex items-center gap-3 rounded-xl bg-white/5 p-3">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-xs font-bold text-white shadow">
-            {user?.email?.charAt(0).toUpperCase() ?? 'U'}
+      {/* User */}
+      <div className="border-t border-slate-100 p-3 space-y-1">
+        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-medium text-slate-800">
               {user?.name ?? user?.email?.split('@')[0] ?? 'User'}
             </p>
             <p className="truncate text-xs text-slate-400">{user?.email ?? ''}</p>
@@ -162,10 +88,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         </div>
         <button
           onClick={signOut}
-          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
         >
           <LogOut className="h-4 w-4" />
-          Sign Out
+          Sign out
         </button>
       </div>
     </div>
@@ -173,38 +99,33 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 }
 
 export default function Sidebar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <>
       {/* Mobile toggle */}
       <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-lg lg:hidden"
+        onClick={() => setOpen(true)}
+        className="fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm text-slate-600 lg:hidden"
       >
         <Menu className="h-4 w-4" />
       </button>
 
-      {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+      {/* Mobile overlay */}
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden" onClick={() => setOpen(false)} />
       )}
 
-      {/* Mobile sidebar */}
-      <div
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 w-60 transition-transform duration-300 ease-in-out lg:hidden',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
-        <SidebarContent onClose={() => setMobileOpen(false)} />
+      {/* Mobile drawer */}
+      <div className={cn(
+        'fixed inset-y-0 left-0 z-50 w-60 transition-transform duration-200 lg:hidden',
+        open ? 'translate-x-0' : '-translate-x-full'
+      )}>
+        <SidebarContent onClose={() => setOpen(false)} />
       </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden w-60 flex-shrink-0 lg:block">
+      {/* Desktop */}
+      <div className="hidden w-60 shrink-0 lg:block">
         <div className="fixed inset-y-0 left-0 w-60">
           <SidebarContent />
         </div>

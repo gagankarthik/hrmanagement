@@ -5,7 +5,8 @@
       "Bash(npm run build:*)",
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(grep -E \"\\\\.\\(ts|js|tsx|json\\)$\")"
     ]
   }
 }
