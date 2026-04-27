@@ -84,39 +84,6 @@ export default function EmployeesPage() {
         ))}
       </div>
 
-      {/* Type breakdown mini cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { id: 'W2', label: 'W2', count: stats.w2Count, icon: Briefcase, color: 'blue' },
-          { id: 'Contract', label: 'Contract', count: stats.contractCount, icon: FileText, color: 'purple' },
-          { id: '1099', label: '1099', count: stats.employee1099Count, icon: FileText, color: 'teal' },
-          { id: 'Offshore', label: 'Offshore', count: stats.offshoreCount, icon: Globe, color: 'pink' },
-        ].map((item) => {
-          const colorMap: Record<string, string> = {
-            blue: 'border-blue-200 bg-blue-50 text-blue-700',
-            purple: 'border-purple-200 bg-purple-50 text-purple-700',
-            teal: 'border-teal-200 bg-teal-50 text-teal-700',
-            pink: 'border-pink-200 bg-pink-50 text-pink-700',
-          };
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id as EmployeeType)}
-              className={cn(
-                'flex items-center gap-2 rounded-xl border px-4 py-3 text-left transition-all hover:shadow-sm',
-                activeTab === item.id ? colorMap[item.color] : 'border-slate-100 bg-white text-slate-600 hover:border-slate-200'
-              )}
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-medium">{item.label}</p>
-                <p className="text-lg font-bold">{item.count}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Tab navigation */}
       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
         <div className="flex items-center gap-1 border-b border-slate-100 px-4">
