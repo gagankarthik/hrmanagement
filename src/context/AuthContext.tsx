@@ -12,6 +12,11 @@ import {
   fetchAuthSession,
   fetchUserAttributes,
 } from 'aws-amplify/auth';
+import { configureAmplify } from '@/config/amplify';
+
+if (typeof window !== 'undefined') {
+  configureAmplify();
+}
 
 interface User {
   username: string;

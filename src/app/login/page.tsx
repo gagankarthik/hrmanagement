@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useAuth } from "@/lib/auth";
+import { useState, useEffect, FormEvent } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, ShieldCheck, BarChart3, Layers } from "lucide-react";
+import { Layers, Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
 
-export default function SignInPage() {
+export default function LoginPage() {
   const { isAuthenticated, isLoading, signIn } = useAuth();
   const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) router.push("/dashboard");
@@ -21,6 +27,20 @@ export default function SignInPage() {
       </div>
     );
   }
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signIn(email, password);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Invalid email or password";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -75,24 +95,77 @@ export default function SignInPage() {
           <span className="text-xl font-bold text-slate-900">ZenHR</span>
         </div>
 
-        <div className="w-full max-w-[380px] space-y-7">
+        <div className="w-full max-w-[380px] space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
             <p className="mt-1 text-sm text-slate-500">Sign in to access your HR dashboard</p>
           </div>
 
-          <button
-            onClick={signIn}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Continue with SSO
-          </button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              />
+            </div>
 
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-100" />
-            <span className="text-xs text-slate-400">or</span>
-            <div className="h-px flex-1 bg-slate-100" />
-          </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  Password
+                </label>
+                <Link href="/forgot-password" className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : null}
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
 
           <p className="text-center text-sm text-slate-500">
             Don&apos;t have an account?{" "}
@@ -103,7 +176,7 @@ export default function SignInPage() {
 
           <p className="text-center text-xs text-slate-400">
             By continuing you agree to our{" "}
-            <span className="cursor-pointer underline decoration-slate-300">Terms</span>{" "}and{" "}
+            <span className="cursor-pointer underline decoration-slate-300">Terms</span> and{" "}
             <span className="cursor-pointer underline decoration-slate-300">Privacy Policy</span>.
           </p>
         </div>

@@ -1,16 +1,11 @@
 'use client';
 
 import React from 'react';
-import { configureAmplify } from '@/config/amplify';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { ClientProvider } from '@/context/ClientContext';
 import { VendorProvider } from '@/context/VendorContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/dashboard/Sidebar';
-
-if (typeof window !== 'undefined') {
-  configureAmplify();
-}
 
 export default function DashboardLayout({
   children,

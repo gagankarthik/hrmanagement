@@ -8,7 +8,7 @@ import {
   UserPlus, BarChart3, LogOut, Menu, X, Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 
 const nav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },

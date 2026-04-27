@@ -17,7 +17,7 @@ import {
   Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavItem {
   label: string;
