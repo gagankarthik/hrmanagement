@@ -13,6 +13,8 @@ import {
   getFieldsByType,
   EmployeeClientAssignment,
   EmployeeVendorAssignment,
+  EmployeeEndClientAssignment,
+  EmployeeEndVendorAssignment,
 } from '@/types/employee';
 import Link from 'next/link';
 
@@ -81,6 +83,8 @@ export default function OnboardPage() {
   const [success, setSuccess] = useState(false);
   const [clientAssignments, setClientAssignments] = useState<EmployeeClientAssignment[]>([]);
   const [vendorAssignments, setVendorAssignments] = useState<EmployeeVendorAssignment[]>([]);
+  const [endClientAssignments, setEndClientAssignments] = useState<EmployeeEndClientAssignment[]>([]);
+  const [endVendorAssignments, setEndVendorAssignments] = useState<EmployeeEndVendorAssignment[]>([]);
 
   useEffect(() => {
     fetchClients();
@@ -99,6 +103,8 @@ export default function OnboardPage() {
     setFormData({ type });
     setClientAssignments([]);
     setVendorAssignments([]);
+    setEndClientAssignments([]);
+    setEndVendorAssignments([]);
     setStep(2);
   };
 
@@ -139,12 +145,18 @@ export default function OnboardPage() {
     try {
       const activeClient = clientAssignments.find((a) => !a.endDate || new Date(a.endDate) >= new Date());
       const activeVendor = vendorAssignments.find((a) => !a.endDate || new Date(a.endDate) >= new Date());
+      const activeEndClient = endClientAssignments.find((a) => !a.endDate || new Date(a.endDate) >= new Date());
+      const activeEndVendor = endVendorAssignments.find((a) => !a.endDate || new Date(a.endDate) >= new Date());
       const payload = {
         ...formData,
         clientAssignments: clientAssignments.length ? clientAssignments : undefined,
         vendorAssignments: vendorAssignments.length ? vendorAssignments : undefined,
+        endClientAssignments: endClientAssignments.length ? endClientAssignments : undefined,
+        endVendorAssignments: endVendorAssignments.length ? endVendorAssignments : undefined,
         clientId: activeClient?.clientId || undefined,
         vendorId: activeVendor?.vendorId || undefined,
+        endClientId: activeEndClient?.clientId || undefined,
+        endVendorId: activeEndVendor?.vendorId || undefined,
       };
       await createEmployee(payload as Parameters<typeof createEmployee>[0]);
       setSuccess(true);
@@ -495,6 +507,176 @@ export default function OnboardPage() {
                       <button
                         type="button"
                         onClick={() => setVendorAssignments((prev) => prev.filter((_, i) => i !== idx))}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* End Client Assignments */}
+          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
+                  <Briefcase className="h-4 w-4 text-sky-600" />
+                </div>
+                <h2 className="text-base font-semibold text-slate-900">End Client Assignments</h2>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                  {endClientAssignments.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEndClientAssignments((prev) => [...prev, { clientId: '', startDate: '', endDate: '' }])}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add End Client
+              </button>
+            </div>
+            <div className="p-6">
+              {endClientAssignments.length === 0 ? (
+                <p className="text-sm text-slate-400">No end client assignments. Click &quot;Add End Client&quot; to assign.</p>
+              ) : (
+                <div className="space-y-3">
+                  {endClientAssignments.map((assignment, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Client</label>}
+                        <select
+                          value={assignment.clientId}
+                          onChange={(e) => {
+                            const next = [...endClientAssignments];
+                            next[idx] = { ...next[idx], clientId: e.target.value };
+                            setEndClientAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                        >
+                          <option value="">Select End Client</option>
+                          {clients.filter((c) => c?.id && c?.name).map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
+                        <input
+                          type="date"
+                          value={assignment.startDate || ''}
+                          onChange={(e) => {
+                            const next = [...endClientAssignments];
+                            next[idx] = { ...next[idx], startDate: e.target.value };
+                            setEndClientAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
+                        <input
+                          type="date"
+                          value={assignment.endDate || ''}
+                          onChange={(e) => {
+                            const next = [...endClientAssignments];
+                            next[idx] = { ...next[idx], endDate: e.target.value };
+                            setEndClientAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEndClientAssignments((prev) => prev.filter((_, i) => i !== idx))}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* End Vendor Assignments */}
+          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                  <Briefcase className="h-4 w-4 text-amber-600" />
+                </div>
+                <h2 className="text-base font-semibold text-slate-900">End Vendor Assignments</h2>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                  {endVendorAssignments.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEndVendorAssignments((prev) => [...prev, { vendorId: '', startDate: '', endDate: '' }])}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add End Vendor
+              </button>
+            </div>
+            <div className="p-6">
+              {endVendorAssignments.length === 0 ? (
+                <p className="text-sm text-slate-400">No end vendor assignments. Click &quot;Add End Vendor&quot; to assign.</p>
+              ) : (
+                <div className="space-y-3">
+                  {endVendorAssignments.map((assignment, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Vendor</label>}
+                        <select
+                          value={assignment.vendorId}
+                          onChange={(e) => {
+                            const next = [...endVendorAssignments];
+                            next[idx] = { ...next[idx], vendorId: e.target.value };
+                            setEndVendorAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        >
+                          <option value="">Select End Vendor</option>
+                          {vendors.filter((v) => v?.id && v?.name).map((v) => (
+                            <option key={v.id} value={v.id}>{v.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
+                        <input
+                          type="date"
+                          value={assignment.startDate || ''}
+                          onChange={(e) => {
+                            const next = [...endVendorAssignments];
+                            next[idx] = { ...next[idx], startDate: e.target.value };
+                            setEndVendorAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        />
+                      </div>
+                      <div>
+                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
+                        <input
+                          type="date"
+                          value={assignment.endDate || ''}
+                          onChange={(e) => {
+                            const next = [...endVendorAssignments];
+                            next[idx] = { ...next[idx], endDate: e.target.value };
+                            setEndVendorAssignments(next);
+                          }}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEndVendorAssignments((prev) => prev.filter((_, i) => i !== idx))}
                         className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
