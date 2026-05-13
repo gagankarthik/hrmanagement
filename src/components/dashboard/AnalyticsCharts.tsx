@@ -107,7 +107,7 @@ export default function AnalyticsCharts() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Employee Distribution by Type - Donut Chart */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Employee Distribution by Type
         </h3>
@@ -195,7 +195,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Revenue Status Distribution */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Revenue Status (B/NB)
         </h3>
@@ -294,7 +294,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Hiring Trend - Bar Chart with W2 and Offshore */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Hiring Trend (Last 12 Months)
         </h3>
@@ -356,7 +356,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Client Distribution */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
             Top Clients
@@ -387,7 +387,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Vendor Distribution */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-6 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
             Top Vendors
@@ -418,7 +418,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* State Distribution */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Distribution by State
         </h3>
@@ -442,7 +442,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Work Authorization Distribution */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Work Authorization Types
         </h3>
@@ -475,7 +475,7 @@ export default function AnalyticsCharts() {
       </div>
 
       {/* Active vs Terminated */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 lg:col-span-2">
         <h3 className="mb-6 text-lg font-semibold text-slate-900 dark:text-white">
           Employment Status Overview
         </h3>

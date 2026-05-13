@@ -31,6 +31,12 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/toast';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface EmployeeDetailPageProps {
   params: Promise<{ id: string }>;
@@ -58,12 +64,15 @@ const typeColors: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) {
+function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
   const router = useRouter();
   const { employees, deleteEmployee, isLoading } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
+  const toast = useToast();
   const [employeeId, setEmployeeId] = React.useState<string>('');
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
     params.then((p) => setEmployeeId(p.id));
@@ -128,10 +137,18 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
     return y;
   }, [employee]);
 
-  const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this employee? This cannot be undone.')) {
+  const handleDelete = () => setDeleteOpen(true);
+
+  const confirmDelete = async () => {
+    if (!employee) return;
+    setIsDeleting(true);
+    try {
       await deleteEmployee(employeeId);
+      toast.success('Employee deleted', `${employee.name} has been removed.`);
       router.push('/dashboard/employees');
+    } catch (err) {
+      toast.error('Failed to delete employee', err instanceof Error ? err.message : 'Please try again.');
+      setIsDeleting(false);
     }
   };
 
@@ -237,23 +254,44 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-9 w-9 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-44" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-56 w-full rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (!employee) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
-          <XCircle className="h-8 w-8 text-red-500" />
-        </div>
-        <h2 className="text-lg font-bold text-slate-900">Employee Not Found</h2>
-        <button onClick={() => router.push('/dashboard/employees')} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-          Back to Employees
-        </button>
-      </div>
+      <EmptyState
+        icon={XCircle}
+        tone="default"
+        title="Employee Not Found"
+        description="We couldn't find that employee. They may have been deleted or the link is invalid."
+        action={
+          <button
+            onClick={() => router.push('/dashboard/employees')}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+          >
+            Back to Employees
+          </button>
+        }
+        className="mt-12"
+      />
     );
   }
 
@@ -270,6 +308,13 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Employees', href: '/dashboard/employees' },
+          { label: employee.name },
+        ]}
+      />
+
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -578,6 +623,30 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailPageProps) 
           <span><span className="font-medium text-slate-700">Updated:</span> {format(new Date(employee.updatedAt), 'MMMM d, yyyy h:mm a')}</span>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => !isDeleting && setDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Employee"
+        description={
+          <>
+            Are you sure you want to delete{' '}
+            <span className="font-semibold text-slate-900">{employee.name}</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete Employee"
+        isLoading={isDeleting}
+      />
     </div>
+  );
+}
+
+export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
+  return (
+    <ErrorBoundary>
+      <EmployeeDetailPageContent {...props} />
+    </ErrorBoundary>
   );
 }

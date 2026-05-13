@@ -22,6 +22,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface VendorDetailPageProps {
   params: Promise<{ id: string }>;
@@ -34,7 +38,7 @@ const typeBadge: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-export default function VendorDetailPage({ params }: VendorDetailPageProps) {
+function VendorDetailPageContent({ params }: VendorDetailPageProps) {
   const router = useRouter();
   const { employees } = useEmployees();
   const { vendors, isLoading } = useVendors();
@@ -142,28 +146,52 @@ export default function VendorDetailPage({ params }: VendorDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-9 w-9 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[0, 1].map((i) => <Skeleton key={i} className="h-56 w-full rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-72 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (!vendor) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
-          <XCircle className="h-8 w-8 text-red-500" />
-        </div>
-        <h2 className="text-lg font-bold text-slate-900">Vendor Not Found</h2>
-        <button onClick={() => router.push('/dashboard/vendors')} className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">
-          Back to Vendors
-        </button>
-      </div>
+      <EmptyState
+        icon={XCircle}
+        tone="default"
+        title="Vendor Not Found"
+        description="We couldn't find that vendor. They may have been deleted or the link is invalid."
+        action={
+          <button
+            onClick={() => router.push('/dashboard/vendors')}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+          >
+            Back to Vendors
+          </button>
+        }
+        className="mt-12"
+      />
     );
   }
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Vendors', href: '/dashboard/vendors' },
+          { label: vendor.name },
+        ]}
+      />
+
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -338,11 +366,13 @@ export default function VendorDetailPage({ params }: VendorDetailPageProps) {
         </div>
 
         {vendorEmployees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-              <Users className="h-7 w-7 text-slate-400" />
-            </div>
-            <p className="mt-3 text-sm font-medium text-slate-500">No employees assigned to this vendor</p>
+          <div className="p-5">
+            <EmptyState
+              icon={Users}
+              tone="purple"
+              title="No employees assigned"
+              description="When you assign employees to this vendor they'll appear here."
+            />
           </div>
         ) : (
           <div className="divide-y divide-slate-50">
@@ -404,5 +434,13 @@ export default function VendorDetailPage({ params }: VendorDetailPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VendorDetailPage(props: VendorDetailPageProps) {
+  return (
+    <ErrorBoundary>
+      <VendorDetailPageContent {...props} />
+    </ErrorBoundary>
   );
 }

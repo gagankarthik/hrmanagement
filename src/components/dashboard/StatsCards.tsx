@@ -90,7 +90,7 @@ function StatCard({ title, value, icon: Icon, color, onClick, subtitle }: StatCa
     <button
       onClick={onClick}
       className={cn(
-        'group relative overflow-hidden rounded-2xl border border-slate-200 p-5 text-left transition-all hover:shadow-lg dark:border-slate-800',
+        'group relative overflow-hidden rounded-2xl border border-slate-100 p-5 text-left transition-all hover:shadow-lg dark:border-slate-800',
         'bg-white dark:bg-slate-900',
         onClick && 'cursor-pointer'
       )}

@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import StatsCards from '@/components/dashboard/StatsCards';
 import AnalyticsCharts from '@/components/dashboard/AnalyticsCharts';
+import StaffingKPIs from '@/components/dashboard/StaffingKPIs';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -37,6 +38,7 @@ import { format } from 'date-fns';
 import { EmployeeType, Employee } from '@/types/employee';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 const employeeTypes = [
   { value: 'all', label: 'All Types' },
@@ -413,11 +415,17 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Loading dashboard...</p>
+      <div className="space-y-6">
+        <Skeleton className="h-36 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
         </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-72 w-full rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }
@@ -469,7 +477,7 @@ export default function DashboardPage() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 animate-in slide-in-from-top-2 duration-200">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 animate-in slide-in-from-top-2 duration-200">
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Employee Type</label>
@@ -596,13 +604,16 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Staffing KPIs (Phase 3) */}
+      <StaffingKPIs employees={filteredEmployees} />
+
       {/* Stats Cards */}
       <StatsCards />
 
       {/* Enhanced Analytics Section */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Employee Type Distribution */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
@@ -649,7 +660,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Revenue Distribution */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600">
               <CircleDollarSign className="h-4 w-4 text-white" />
@@ -681,7 +692,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Active Status */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600">
               <Activity className="h-4 w-4 text-white" />
@@ -750,7 +761,7 @@ export default function DashboardPage() {
       {/* Client & Vendor Cards */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Clients */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
@@ -793,7 +804,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Vendors */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
@@ -838,7 +849,7 @@ export default function DashboardPage() {
 
       {/* Geographic Distribution */}
       {stateDistribution.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg">
               <MapPin className="h-5 w-5 text-white" />
@@ -858,7 +869,7 @@ export default function DashboardPage() {
       {/* Recent Hires & Expiring Authorizations */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Hires */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg">
@@ -904,7 +915,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Expiring Authorizations */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg">
@@ -970,7 +981,7 @@ export default function DashboardPage() {
       {/* Birthdays & Anniversaries */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Upcoming Birthdays */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg">
@@ -1027,7 +1038,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Upcoming Anniversaries */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 hover:shadow-md transition-shadow">
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">

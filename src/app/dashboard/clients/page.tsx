@@ -11,6 +11,11 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { Client } from '@/types/client';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useToast } from '@/components/ui/toast';
+import { StatCard, StatGrid } from '@/components/ui/stat-card';
 
 export default function ClientsPage() {
   const { clients, isLoading, deleteClient } = useClients();
@@ -21,6 +26,10 @@ export default function ClientsPage() {
   const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; client?: Client }>({
     isOpen: false, mode: 'create',
   });
+  const [deleteState, setDeleteState] = useState<{ client: Client | null; isDeleting: boolean }>({
+    client: null, isDeleting: false,
+  });
+  const toast = useToast();
 
   const getEmpCount = (clientId: string, clientName: string) =>
     employees.filter((emp) =>
@@ -41,17 +50,34 @@ export default function ClientsPage() {
   const totalActive = valid.filter((c) => c.status === 'Active').length;
   const totalInactive = valid.filter((c) => c.status === 'Inactive').length;
 
-  const handleDelete = async (e: React.MouseEvent, client: Client) => {
+  const handleDelete = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
-    if (confirm(`Delete "${client.name}"? This cannot be undone.`)) {
-      try { await deleteClient(client.id); } catch {}
+    setDeleteState({ client, isDeleting: false });
+  };
+
+  const confirmDelete = async () => {
+    const client = deleteState.client;
+    if (!client) return;
+    setDeleteState((prev) => ({ ...prev, isDeleting: true }));
+    try {
+      await deleteClient(client.id);
+      toast.success('Client deleted', `${client.name} has been removed.`);
+      setDeleteState({ client: null, isDeleting: false });
+    } catch (err) {
+      toast.error('Failed to delete client', err instanceof Error ? err.message : 'Please try again.');
+      setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-emerald-600" />
+      <div className="space-y-5">
+        <div className="grid grid-cols-3 gap-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[68px] animate-pulse rounded-xl border border-slate-100 bg-white shadow-sm" />
+          ))}
+        </div>
+        <SkeletonTable rows={6} cols={6} />
       </div>
     );
   }
@@ -73,23 +99,11 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label: 'Total', value: valid.length, icon: Building2, bg: 'bg-slate-100', color: 'text-slate-600' },
-          { label: 'Active', value: totalActive, icon: CheckCircle2, bg: 'bg-emerald-100', color: 'text-emerald-600' },
-          { label: 'Inactive', value: totalInactive, icon: XCircle, bg: 'bg-red-100', color: 'text-red-500' },
-        ].map((s) => (
-          <div key={s.label} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', s.bg)}>
-              <s.icon className={cn('h-5 w-5', s.color)} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-slate-900">{s.value}</p>
-              <p className="text-xs text-slate-500">{s.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatGrid cols={3}>
+        <StatCard label="Total" value={valid.length} icon={Building2} tone="slate" />
+        <StatCard label="Active" value={totalActive} icon={CheckCircle2} tone="emerald" />
+        <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" />
+      </StatGrid>
 
       {/* Table card */}
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
@@ -121,24 +135,23 @@ export default function ClientsPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-              <Building2 className="h-7 w-7 text-slate-400" />
-            </div>
-            <p className="mt-4 text-sm font-semibold text-slate-700">
-              {searchQuery ? 'No clients match your search' : 'No clients yet'}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">
-              {searchQuery ? 'Try different keywords' : 'Add your first client to get started'}
-            </p>
-            {!searchQuery && (
-              <button
-                onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                <Plus className="h-4 w-4" /> Add Client
-              </button>
-            )}
+          <div className="p-5">
+            <EmptyState
+              icon={Building2}
+              tone="emerald"
+              title={searchQuery ? 'No clients match your search' : 'No clients yet'}
+              description={searchQuery ? 'Try different keywords or clear filters.' : 'Add your first client to start tracking relationships.'}
+              action={
+                !searchQuery ? (
+                  <button
+                    onClick={() => setModalState({ isOpen: true, mode: 'create' })}
+                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+                  >
+                    <Plus className="h-4 w-4" /> Add Client
+                  </button>
+                ) : undefined
+              }
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -241,6 +254,24 @@ export default function ClientsPage() {
         onClose={() => setModalState({ isOpen: false, mode: 'create' })}
         mode={modalState.mode}
         client={modalState.client}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteState.client !== null}
+        onClose={() => setDeleteState({ client: null, isDeleting: false })}
+        onConfirm={confirmDelete}
+        title="Delete Client"
+        description={
+          deleteState.client ? (
+            <>
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-slate-900">{deleteState.client.name}</span>?
+              This action cannot be undone.
+            </>
+          ) : null
+        }
+        confirmLabel="Delete Client"
+        isLoading={deleteState.isDeleting}
       />
     </div>
   );

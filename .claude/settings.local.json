@@ -6,7 +6,11 @@
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(grep -E \"\\\\.\\(ts|js|tsx|json\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|js|tsx|json\\)$\")",
+      "Bash(dir /s /b src\\\\app\\\\*.tsx)",
+      "Bash(findstr \"page.tsx\")",
+      "Bash(powershell -Command \"\\(Get-Content 'src/app/dashboard/clients/[id]/page.tsx' | Measure-Object -Line\\).Lines\")",
+      "Bash(powershell -Command \"\\(Get-Content -LiteralPath 'src/app/dashboard/clients/[id]/page.tsx' | Measure-Object -Line\\).Lines\")"
     ]
   }
 }

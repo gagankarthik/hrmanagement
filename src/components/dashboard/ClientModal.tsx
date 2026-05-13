@@ -5,6 +5,7 @@ import { X, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useClients } from '@/context/ClientContext';
 import { Client, ClientFormData } from '@/types/client';
+import { useToast } from '@/components/ui/toast';
 
 const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50';
 const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
@@ -13,6 +14,7 @@ export default function ClientModal({ isOpen, onClose, mode, client }: {
   isOpen: boolean; onClose: () => void; mode: 'create' | 'edit'; client?: Client;
 }) {
   const { createClient, updateClient } = useClients();
+  const toast = useToast();
   const [form, setForm] = useState<ClientFormData>({ name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -35,10 +37,18 @@ export default function ClientModal({ isOpen, onClose, mode, client }: {
     if (!form.name?.trim()) { setErrors({ name: 'Client name is required' }); return; }
     setSubmitting(true);
     try {
-      mode === 'create' ? await createClient(form) : await updateClient(client!.id, form);
+      if (mode === 'create') {
+        await createClient(form);
+        toast.success('Client created', `${form.name} has been added.`);
+      } else {
+        await updateClient(client!.id, form);
+        toast.success('Client updated', `${form.name} has been saved.`);
+      }
       onClose();
-    } catch {
-      setErrors({ _: 'Failed to save. Please try again.' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';
+      setErrors({ _: message });
+      toast.error(mode === 'create' ? 'Could not create client' : 'Could not update client', message);
     } finally {
       setSubmitting(false);
     }

@@ -23,6 +23,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface ClientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -35,7 +39,7 @@ const typeBadge: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-export default function ClientDetailPage({ params }: ClientDetailPageProps) {
+function ClientDetailPageContent({ params }: ClientDetailPageProps) {
   const router = useRouter();
   const { employees } = useEmployees();
   const { clients, isLoading } = useClients();
@@ -143,28 +147,52 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-9 w-9 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {[0, 1].map((i) => <Skeleton key={i} className="h-56 w-full rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-72 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (!client) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
-          <XCircle className="h-8 w-8 text-red-500" />
-        </div>
-        <h2 className="text-lg font-bold text-slate-900">Client Not Found</h2>
-        <button onClick={() => router.push('/dashboard/clients')} className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
-          Back to Clients
-        </button>
-      </div>
+      <EmptyState
+        icon={XCircle}
+        tone="default"
+        title="Client Not Found"
+        description="We couldn't find that client. They may have been deleted or the link is invalid."
+        action={
+          <button
+            onClick={() => router.push('/dashboard/clients')}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+          >
+            Back to Clients
+          </button>
+        }
+        className="mt-12"
+      />
     );
   }
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Clients', href: '/dashboard/clients' },
+          { label: client.name },
+        ]}
+      />
+
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -339,11 +367,13 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
         </div>
 
         {clientEmployees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-              <Users className="h-7 w-7 text-slate-400" />
-            </div>
-            <p className="mt-3 text-sm font-medium text-slate-500">No employees assigned to this client</p>
+          <div className="p-5">
+            <EmptyState
+              icon={Users}
+              tone="emerald"
+              title="No employees assigned"
+              description="When you assign employees to this client they'll appear here."
+            />
           </div>
         ) : (
           <div className="divide-y divide-slate-50">
@@ -405,5 +435,13 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ClientDetailPage(props: ClientDetailPageProps) {
+  return (
+    <ErrorBoundary>
+      <ClientDetailPageContent {...props} />
+    </ErrorBoundary>
   );
 }

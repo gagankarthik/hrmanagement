@@ -14,6 +14,7 @@ import {
   EmployeeClientAssignment,
   EmployeeVendorAssignment,
 } from '@/types/employee';
+import { useToast } from '@/components/ui/toast';
 
 interface EmployeeModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function EmployeeModal({
   defaultType = 'W2',
 }: EmployeeModalProps) {
   const { createEmployee, updateEmployee } = useEmployees();
+  const toast = useToast();
   const { clients, isLoading: clientsLoading, fetchClients } = useClients();
   const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
   const [selectedType, setSelectedType] = useState<EmployeeType>(defaultType);
@@ -196,15 +198,20 @@ export default function EmployeeModal({
         vendorId: primaryVendorId || (formData.vendorId as string) || '',
       };
 
+      const name = (formData.name as string | undefined) || 'Employee';
       if (mode === 'create') {
         await createEmployee(employeeData as Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>);
+        toast.success('Employee created', `${name} has been added.`);
       } else if (mode === 'edit' && employee) {
         await updateEmployee(employee.id, employeeData as Partial<Employee>);
+        toast.success('Employee updated', `${name} has been saved.`);
       }
 
       onClose();
     } catch (error) {
       console.error('Failed to save employee:', error);
+      const message = error instanceof Error ? error.message : 'Please try again.';
+      toast.error(mode === 'create' ? 'Could not create employee' : 'Could not update employee', message);
     } finally {
       setIsSubmitting(false);
     }

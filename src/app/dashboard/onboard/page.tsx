@@ -17,6 +17,7 @@ import {
   EmployeeEndVendorAssignment,
 } from '@/types/employee';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/toast';
 
 const employeeTypes: {
   value: EmployeeType;
@@ -73,6 +74,7 @@ const employeeTypes: {
 export default function OnboardPage() {
   const router = useRouter();
   const { createEmployee } = useEmployees();
+  const toast = useToast();
   const { clients, isLoading: clientsLoading, fetchClients } = useClients();
   const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
   const [step, setStep] = useState<1 | 2>(1);
@@ -85,11 +87,67 @@ export default function OnboardPage() {
   const [vendorAssignments, setVendorAssignments] = useState<EmployeeVendorAssignment[]>([]);
   const [endClientAssignments, setEndClientAssignments] = useState<EmployeeEndClientAssignment[]>([]);
   const [endVendorAssignments, setEndVendorAssignments] = useState<EmployeeEndVendorAssignment[]>([]);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const DRAFT_KEY = 'zenhr:onboard-draft:v1';
 
   useEffect(() => {
     fetchClients();
     fetchVendors();
   }, [fetchClients, fetchVendors]);
+
+  // Restore draft on mount
+  useEffect(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        selectedType?: EmployeeType;
+        formData?: Record<string, unknown>;
+        clientAssignments?: EmployeeClientAssignment[];
+        vendorAssignments?: EmployeeVendorAssignment[];
+        endClientAssignments?: EmployeeEndClientAssignment[];
+        endVendorAssignments?: EmployeeEndVendorAssignment[];
+      };
+      if (draft.selectedType) {
+        setSelectedType(draft.selectedType);
+        setFormData(draft.formData || { type: draft.selectedType });
+        setClientAssignments(draft.clientAssignments || []);
+        setVendorAssignments(draft.vendorAssignments || []);
+        setEndClientAssignments(draft.endClientAssignments || []);
+        setEndVendorAssignments(draft.endVendorAssignments || []);
+        setStep(2);
+        setDraftRestored(true);
+      }
+    } catch {
+      // ignore malformed drafts
+    }
+  }, []);
+
+  // Persist draft whenever the form changes (after type chosen and not yet submitted)
+  useEffect(() => {
+    if (!selectedType || success) return;
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({
+          selectedType,
+          formData,
+          clientAssignments,
+          vendorAssignments,
+          endClientAssignments,
+          endVendorAssignments,
+        })
+      );
+    } catch {
+      // quota or disabled storage — silent
+    }
+  }, [selectedType, formData, clientAssignments, vendorAssignments, endClientAssignments, endVendorAssignments, success]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+    setDraftRestored(false);
+  };
 
   const fields = useMemo(() => {
     if (!selectedType) return [];
@@ -140,7 +198,10 @@ export default function OnboardPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.warning('Check the highlighted fields', 'Some required fields need attention.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const activeClient = clientAssignments.find((a) => !a.endDate || new Date(a.endDate) >= new Date());
@@ -159,10 +220,15 @@ export default function OnboardPage() {
         endVendorId: activeEndVendor?.vendorId || undefined,
       };
       await createEmployee(payload as Parameters<typeof createEmployee>[0]);
+      const name = (formData.name as string | undefined) || 'Employee';
+      toast.success('Employee onboarded', `${name} has been added to the workforce.`);
+      clearDraft();
       setSuccess(true);
       setTimeout(() => router.push('/dashboard/employees'), 1500);
-    } catch {
-      setErrors({ submit: 'Failed to create employee. Please try again.' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create employee. Please try again.';
+      setErrors({ submit: message });
+      toast.error('Onboarding failed', message);
     } finally {
       setIsSubmitting(false);
     }
@@ -317,12 +383,46 @@ export default function OnboardPage() {
       {/* Step 2: Employee Form */}
       {step === 2 && selectedType && (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {draftRestored && (
+            <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+              <p className="text-xs font-medium text-amber-800">
+                Draft restored from your last session. Submit when ready, or discard to start fresh.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  clearDraft();
+                  setSelectedType(null);
+                  setFormData({});
+                  setClientAssignments([]);
+                  setVendorAssignments([]);
+                  setEndClientAssignments([]);
+                  setEndVendorAssignments([]);
+                  setErrors({});
+                  setStep(1);
+                }}
+                className="text-xs font-semibold text-amber-900 hover:underline"
+              >
+                Discard draft
+              </button>
+            </div>
+          )}
           <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <h2 className="text-base font-semibold text-slate-900">{selectedType} Employee Details</h2>
               <button
                 type="button"
-                onClick={() => { setStep(1); setSelectedType(null); setFormData({}); setErrors({}); }}
+                onClick={() => {
+                  setStep(1);
+                  setSelectedType(null);
+                  setFormData({});
+                  setErrors({});
+                  setClientAssignments([]);
+                  setVendorAssignments([]);
+                  setEndClientAssignments([]);
+                  setEndVendorAssignments([]);
+                  clearDraft();
+                }}
                 className="text-sm text-indigo-600 hover:text-indigo-700"
               >
                 Change Type

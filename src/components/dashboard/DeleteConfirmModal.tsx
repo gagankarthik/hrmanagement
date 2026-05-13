@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useToast } from '@/components/ui/toast';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export default function DeleteConfirmModal({
   employee,
 }: DeleteConfirmModalProps) {
   const { deleteEmployee } = useEmployees();
+  const toast = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -25,9 +27,11 @@ export default function DeleteConfirmModal({
     setIsDeleting(true);
     try {
       await deleteEmployee(employee.id);
+      toast.success('Employee deleted', `${employee.name} has been removed.`);
       onClose();
     } catch (error) {
       console.error('Failed to delete employee:', error);
+      toast.error('Failed to delete employee', error instanceof Error ? error.message : 'Please try again.');
     } finally {
       setIsDeleting(false);
     }

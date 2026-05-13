@@ -12,6 +12,7 @@ import { useVendors } from '@/context/VendorContext';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Employee } from '@/types/employee';
+import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -302,8 +303,15 @@ export default function ReportsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-9 w-9 animate-spin rounded-full border-4 border-rose-200 border-t-rose-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+        </div>
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { Users, Plus, UserCheck, UserX, Globe, Briefcase, FileText, AlertTriangl
 import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
 import EmployeeModal from '@/components/dashboard/EmployeeModal';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
+import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Employee, EmployeeType } from '@/types/employee';
 import Link from 'next/link';
@@ -65,24 +66,12 @@ export default function EmployeesPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-4">
-        {[
-          { label: 'Total', value: stats.totalEmployees, icon: Users, color: 'indigo', bg: 'bg-indigo-50', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
-          { label: 'Active', value: stats.activeCount, icon: UserCheck, color: 'emerald', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-          { label: 'Terminated', value: stats.terminatedCount, icon: UserX, color: 'red', bg: 'bg-red-50', iconBg: 'bg-red-100', iconColor: 'text-red-600' },
-          { label: 'Expiring Auth', value: stats.expiringAuthorizations, icon: AlertTriangle, color: 'amber', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-        ].map((stat) => (
-          <div key={stat.label} className={cn('flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm')}>
-            <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl', stat.iconBg)}>
-              <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-              <p className="text-xs font-medium text-slate-500">{stat.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatGrid cols={4}>
+        <StatCard label="Total" value={stats.totalEmployees} icon={Users} tone="indigo" />
+        <StatCard label="Active" value={stats.activeCount} icon={UserCheck} tone="emerald" />
+        <StatCard label="Terminated" value={stats.terminatedCount} icon={UserX} tone="red" />
+        <StatCard label="Expiring Auth" value={stats.expiringAuthorizations} icon={AlertTriangle} tone="amber" />
+      </StatGrid>
 
       {/* Tab navigation */}
       <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">

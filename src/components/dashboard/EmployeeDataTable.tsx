@@ -5,6 +5,7 @@ import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Eye, Edit2, 
 import { cn } from '@/lib/utils';
 import { Employee, EmployeeType } from '@/types/employee';
 import { format } from 'date-fns';
+import { SkeletonTable } from '@/components/ui/skeleton';
 
 interface Props {
   employees: Employee[];
@@ -72,8 +73,8 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
     ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />;
 
   if (isLoading) return (
-    <div className="flex h-48 items-center justify-center">
-      <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-indigo-600" />
+    <div className="p-3">
+      <SkeletonTable rows={8} cols={7} />
     </div>
   );
 
