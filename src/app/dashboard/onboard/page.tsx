@@ -475,7 +475,7 @@ export default function OnboardPage() {
               ) : (
                 <div className="space-y-3">
                   {clientAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
                       <div>
                         {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Client</label>}
                         <select
@@ -560,7 +560,7 @@ export default function OnboardPage() {
               ) : (
                 <div className="space-y-3">
                   {vendorAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
                       <div>
                         {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Vendor</label>}
                         <select
@@ -645,7 +645,7 @@ export default function OnboardPage() {
               ) : (
                 <div className="space-y-3">
                   {endClientAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
                       <div>
                         {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Client</label>}
                         <select
@@ -730,7 +730,7 @@ export default function OnboardPage() {
               ) : (
                 <div className="space-y-3">
                   {endVendorAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_36px] gap-3 items-end">
+                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
                       <div>
                         {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Vendor</label>}
                         <select

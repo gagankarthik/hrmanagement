@@ -375,7 +375,8 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
             />
           </div>
         ) : (
-          <div className="divide-y divide-slate-50">
+          <div className="overflow-x-auto">
+          <div className="min-w-[720px] divide-y divide-slate-50">
             <div className="grid grid-cols-[2fr_1.5fr_80px_90px_100px_80px] gap-3 px-5 py-3">
               {['Employee', 'Position', 'Type', 'Status', 'Hire Date', ''].map((h) => (
                 <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</span>
@@ -427,6 +428,7 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
                 </div>
               );
             })}
+          </div>
           </div>
         )}
         <div className="border-t border-slate-100 px-5 py-3">
