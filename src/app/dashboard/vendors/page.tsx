@@ -94,26 +94,33 @@ export default function VendorsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Vendors</h1>
-          <p className="text-sm text-slate-500">Manage vendor partnerships and contractor firms</p>
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-purple-100 sm:h-12 sm:w-12">
+            <Package className="h-5 w-5 text-purple-600 sm:h-6 sm:w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Vendors</h1>
+            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+              Manage vendor partnerships and contractor firms placed through them
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="inline-flex flex-shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md"
         >
           <Plus className="h-4 w-4" /> Add Vendor
         </button>
-      </div>
+      </header>
 
       {/* Stats */}
       <StatGrid cols={3}>
-        <StatCard label="Total" value={validVendors.length} icon={Package} tone="slate" />
-        <StatCard label="Active" value={totalActive} icon={CheckCircle2} tone="emerald" />
-        <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" />
+        <StatCard label="Total vendors" value={validVendors.length} icon={Package} tone="slate" hint="all on record" />
+        <StatCard label="Active" value={totalActive} icon={CheckCircle2} tone="emerald" hint={validVendors.length ? `${Math.round((totalActive / validVendors.length) * 100)}% of total` : undefined} />
+        <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" hint={validVendors.length ? `${Math.round((totalInactive / validVendors.length) * 100)}% of total` : undefined} />
       </StatGrid>
 
       {/* Table card */}

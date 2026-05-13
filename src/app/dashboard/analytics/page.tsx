@@ -5,10 +5,9 @@ import {
   PieChart, AlertOctagon, AlertTriangle, UserMinus, Sparkles,
   Users, DollarSign, Gauge, Calendar, TrendingUp, TrendingDown,
   Shield, MapPin, Building2, Package, Cake, Award,
-  Heart, Wallet, ShieldCheck, Briefcase, Globe, FileCheck, X,
-  ChevronRight,
+  Heart, Wallet, ShieldCheck, Briefcase, Globe, FileCheck,
+  CheckCircle2, XCircle, FileText, ChevronRight,
 } from 'lucide-react';
-import Link from 'next/link';
 import { format, differenceInYears, differenceInDays } from 'date-fns';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
@@ -26,6 +25,12 @@ const TYPE_COLOR: Record<EmployeeType, { hex: string; bg: string; ring: string; 
   Contract: { hex: '#a855f7', bg: 'bg-purple-500', ring: 'ring-purple-200', text: 'text-purple-700' },
   '1099':   { hex: '#14b8a6', bg: 'bg-teal-500',   ring: 'ring-teal-200',   text: 'text-teal-700' },
   Offshore: { hex: '#ec4899', bg: 'bg-pink-500',   ring: 'ring-pink-200',   text: 'text-pink-700' },
+};
+const TYPE_LABEL: Record<EmployeeType, string> = {
+  W2: 'W-2', Contract: 'Contract', '1099': '1099', Offshore: 'Offshore',
+};
+const TYPE_DRILL_TONE: Record<EmployeeType, 'sky' | 'purple' | 'emerald' | 'pink'> = {
+  W2: 'sky', Contract: 'purple', '1099': 'emerald', Offshore: 'pink',
 };
 
 const STATUS_COLOR = { Active: '#10b981', Terminated: '#ef4444' };
@@ -52,54 +57,27 @@ function monthlyPay(e: Employee): number {
   return 0;
 }
 
+type DrillTone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'indigo' | 'slate';
+
+interface DrillConfig {
+  title: string;
+  description?: string;
+  icon: React.ElementType;
+  tone: DrillTone;
+  people: Employee[];
+  contextGetter?: (e: Employee) => { primary?: string; secondary?: string };
+}
+
 export default function AnalyticsPage() {
   const { employees, isLoading } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
 
-  // Cross-chart filter state — clicking a segment filters the whole page.
-  const [filterType, setFilterType] = useState<EmployeeType | 'all'>('all');
-  const [filterStatus, setFilterStatus] = useState<'Active' | 'Terminated' | 'all'>('all');
-  const [filterState, setFilterState] = useState<string>('all');
-  const [filterClient, setFilterClient] = useState<string>('all');
-  const [filterVendor, setFilterVendor] = useState<string>('all');
+  // Single drill-down modal for click-through across the whole page.
+  const [drill, setDrill] = useState<DrillConfig | null>(null);
 
-  // Modal state for birthdays / anniversaries
-  const [milestoneModal, setMilestoneModal] = useState<'birthdays' | 'anniversaries' | null>(null);
-
-  const filtered = useMemo(() => {
-    return employees.filter((e) => {
-      if (filterType !== 'all' && e.type !== filterType) return false;
-      if (filterStatus !== 'all' && 'status' in e && e.status !== filterStatus) return false;
-      if (filterState !== 'all' && e.state !== filterState) return false;
-      if (filterClient !== 'all') {
-        const ids = e.clientAssignments?.map((a) => a.clientId).filter(Boolean) || (e.clientId ? [e.clientId] : []);
-        if (!ids.includes(filterClient)) return false;
-      }
-      if (filterVendor !== 'all') {
-        const ids = e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (e.vendorId ? [e.vendorId] : []);
-        if (!ids.includes(filterVendor)) return false;
-      }
-      return true;
-    });
-  }, [employees, filterType, filterStatus, filterState, filterClient, filterVendor]);
-
-  const activeFilterChips: { label: string; value: string; clear: () => void }[] = [];
-  if (filterType !== 'all') activeFilterChips.push({ label: 'Type', value: filterType, clear: () => setFilterType('all') });
-  if (filterStatus !== 'all') activeFilterChips.push({ label: 'Status', value: filterStatus, clear: () => setFilterStatus('all') });
-  if (filterState !== 'all') activeFilterChips.push({ label: 'State', value: filterState, clear: () => setFilterState('all') });
-  if (filterClient !== 'all') {
-    const c = clients.find((c) => c.id === filterClient);
-    activeFilterChips.push({ label: 'Client', value: c?.name || filterClient, clear: () => setFilterClient('all') });
-  }
-  if (filterVendor !== 'all') {
-    const v = vendors.find((v) => v.id === filterVendor);
-    activeFilterChips.push({ label: 'Vendor', value: v?.name || filterVendor, clear: () => setFilterVendor('all') });
-  }
-  const clearAll = () => {
-    setFilterType('all'); setFilterStatus('all'); setFilterState('all');
-    setFilterClient('all'); setFilterVendor('all');
-  };
+  // All charts compute against the full workforce — clicks drill into details rather than cross-filter.
+  const filtered = employees;
 
   // ───────────────────────── METRICS ─────────────────────────
   const metrics = useMemo(() => {
@@ -409,6 +387,164 @@ export default function AnalyticsPage() {
     }).slice(0, 5);
   }, [filtered]);
 
+  // ─────────── Drill-down helpers (open modal with employees) ───────────
+  const ctxHire = (e: Employee) => {
+    if (!e.hireDate) return {};
+    const d = new Date(e.hireDate);
+    if (Number.isNaN(d.getTime())) return {};
+    return {
+      primary: format(d, 'MMM d, yyyy'),
+      secondary: `${differenceInDays(new Date(), d)}d ago`,
+    };
+  };
+  const ctxExpiry = (e: Employee) => {
+    const raw = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+    if (!raw) return {};
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return {};
+    const now = new Date();
+    const days = differenceInDays(d, now);
+    return {
+      primary: format(d, 'MMM d, yyyy'),
+      secondary: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d remaining`,
+    };
+  };
+  const ctxBirthday = (e: Employee) => {
+    if (!e.dob) return {};
+    const now = new Date();
+    const d = new Date(e.dob);
+    if (Number.isNaN(d.getTime())) return {};
+    const ty = new Date(now.getFullYear(), d.getMonth(), d.getDate());
+    if (ty < now) ty.setFullYear(now.getFullYear() + 1);
+    return { primary: format(ty, 'MMM d'), secondary: `Turning ${ty.getFullYear() - d.getFullYear()}` };
+  };
+  const ctxAnniversary = (e: Employee) => {
+    if (!e.hireDate) return {};
+    const now = new Date();
+    const d = new Date(e.hireDate);
+    if (Number.isNaN(d.getTime())) return {};
+    const ty = new Date(now.getFullYear(), d.getMonth(), d.getDate());
+    if (ty < now) ty.setFullYear(now.getFullYear() + 1);
+    return { primary: format(ty, 'MMM d'), secondary: `${ty.getFullYear() - d.getFullYear()} years` };
+  };
+  const ctxLocation = (e: Employee) => ({
+    primary: e.state || '—',
+    secondary: e.city || undefined,
+  });
+  const ctxPay = (e: Employee) => {
+    const pay = 'pay' in e ? (e as { pay?: number }).pay : undefined;
+    const salary = 'salary' in e ? (e as { salary?: number }).salary : undefined;
+    const v = monthlyPay(e);
+    if (v <= 0 && !pay && !salary) return { primary: '—' };
+    return { primary: compactCurrency(v) + '/mo', secondary: e.position || undefined };
+  };
+  const isActiveE = (e: Employee) => 'status' in e ? (e as { status: string }).status === 'Active' : true;
+
+  const openType = (t: EmployeeType) => setDrill({
+    title: `${TYPE_LABEL[t]} employees`,
+    description: `Showing ${filtered.filter((e) => e.type === t).length} employees in the ${t} class.`,
+    icon: Users, tone: TYPE_DRILL_TONE[t],
+    people: filtered.filter((e) => e.type === t),
+    contextGetter: ctxHire,
+  });
+  const openStatus = (s: 'Active' | 'Terminated') => setDrill({
+    title: `${s} employees`,
+    description: s === 'Active' ? 'All active employees on the books.' : 'All terminated employees.',
+    icon: s === 'Active' ? CheckCircle2 : XCircle,
+    tone: s === 'Active' ? 'emerald' : 'red',
+    people: filtered.filter((e) => 'status' in e && (e as { status: string }).status === s),
+    contextGetter: ctxHire,
+  });
+  const openRevenue = (r: 'Billable' | 'Non-Billable') => setDrill({
+    title: `${r} workforce`,
+    description: r === 'Billable' ? 'Active employees generating billable revenue.' : 'Active employees not currently billable.',
+    icon: DollarSign,
+    tone: r === 'Billable' ? 'emerald' : 'amber',
+    people: filtered.filter((e) => 'revenueStatus' in e && (e as { revenueStatus?: string }).revenueStatus === (r === 'Billable' ? 'B' : 'NB')),
+    contextGetter: ctxPay,
+  });
+  const openExpired = () => {
+    const now = new Date();
+    const people = filtered.filter((e) => {
+      if (!isActiveE(e)) return false;
+      const raw = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+      if (!raw) return false;
+      const d = new Date(raw);
+      return !Number.isNaN(d.getTime()) && d < now;
+    });
+    setDrill({ title: 'Authorizations Expired', description: 'Active employees whose work authorization is past due — renew immediately.', icon: AlertOctagon, tone: 'red', people, contextGetter: ctxExpiry });
+  };
+  const openExpiryBucket = (label: 'in30' | 'in60' | 'in90' | 'beyond') => {
+    const now = new Date();
+    const ranges: Record<typeof label, [number, number]> = {
+      in30: [0, 30], in60: [30, 60], in90: [60, 90], beyond: [90, Infinity],
+    };
+    const [from, to] = ranges[label];
+    const people = filtered.filter((e) => {
+      if (!isActiveE(e)) return false;
+      const raw = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+      if (!raw) return false;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime()) || d < now) return false;
+      const days = differenceInDays(d, now);
+      return days >= from && days < (to === Infinity ? 36500 : to);
+    });
+    const labels: Record<typeof label, { title: string; tone: DrillTone }> = {
+      in30: { title: 'Expiring in 0–30 days', tone: 'amber' },
+      in60: { title: 'Expiring in 31–60 days', tone: 'yellow' },
+      in90: { title: 'Expiring in 61–90 days', tone: 'sky' },
+      beyond: { title: 'Expiring 90+ days out', tone: 'slate' },
+    };
+    setDrill({ title: labels[label].title, description: 'Work authorizations in this expiry window.', icon: AlertTriangle, tone: labels[label].tone, people, contextGetter: ctxExpiry });
+  };
+  const openBench = () => {
+    const now = new Date();
+    const people = filtered.filter((e) => {
+      if (!isActiveE(e)) return false;
+      const hasClient =
+        e.clientAssignments?.some((a) => a.clientId && (!a.endDate || new Date(a.endDate) >= now)) ||
+        Boolean(e.clientId || e.client);
+      const billable = 'revenueStatus' in e && (e as { revenueStatus?: string }).revenueStatus === 'B';
+      return !hasClient || !billable;
+    });
+    setDrill({ title: 'On Bench', description: 'Active employees without a client or marked non-billable.', icon: UserMinus, tone: 'yellow', people, contextGetter: (e) => ({ primary: e.position || '—', secondary: e.state || undefined }) });
+  };
+  const openNewThisWeek = () => {
+    const now = new Date(), last7 = new Date(now.getTime() - 7 * 86400000);
+    const people = filtered.filter((e) => {
+      if (!e.hireDate) return false;
+      const d = new Date(e.hireDate);
+      return !Number.isNaN(d.getTime()) && d >= last7 && d <= now;
+    });
+    setDrill({ title: 'New This Week', description: 'New hires onboarded in the last 7 days.', icon: Sparkles, tone: 'emerald', people, contextGetter: ctxHire });
+  };
+  const openState = (state: string) => {
+    setDrill({ title: `Employees in ${state}`, description: `All employees based in ${state}.`, icon: MapPin, tone: 'sky', people: filtered.filter((e) => e.state === state), contextGetter: ctxLocation });
+  };
+  const openCity = (city: string) => {
+    setDrill({ title: `Employees in ${city}`, description: `All employees based in ${city}.`, icon: MapPin, tone: 'indigo', people: filtered.filter((e) => e.city === city), contextGetter: ctxLocation });
+  };
+  const openClient = (id: string) => {
+    const name = clients.find((c) => c.id === id)?.name || id;
+    const people = filtered.filter((e) => {
+      const ids = e.clientAssignments?.map((a) => a.clientId).filter(Boolean) || (e.clientId ? [e.clientId] : []);
+      return ids.includes(id);
+    });
+    setDrill({ title: `${name} placements`, description: `Employees currently assigned to ${name}.`, icon: Building2, tone: 'emerald', people, contextGetter: ctxHire });
+  };
+  const openVendor = (id: string) => {
+    const name = vendors.find((v) => v.id === id)?.name || id;
+    const people = filtered.filter((e) => {
+      const ids = e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (e.vendorId ? [e.vendorId] : []);
+      return ids.includes(id);
+    });
+    setDrill({ title: `${name} placements`, description: `Employees contracted via ${name}.`, icon: Package, tone: 'purple', people, contextGetter: ctxHire });
+  };
+  const openAuthType = (auth: string) => {
+    const people = filtered.filter((e) => 'workAuthorization' in e && (e as { workAuthorization?: string }).workAuthorization === auth);
+    setDrill({ title: `${auth} holders`, description: `Employees with ${auth} work authorization.`, icon: Shield, tone: 'indigo', people, contextGetter: ctxExpiry });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -432,9 +568,9 @@ export default function AnalyticsPage() {
   const dataCompletenessAddress = filtered.length ? Math.round((1 - metrics.withMissingAddress / filtered.length) * 100) : 100;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 sm:space-y-10">
       {/* HEADER */}
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100">
             <PieChart className="h-6 w-6 text-indigo-600" />
@@ -443,32 +579,15 @@ export default function AnalyticsPage() {
             <h1 className="text-2xl font-bold text-slate-900">HR Analytics</h1>
             <p className="mt-0.5 text-sm text-slate-500">
               Every workforce metric, derived live from {employees.length.toLocaleString()} employee record{employees.length === 1 ? '' : 's'}.
-              Click any chart segment to filter.
+              Click any chart segment to see the people behind the number.
             </p>
           </div>
         </div>
-        {activeFilterChips.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {activeFilterChips.map((c) => (
-              <button
-                key={c.label}
-                onClick={c.clear}
-                className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100"
-              >
-                {c.label}: {c.value}
-                <X className="h-3 w-3" />
-              </button>
-            ))}
-            <button onClick={clearAll} className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline">
-              Clear all
-            </button>
-          </div>
-        )}
       </header>
 
       {/* CRITICAL ALERTS — TOP, biggest cards */}
       <section>
-        <SectionHeader title="Critical Attention" subtitle="Highest-priority items, surfaced for immediate action." />
+        <SectionHeader title="Critical Attention" subtitle="Click any card to see exactly who's in that category." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AlertCard
             tone="red"
@@ -476,7 +595,7 @@ export default function AnalyticsPage() {
             label="Authorizations Expired"
             value={metrics.expired}
             sub={metrics.expired === 0 ? 'Nothing past due' : 'Renew immediately'}
-            href="/dashboard/employees"
+            onClick={metrics.expired > 0 ? openExpired : undefined}
           />
           <AlertCard
             tone="amber"
@@ -484,7 +603,7 @@ export default function AnalyticsPage() {
             label="Expire in 30 Days"
             value={metrics.in30Bucket}
             sub={`${metrics.in60Bucket + metrics.in90Bucket} more in 31–90d`}
-            href="/dashboard/employees"
+            onClick={metrics.in30Bucket > 0 ? () => openExpiryBucket('in30') : undefined}
           />
           <AlertCard
             tone="yellow"
@@ -492,7 +611,7 @@ export default function AnalyticsPage() {
             label="On Bench"
             value={metrics.bench}
             sub={metrics.active ? `${Math.round((metrics.bench / metrics.active) * 100)}% of active workforce` : 'No active staff'}
-            href="/dashboard/employees"
+            onClick={metrics.bench > 0 ? openBench : undefined}
           />
           <AlertCard
             tone="emerald"
@@ -500,7 +619,7 @@ export default function AnalyticsPage() {
             label="New This Week"
             value={metrics.newThisWeek}
             sub={`${metrics.newThisMonth} new in last 30 days`}
-            href="/dashboard/employees"
+            onClick={metrics.newThisWeek > 0 ? openNewThisWeek : undefined}
           />
         </div>
       </section>
@@ -523,14 +642,14 @@ export default function AnalyticsPage() {
         <SectionHeader title="Workforce Composition" subtitle="Who makes up your workforce — class, status, revenue." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
           {/* Type donut */}
-          <ChartCard title="By Class" hint="Click a slice to filter" className="lg:col-span-3">
+          <ChartCard title="By Class" hint="Click a slice to see who" className="lg:col-span-3">
             {typeDist.every((d) => d.value === 0) ? (
               <EmptyChart label="No data" />
             ) : (
               <Donut
                 data={typeDist.map((d) => ({ label: d.label, value: d.value, color: TYPE_COLOR[d.label].hex }))}
                 size={180}
-                onSelect={(label) => setFilterType(label as EmployeeType)}
+                onSelect={(label) => openType(label as EmployeeType)}
                 centerLabel={`${metrics.total}`}
                 centerSub="employees"
               />
@@ -538,14 +657,14 @@ export default function AnalyticsPage() {
           </ChartCard>
 
           {/* Status donut */}
-          <ChartCard title="By Status" hint="Click a slice to filter" className="lg:col-span-3">
+          <ChartCard title="By Status" hint="Click a slice to see who" className="lg:col-span-3">
             {statusDist.every((d) => d.value === 0) ? (
               <EmptyChart label="No status data" />
             ) : (
               <Donut
                 data={statusDist}
                 size={180}
-                onSelect={(label) => setFilterStatus(label as 'Active' | 'Terminated')}
+                onSelect={(label) => openStatus(label as 'Active' | 'Terminated')}
                 centerLabel={metrics.active && metrics.total ? `${Math.round((metrics.active / metrics.total) * 100)}%` : '—'}
                 centerSub="active"
               />
@@ -553,13 +672,14 @@ export default function AnalyticsPage() {
           </ChartCard>
 
           {/* Revenue donut */}
-          <ChartCard title="Billable vs Non-Billable" hint="Of active workforce" className="lg:col-span-3">
+          <ChartCard title="Billable vs Non-Billable" hint="Click a slice to see who" className="lg:col-span-3">
             {revenueDist.every((d) => d.value === 0) ? (
               <EmptyChart label="No revenue data" />
             ) : (
               <Donut
                 data={revenueDist}
                 size={180}
+                onSelect={(label) => openRevenue(label as 'Billable' | 'Non-Billable')}
                 centerLabel={`${metrics.utilization}%`}
                 centerSub="utilization"
               />
@@ -576,24 +696,28 @@ export default function AnalyticsPage() {
       {/* COMPLIANCE & RISK */}
       <section>
         <SectionHeader title="Compliance & Risk" subtitle="Work authorization, subcontractor status, data quality." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="grid gap-4 lg:grid-cols-12">
           {/* Auth expiry buckets */}
-          <ChartCard title="Authorization Expiry Buckets" hint="Active workforce only" className="lg:col-span-5">
+          <ChartCard title="Authorization Expiry Buckets" hint="Click a bar to see who" className="lg:col-span-5">
             <ExpiryBuckets
               expired={metrics.expired}
               in30={metrics.in30Bucket}
               in60={metrics.in60Bucket}
               in90={metrics.in90Bucket}
               beyond={metrics.beyond90}
+              onSelect={(b) => {
+                if (b === 'expired') openExpired();
+                else openExpiryBucket(b);
+              }}
             />
           </ChartCard>
 
           {/* Auth type horizontal bar */}
-          <ChartCard title="Work Authorization Mix" hint="Top 8 authorization types" className="lg:col-span-4">
+          <ChartCard title="Work Authorization Mix" hint="Click a row to see who" className="lg:col-span-4">
             {topAuths.length === 0 ? (
               <EmptyChart label="No authorization data" />
             ) : (
-              <HBarList items={topAuths} accent="bg-indigo-500" />
+              <HBarList items={topAuths} accent="bg-indigo-500" onSelect={(label) => openAuthType(label)} />
             )}
           </ChartCard>
 
@@ -618,7 +742,7 @@ export default function AnalyticsPage() {
       {/* FINANCIAL */}
       <section>
         <SectionHeader title="Financial Snapshot" subtitle="Monthly run-rate, benefits adoption, cost distribution." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="grid gap-4 lg:grid-cols-12">
           {/* Run-rate by type */}
           <ChartCard title="Monthly Run-Rate by Class" hint="Sum of monthly pay × billable" className="lg:col-span-5">
             <RunRateByType employees={filtered} />
@@ -660,7 +784,7 @@ export default function AnalyticsPage() {
       {/* TRENDS */}
       <section>
         <SectionHeader title="Hiring Trends" subtitle="Last 24 weeks and monthly view." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="grid gap-4 lg:grid-cols-12">
           <ChartCard title="Weekly Hires (24 weeks)" hint="Hover bars for week count" className="lg:col-span-7">
             <AreaTrend data={hiringTrend} />
           </ChartCard>
@@ -672,40 +796,58 @@ export default function AnalyticsPage() {
 
       {/* DEMOGRAPHICS */}
       <section>
-        <SectionHeader title="Tenure & Demographics" subtitle="Tenure, age, anniversaries, birthdays." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
-          <ChartCard title="Tenure Distribution" hint="Years with the company" className="lg:col-span-4">
+        <SectionHeader title="Tenure & Demographics" subtitle="How long employees have been on the books and their age profile." />
+        <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+          <ChartCard title="Tenure Distribution" hint="Years with the company">
             <BucketBars
               data={Object.entries(metrics.tenureBuckets).map(([label, value]) => ({ label, value }))}
               accent="#8b5cf6"
             />
           </ChartCard>
-          <ChartCard title="Age Distribution" hint="Active + terminated" className="lg:col-span-4">
+          <ChartCard title="Age Distribution" hint="Across active + terminated">
             <BucketBars
               data={Object.entries(metrics.ageBuckets).map(([label, value]) => ({ label, value }))}
               accent="#ec4899"
             />
           </ChartCard>
-          <ChartCard title="Upcoming Birthdays" hint="Click to see everyone" className="lg:col-span-2">
-            <button
-              type="button"
-              onClick={() => upcomingBirthdays.length > 0 && setMilestoneModal('birthdays')}
-              className={cn('block w-full text-left', upcomingBirthdays.length > 0 && 'cursor-pointer')}
-              disabled={upcomingBirthdays.length === 0}
-            >
-              <PeopleList people={upcomingBirthdays} dateGetter={(e) => e.dob} icon={Cake} tone="pink" />
-            </button>
-          </ChartCard>
-          <ChartCard title="Work Anniversaries" hint="Click to see everyone" className="lg:col-span-2">
-            <button
-              type="button"
-              onClick={() => upcomingAnniversaries.length > 0 && setMilestoneModal('anniversaries')}
-              className={cn('block w-full text-left', upcomingAnniversaries.length > 0 && 'cursor-pointer')}
-              disabled={upcomingAnniversaries.length === 0}
-            >
-              <PeopleList people={upcomingAnniversaries} dateGetter={(e) => e.hireDate} icon={Award} tone="emerald" anniversaryYears />
-            </button>
-          </ChartCard>
+        </div>
+      </section>
+
+      {/* UPCOMING CELEBRATIONS */}
+      <section>
+        <SectionHeader title="Upcoming Celebrations" subtitle="Birthdays and work anniversaries in the next 30 days — click a card to see everyone." />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <CelebrationCard
+            title="Upcoming Birthdays"
+            subtitle={`Next 30 days · ${upcomingBirthdays.length} ${upcomingBirthdays.length === 1 ? 'person' : 'people'}`}
+            icon={Cake}
+            tone="pink"
+            people={upcomingBirthdays}
+            dateGetter={(e) => e.dob}
+            onOpen={() => upcomingBirthdays.length > 0 && setDrill({
+              title: 'Upcoming Birthdays',
+              description: 'Birthdays in the next 30 days.',
+              icon: Cake, tone: 'pink',
+              people: upcomingBirthdays,
+              contextGetter: ctxBirthday,
+            })}
+          />
+          <CelebrationCard
+            title="Work Anniversaries"
+            subtitle={`Next 30 days · ${upcomingAnniversaries.length} ${upcomingAnniversaries.length === 1 ? 'person' : 'people'}`}
+            icon={Award}
+            tone="emerald"
+            people={upcomingAnniversaries}
+            dateGetter={(e) => e.hireDate}
+            showYears
+            onOpen={() => upcomingAnniversaries.length > 0 && setDrill({
+              title: 'Work Anniversaries',
+              description: 'Work anniversaries in the next 30 days.',
+              icon: Award, tone: 'emerald',
+              people: upcomingAnniversaries,
+              contextGetter: ctxAnniversary,
+            })}
+          />
         </div>
       </section>
 
@@ -713,22 +855,18 @@ export default function AnalyticsPage() {
       <section>
         <SectionHeader title="Geographic Distribution" subtitle="Where your workforce is concentrated." />
         <div className="grid gap-4 lg:grid-cols-2">
-          <ChartCard title="Top States" hint="Click a row to filter" icon={MapPin}>
+          <ChartCard title="Top States" hint="Click a row to see who" icon={MapPin}>
             {topStates.length === 0 ? (
               <EmptyChart label="No state data" />
             ) : (
-              <HBarList
-                items={topStates}
-                accent="bg-sky-500"
-                onSelect={(label) => setFilterState(label)}
-              />
+              <HBarList items={topStates} accent="bg-sky-500" onSelect={(label) => openState(label)} />
             )}
           </ChartCard>
-          <ChartCard title="Top Cities" hint="Most populated" icon={MapPin}>
+          <ChartCard title="Top Cities" hint="Click a row to see who" icon={MapPin}>
             {topCities.length === 0 ? (
               <EmptyChart label="No city data" />
             ) : (
-              <HBarList items={topCities} accent="bg-indigo-500" />
+              <HBarList items={topCities} accent="bg-indigo-500" onSelect={(label) => openCity(label)} />
             )}
           </ChartCard>
         </div>
@@ -738,24 +876,24 @@ export default function AnalyticsPage() {
       <section>
         <SectionHeader title="Client & Vendor Network" subtitle="Where placements are concentrated, including end-client and end-vendor chains." />
         <div className="grid gap-4 lg:grid-cols-2">
-          <ChartCard title="Top Clients" hint="Click a row to filter by client" icon={Building2}>
+          <ChartCard title="Top Clients" hint="Click a row to see placements" icon={Building2}>
             {topClients.length === 0 ? <EmptyChart label="No client placements" /> : (
-              <HBarList items={topClients.map((c) => ({ label: c.name, value: c.count, key: c.id }))} accent="bg-emerald-500" onSelect={(_, key) => key && setFilterClient(key)} />
+              <HBarList items={topClients.map((c) => ({ label: c.name, value: c.count, key: c.id }))} accent="bg-emerald-500" onSelect={(_, key) => key && openClient(key)} />
             )}
           </ChartCard>
-          <ChartCard title="Top Vendors" hint="Click a row to filter by vendor" icon={Package}>
+          <ChartCard title="Top Vendors" hint="Click a row to see placements" icon={Package}>
             {topVendors.length === 0 ? <EmptyChart label="No vendor placements" /> : (
-              <HBarList items={topVendors.map((v) => ({ label: v.name, value: v.count, key: v.id }))} accent="bg-purple-500" onSelect={(_, key) => key && setFilterVendor(key)} />
+              <HBarList items={topVendors.map((v) => ({ label: v.name, value: v.count, key: v.id }))} accent="bg-purple-500" onSelect={(_, key) => key && openVendor(key)} />
             )}
           </ChartCard>
-          <ChartCard title="Top End-Clients" hint="Final customer in placement chain" icon={Building2}>
+          <ChartCard title="Top End-Clients" hint="Click a row to see placements" icon={Building2}>
             {topEndClients.length === 0 ? <EmptyChart label="No end-client data" /> : (
-              <HBarList items={topEndClients.map((c) => ({ label: c.name, value: c.count, key: c.id }))} accent="bg-teal-500" />
+              <HBarList items={topEndClients.map((c) => ({ label: c.name, value: c.count, key: c.id }))} accent="bg-teal-500" onSelect={(_, key) => key && openClient(key)} />
             )}
           </ChartCard>
-          <ChartCard title="Top End-Vendors" hint="Prime vendor in placement chain" icon={Package}>
+          <ChartCard title="Top End-Vendors" hint="Click a row to see placements" icon={Package}>
             {topEndVendors.length === 0 ? <EmptyChart label="No end-vendor data" /> : (
-              <HBarList items={topEndVendors.map((v) => ({ label: v.name, value: v.count, key: v.id }))} accent="bg-amber-500" />
+              <HBarList items={topEndVendors.map((v) => ({ label: v.name, value: v.count, key: v.id }))} accent="bg-amber-500" onSelect={(_, key) => key && openVendor(key)} />
             )}
           </ChartCard>
         </div>
@@ -765,7 +903,7 @@ export default function AnalyticsPage() {
       {metrics.offshoreTotal > 0 && (
         <section>
           <SectionHeader title="Offshore Workforce" subtitle="India-specific compliance, payroll, and ID coverage." />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="grid gap-4 lg:grid-cols-12">
             <ChartCard title="Payroll Entity" hint="Offshore staff by entity" className="lg:col-span-3" icon={Briefcase}>
               {Object.keys(metrics.offshorePayrollDist).length === 0 ? <EmptyChart label="No entity data" /> : (
                 <Donut
@@ -805,53 +943,125 @@ export default function AnalyticsPage() {
         Last refreshed {format(new Date(), 'MMM d, yyyy · HH:mm')}
       </footer>
 
+      {/* Unified drill-down modal for every clickable chart */}
       <PeopleListModal
-        isOpen={milestoneModal === 'birthdays'}
-        onClose={() => setMilestoneModal(null)}
-        title="Upcoming Birthdays"
-        description="Birthdays falling within the next 30 days."
-        people={upcomingBirthdays}
-        icon={Cake}
-        tone="pink"
-        contextGetter={(e) => {
-          if (!e.dob) return {};
-          const now = new Date();
-          const d = new Date(e.dob);
-          if (Number.isNaN(d.getTime())) return {};
-          const thisYear = new Date(now.getFullYear(), d.getMonth(), d.getDate());
-          if (thisYear < now) thisYear.setFullYear(now.getFullYear() + 1);
-          const days = Math.round((thisYear.getTime() - now.getTime()) / 86400000);
-          const turning = thisYear.getFullYear() - d.getFullYear();
-          return {
-            primary: format(thisYear, 'MMM d'),
-            secondary: days === 0 ? `Turning ${turning} today` : `Turning ${turning} · in ${days}d`,
-          };
-        }}
-      />
-      <PeopleListModal
-        isOpen={milestoneModal === 'anniversaries'}
-        onClose={() => setMilestoneModal(null)}
-        title="Work Anniversaries"
-        description="Work anniversaries falling within the next 30 days."
-        people={upcomingAnniversaries}
-        icon={Award}
-        tone="emerald"
-        contextGetter={(e) => {
-          if (!e.hireDate) return {};
-          const now = new Date();
-          const d = new Date(e.hireDate);
-          if (Number.isNaN(d.getTime())) return {};
-          const thisYear = new Date(now.getFullYear(), d.getMonth(), d.getDate());
-          if (thisYear < now) thisYear.setFullYear(now.getFullYear() + 1);
-          const days = Math.round((thisYear.getTime() - now.getTime()) / 86400000);
-          const years = thisYear.getFullYear() - d.getFullYear();
-          return {
-            primary: format(thisYear, 'MMM d'),
-            secondary: days === 0 ? `${years}-year anniversary today` : `${years} years · in ${days}d`,
-          };
-        }}
+        isOpen={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill?.title ?? ''}
+        description={drill?.description}
+        people={drill?.people ?? []}
+        contextGetter={drill?.contextGetter}
+        icon={drill?.icon}
+        tone={drill?.tone}
       />
     </div>
+  );
+}
+
+// ───────────── CelebrationCard (spacious birthdays / anniversaries) ─────────────
+function CelebrationCard({
+  title, subtitle, icon: Icon, tone, people, dateGetter, showYears, onOpen,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  tone: 'pink' | 'emerald';
+  people: Employee[];
+  dateGetter: (e: Employee) => string | undefined;
+  showYears?: boolean;
+  onOpen: () => void;
+}) {
+  const toneMap = {
+    pink:    { iconBg: 'bg-pink-100',    iconColor: 'text-pink-600',    chip: 'bg-pink-50 text-pink-700 ring-pink-200',       avatar: 'bg-pink-100 text-pink-700' },
+    emerald: { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200', avatar: 'bg-emerald-100 text-emerald-700' },
+  } as const;
+  const t = toneMap[tone];
+  const preview = people.slice(0, 4);
+  const overflow = people.length - preview.length;
+  const now = new Date();
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      disabled={people.length === 0}
+      className="group flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex items-center gap-3">
+          <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', t.iconBg)}>
+            <Icon className={cn('h-5 w-5', t.iconColor)} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900">{title}</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+          </div>
+        </div>
+        <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ring-1', t.chip)}>
+          {people.length}
+        </span>
+      </div>
+
+      <div className="flex-1 px-5 py-5 sm:px-6 sm:py-6">
+        {people.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+            <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', t.iconBg)}>
+              <Icon className={cn('h-6 w-6', t.iconColor)} />
+            </div>
+            <p className="text-sm font-semibold text-slate-700">None in the next 30 days</p>
+            <p className="text-xs text-slate-500">We&apos;ll let you know when one comes up.</p>
+          </div>
+        ) : (
+          <ul className="space-y-3.5">
+            {preview.map((p) => {
+              const raw = dateGetter(p);
+              const d = raw ? new Date(raw) : null;
+              const valid = d && !Number.isNaN(d.getTime());
+              const thisYear = valid && d ? new Date(now.getFullYear(), d.getMonth(), d.getDate()) : null;
+              if (thisYear && thisYear < now) thisYear.setFullYear(now.getFullYear() + 1);
+              const dateLabel = thisYear ? format(thisYear, 'MMM d') : '—';
+              const days = thisYear ? Math.round((thisYear.getTime() - now.getTime()) / 86400000) : null;
+              const years = showYears && valid && d && thisYear ? thisYear.getFullYear() - d.getFullYear() : null;
+              return (
+                <li key={p.id} className="flex items-center gap-3.5">
+                  <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold', t.avatar)}>
+                    {p.name?.charAt(0) ?? '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">{p.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {p.position || '—'}
+                      {years !== null && <span className="text-slate-400"> · {years}y</span>}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-sm font-bold tabular-nums text-slate-900">{dateLabel}</p>
+                    {days !== null && (
+                      <p className="text-[11px] text-slate-400">
+                        {days === 0 ? 'today' : `in ${days}d`}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {people.length > 0 && (
+        <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs sm:px-6">
+          <span className="text-slate-500">
+            {overflow > 0 ? `+${overflow} more` : 'Click to see everyone'}
+          </span>
+          <span className="inline-flex items-center gap-1 font-semibold text-indigo-600 group-hover:text-indigo-700">
+            <Users className="h-3.5 w-3.5" />
+            View all
+            <ChevronRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -859,9 +1069,15 @@ export default function AnalyticsPage() {
 
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-3">
-      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-      {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+    <div className="mb-5 flex items-end justify-between gap-4 border-b border-slate-100 pb-3 sm:mb-6">
+      <div>
+        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-600">
+          <span className="h-px w-6 bg-indigo-300" />
+          Section
+        </span>
+        <h2 className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h2>
+        {subtitle && <p className="mt-1 text-xs text-slate-500 sm:text-sm">{subtitle}</p>}
+      </div>
     </div>
   );
 }
@@ -872,13 +1088,17 @@ function ChartCard({
   title: string; hint?: string; icon?: React.ElementType; className?: string; children: React.ReactNode;
 }) {
   return (
-    <div className={cn('rounded-2xl border border-slate-100 bg-white p-4 shadow-sm', className)}>
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="h-4 w-4 text-slate-400" />}
+    <div className={cn('rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md sm:p-6', className)}>
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          {Icon && (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100">
+              <Icon className="h-4 w-4 text-slate-500" />
+            </div>
+          )}
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-            {hint && <p className="mt-0.5 text-[11px] text-slate-400">{hint}</p>}
+            <h3 className="text-sm font-bold text-slate-900 sm:text-[15px]">{title}</h3>
+            {hint && <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">{hint}</p>}
           </div>
         </div>
       </div>
@@ -907,36 +1127,40 @@ const TONE: Record<string, { bg: string; iconBg: string; iconColor: string; ring
 };
 
 function AlertCard({
-  tone, icon: Icon, label, value, sub, href,
+  tone, icon: Icon, label, value, sub, onClick,
 }: {
   tone: 'red' | 'amber' | 'yellow' | 'emerald';
   icon: React.ElementType;
   label: string;
   value: number;
   sub?: string;
-  href?: string;
+  onClick?: () => void;
 }) {
   const t = TONE[tone];
-  const inner = (
-    <div className={cn(
-      'group flex h-full flex-col justify-between gap-3 rounded-2xl p-5 ring-1 transition-all',
-      t.bg, t.ring,
-      href && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md'
-    )}>
+  const Wrapper: React.ElementType = onClick ? 'button' : 'div';
+  return (
+    <Wrapper
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={cn(
+        'group flex h-full w-full flex-col justify-between gap-3 rounded-2xl p-5 text-left ring-1 transition-all',
+        t.bg, t.ring,
+        onClick && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', t.iconBg)}>
           <Icon className={cn('h-5 w-5', t.iconColor)} />
         </div>
-        {href && <ChevronRight className={cn('h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100', t.iconColor)} />}
+        {onClick && <ChevronRight className={cn('h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100', t.iconColor)} />}
       </div>
       <div>
         <p className={cn('text-4xl font-bold tabular-nums leading-none', t.textValue)}>{value.toLocaleString()}</p>
         <p className="mt-2 text-sm font-semibold text-slate-900">{label}</p>
         {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
       </div>
-    </div>
+    </Wrapper>
   );
-  return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
 function KpiTile({
@@ -1114,14 +1338,17 @@ function StackedTypeStatus({ data }: { data: { label: EmployeeType; active: numb
 
 // ───────────────────── EXPIRY BUCKETS ─────────────────────
 function ExpiryBuckets({
-  expired, in30, in60, in90, beyond,
-}: { expired: number; in30: number; in60: number; in90: number; beyond: number }) {
+  expired, in30, in60, in90, beyond, onSelect,
+}: {
+  expired: number; in30: number; in60: number; in90: number; beyond: number;
+  onSelect?: (bucket: 'expired' | 'in30' | 'in60' | 'in90' | 'beyond') => void;
+}) {
   const buckets = [
-    { label: 'Expired',  value: expired, color: '#ef4444' },
-    { label: '0–30 days', value: in30,    color: '#f59e0b' },
-    { label: '31–60 days', value: in60,   color: '#eab308' },
-    { label: '61–90 days', value: in90,   color: '#0ea5e9' },
-    { label: '90+ days',   value: beyond, color: '#94a3b8' },
+    { key: 'expired' as const, label: 'Expired',    value: expired, color: '#ef4444' },
+    { key: 'in30' as const,    label: '0–30 days',  value: in30,    color: '#f59e0b' },
+    { key: 'in60' as const,    label: '31–60 days', value: in60,    color: '#eab308' },
+    { key: 'in90' as const,    label: '61–90 days', value: in90,    color: '#0ea5e9' },
+    { key: 'beyond' as const,  label: '90+ days',   value: beyond,  color: '#94a3b8' },
   ];
   const max = Math.max(...buckets.map((b) => b.value), 1);
   const total = buckets.reduce((s, b) => s + b.value, 0);
@@ -1132,21 +1359,31 @@ function ExpiryBuckets({
       <div className="flex items-end gap-1.5 h-32">
         {buckets.map((b) => {
           const h = (b.value / max) * 100;
+          const clickable = b.value > 0 && Boolean(onSelect);
           return (
-            <div key={b.label} className="group flex flex-1 flex-col items-center justify-end gap-1.5">
+            <button
+              key={b.label}
+              type="button"
+              onClick={clickable ? () => onSelect!(b.key) : undefined}
+              disabled={!clickable}
+              className={cn(
+                'group flex flex-1 flex-col items-center justify-end gap-1.5',
+                clickable && 'cursor-pointer'
+              )}
+              title={`${b.label}: ${b.value}${clickable ? ' — click to see who' : ''}`}
+            >
               <span className="text-[10px] font-bold tabular-nums text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">{b.value}</span>
               <div
-                className="w-full rounded-t-md transition-all"
+                className={cn('w-full rounded-t-md transition-all', clickable && 'group-hover:brightness-110 group-hover:scale-y-[1.05] origin-bottom')}
                 style={{ height: `${h}%`, backgroundColor: b.color, minHeight: b.value > 0 ? 8 : 0 }}
-                title={`${b.label}: ${b.value}`}
               />
-            </div>
+            </button>
           );
         })}
       </div>
       <div className="flex items-center justify-between gap-1 text-[10px] text-slate-500">
         {buckets.map((b) => (
-          <span key={b.label} className="flex-1 truncate text-center" title={`${b.label}: ${b.value}`}>
+          <span key={b.label} className="flex-1 truncate text-center">
             {b.label}
           </span>
         ))}

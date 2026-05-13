@@ -18,6 +18,7 @@ import {
 } from '@/types/employee';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
+import { Confetti } from '@/components/ui/confetti';
 
 const employeeTypes: {
   value: EmployeeType;
@@ -291,15 +292,20 @@ export default function OnboardPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
-            <Check className="h-10 w-10 text-emerald-600" />
+      <>
+        <Confetti active count={120} duration={2800} />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 ring-8 ring-emerald-50 animate-in zoom-in-50 duration-300">
+              <Check className="h-10 w-10 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">
+              {((formData.name as string | undefined) || 'Employee')} onboarded!
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">Welcome aboard. Redirecting to the employees list…</p>
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Employee Added Successfully!</h2>
-          <p className="mt-2 text-sm text-slate-500">Redirecting to employees list…</p>
         </div>
-      </div>
+      </>
     );
   }
 

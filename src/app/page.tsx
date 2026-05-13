@@ -1,546 +1,972 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import {
+  ArrowRight, ArrowUpRight, Layers, Users, Shield, Cake, Award,
+  Building2, Package, PieChart, FileText, Sparkles, Activity, Globe,
+  AlertOctagon, AlertTriangle, UserMinus, Menu, X, ChevronRight,
+  TrendingUp, Clock, CheckCircle2, UserCheck, UserPlus, MapPin,
+  Briefcase, BarChart3,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  
+// ──────────────────────────────────────────────────────────────
+// Hooks
+// ──────────────────────────────────────────────────────────────
+function useInView<T extends HTMLElement>(threshold = 0.2) {
+  const ref = useRef<T | null>(null);
+  const [seen, setSeen] = useState(false);
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!ref.current || seen) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setSeen(true)),
+      { threshold }
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [seen, threshold]);
+  return { ref, seen };
+}
+
+function useCountUp(target: number, seen: boolean, duration = 1200) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!seen) return;
+    const start = performance.now();
+    let raf: number;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(target * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, seen, duration]);
+  return value;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Page
+// ──────────────────────────────────────────────────────────────
+export default function LandingPage() {
+  const [navOpen, setNavOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'operations' | 'analytics' | 'onboard'>('operations');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 font-sans antialiased dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-x-hidden">
-      
-      {/* Animated background elements - from first design */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-violet-200/40 to-transparent rounded-full blur-3xl animate-blob" />
-        <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-sky-200/40 to-transparent rounded-full blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute bottom-0 left-1/3 w-[700px] h-[700px] bg-gradient-to-br from-indigo-200/30 to-transparent rounded-full blur-3xl animate-blob animation-delay-4000" />
-        {/* Grid pattern from second design */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwMDAwMDA4IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30 dark:opacity-10" />
-      </div>
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <SiteNav onOpenMobile={() => setNavOpen(true)} />
 
-      {/* Custom Styles - merged animations */}
-      <style jsx global>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -30px) scale(1.05); }
-          50% { transform: translate(-20px, 20px) scale(0.95); }
-          75% { transform: translate(30px, 10px) scale(1.02); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(-30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-blob { animation: blob 8s ease-in-out infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-float-delayed { animation: float 6s ease-in-out infinite; animation-delay: 1.5s; }
-        .animate-slideUp { animation: slideUp 0.8s ease-out forwards; }
-        .animate-slideIn { animation: slideIn 0.6s ease-out forwards; }
-        .animate-fadeIn { animation: fadeIn 1s ease-out forwards; }
-        .animate-shimmer {
-          background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
-          background-size: 200% 100%;
-          animation: shimmer 2s infinite;
-        }
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient-shift 4s ease infinite;
-        }
-        .stagger-1 { animation-delay: 0.1s; }
-        .stagger-2 { animation-delay: 0.2s; }
-        .stagger-3 { animation-delay: 0.3s; }
-        .stagger-4 { animation-delay: 0.4s; }
-        .stagger-5 { animation-delay: 0.5s; }
-        .stagger-6 { animation-delay: 0.6s; }
-      `}</style>
-
-      {/* Navigation - merged glassmorphism from both designs */}
-      <header className={`relative z-50 mx-auto max-w-7xl px-6 pt-6 md:px-12 ${mounted ? 'animate-slideUp' : 'opacity-0'}`}>
-        <nav className="relative rounded-2xl border border-white/60 bg-white/80 px-6 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/80">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 blur-lg opacity-50" />
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg">
-                  <i className="fa-solid fa-cubes text-white text-lg"></i>
-                </div>
-              </div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-violet-400 dark:to-indigo-400">ZenHr</span>
+      {/* Mobile nav drawer */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setNavOpen(false)} />
+          <div className="absolute right-0 top-0 flex h-full w-72 flex-col gap-1 border-l border-slate-100 bg-white p-5 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-900">Menu</span>
+              <button onClick={() => setNavOpen(false)} className="rounded-md p-1 text-slate-500"><X className="h-4 w-4" /></button>
             </div>
-            
-            <div className="hidden items-center gap-8 md:flex">
-              {['Employees', 'Vendors', 'Clients', 'Onboarding', 'Pricing'].map((item) => (
-                <a key={item} href="#" className="group relative text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                  {item}
-                  <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-gradient-to-r from-violet-600 to-indigo-600 transition-all duration-300 group-hover:w-full" />
-                </a>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <a href="/login" className="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-700 transition-all hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
-                Sign in
-              </a>
-              <a href="/dashboard" className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:shadow-violet-500/30">
-                <span className="relative z-10">Get Started</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 transition-opacity group-hover:opacity-100" />
-              </a>
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      {/* Hero Section - merged both designs */}
-      <section className="relative mx-auto max-w-7xl px-6 pt-20 md:px-12 md:pt-28">
-        <div className="flex flex-col items-center gap-16 lg:flex-row lg:gap-20">
-          
-          {/* Left Content - enhanced with second design elements */}
-          <div className={`flex-1 space-y-8 ${mounted ? 'animate-slideUp' : 'opacity-0'}`}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 dark:border-violet-800 dark:bg-violet-900/30">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600" />
-              </span>
-              <span className="text-sm font-medium text-violet-700 dark:text-violet-300">
-                <i className="fa-solid fa-shield-halved mr-1"></i>100%  · Trusted by 2,500+ companies
-              </span>
-            </div>
-            
-            <h1 className="text-5xl font-bold leading-[1.1] tracking-tight md:text-6xl lg:text-7xl">
-              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent animate-gradient">HR,</span>
-              <span className="text-slate-900 dark:text-white"> without the<br />guesswork.</span>
-            </h1>
-            
-            <p className="max-w-xl text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-              The all-in-one type-safe HR platform for managing employees, vendors, and clients. 
-              Streamline onboarding, automate workflows, and build stronger relationships with everyone who matters.
-            </p>
-            
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <a href="/dashboard" className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-violet-500/30 transition-all hover:shadow-violet-500/40">
-                <span className="relative z-10">Start Free Trial</span>
-                <i className="fa-regular fa-eye relative z-10"></i>
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 transition-opacity group-hover:opacity-100" />
-              </a>
-              <a href="#demo" className="group inline-flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white px-8 py-4 text-lg font-semibold text-slate-700 shadow-lg transition-all hover:border-slate-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:text-white">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900 dark:to-indigo-900">
-                  <i className="fa-regular fa-circle-check text-violet-600 dark:text-violet-400"></i>
-                </div>
-                Why Choose Us
-              </a>
-            </div>
-            
-            {/* Micro stats - from second design */}
-            <div className="flex flex-wrap gap-6 pt-6 text-sm text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-6">
-              <div><i className="fa-regular fa-clock mr-1 text-indigo-500"></i> 99.9% uptime SLA</div>
-              <div><i className="fa-brands fa-typescript mr-1 text-indigo-500"></i> full TypeScript</div>
-              <div><i className="fa-regular fa-star mr-1 text-indigo-500"></i> 4.98 / 5</div>
-            </div>
-            
-            {/* Social Proof - from first design */}
-            <div className="flex flex-wrap items-center gap-8">
-              <div className="flex -space-x-3">
-                {[1,2,3,4,5].map((i) => (
-                  <div key={i} className="relative h-12 w-12 overflow-hidden rounded-full border-3 border-white shadow-lg dark:border-slate-900">
-                    <Image src={`https://i.pravatar.cc/96?img=${i+10}`} alt="User" fill className="object-cover" />
-                  </div>
-                ))}
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-3 border-white bg-gradient-to-br from-violet-600 to-indigo-600 text-sm font-bold text-white shadow-lg dark:border-slate-900">
-                  +2k
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  {[1,2,3,4,5].map((i) => (
-                    <i key={i} className="fa-solid fa-star text-amber-400 text-sm"></i>
-                  ))}
-                </div>
-                <span className="text-sm text-slate-600 dark:text-slate-400">4.9/5 from 2,500+ reviews</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Dashboard Preview - merged with second design elements */}
-          <div className={`relative flex-1 ${mounted ? 'animate-slideUp stagger-2' : 'opacity-0'}`}>
-            <div className="relative">
-              {/* Glow effect */}
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-violet-600/20 via-indigo-600/20 to-violet-600/20 blur-2xl" />
-              
-              {/* Main dashboard card */}
-              <div className="relative rounded-3xl border border-white/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/90">
-                {/* Header */}
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full bg-red-400" />
-                    <div className="h-3 w-3 rounded-full bg-amber-400" />
-                    <div className="h-3 w-3 rounded-full bg-emerald-400" />
-                  </div>
-                  <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Live Dashboard · </span>
-                  </div>
-                </div>
-                
-                {/* Stats Grid - enhanced with icons */}
-                <div className="mb-6 grid grid-cols-4 gap-3">
-                  {[
-                    { label: 'Employees', value: '248', color: 'from-violet-500 to-indigo-500', icon: 'fa-users' },
-                    { label: 'Vendors', value: '56', color: 'from-sky-500 to-cyan-500', icon: 'fa-building' },
-                    { label: 'Clients', value: '132', color: 'from-emerald-500 to-teal-500', icon: 'fa-handshake' },
-                    { label: 'Onboarding', value: '12', color: 'from-amber-500 to-orange-500', icon: 'fa-rocket' },
-                  ].map((stat, i) => (
-                    <div key={stat.label} className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.color} p-4 text-white shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl`}>
-                      <i className={`fa-solid ${stat.icon} absolute -right-2 -top-2 text-5xl text-white/10`}></i>
-                      <p className="text-xs font-medium text-white/80">{stat.label}</p>
-                      <p className="mt-1 text-2xl font-bold">{stat.value}</p>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Bar Chart - from second design */}
-                <div className="mb-5 flex h-20 w-full items-end gap-1">
-                  <div className="h-8 w-1/6 rounded-t-md bg-indigo-300 dark:bg-indigo-800"></div>
-                  <div className="h-12 w-1/6 rounded-t-md bg-indigo-400 dark:bg-indigo-700"></div>
-                  <div className="h-16 w-1/6 rounded-t-md bg-indigo-500 dark:bg-indigo-600"></div>
-                  <div className="h-10 w-1/6 rounded-t-md bg-indigo-600 dark:bg-indigo-500"></div>
-                  <div className="h-14 w-1/6 rounded-t-md bg-indigo-400 dark:bg-indigo-700"></div>
-                  <div className="h-6 w-1/6 rounded-t-md bg-indigo-300 dark:bg-indigo-800"></div>
-                </div>
-                
-                {/* Activity Feed - from first design */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Recent Activity</span>
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400">+12.5% this week</span>
-                  </div>
-                  {[
-                    { name: 'Sarah Chen', action: 'completed onboarding', time: '2m ago', avatar: 5 },
-                    { name: 'Marcus Johnson', action: 'added as vendor', time: '15m ago', avatar: 8 },
-                    { name: 'Emily Davis', action: 'signed client contract', time: '1h ago', avatar: 9 },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 transition-colors hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800">
-                      <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                        <Image src={`https://i.pravatar.cc/80?img=${item.avatar}`} alt={item.name} fill className="object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          <span className="font-semibold">{item.name}</span> {item.action}
-                        </p>
-                        <p className="text-xs text-slate-500">{item.time}</p>
-                      </div>
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Floating notification cards - merged styles */}
-              <div className="absolute -left-6 top-20 animate-float rounded-2xl border border-white/60 bg-white/95 p-4 shadow-xl backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/50">
-                    <i className="fa-solid fa-check text-emerald-600 dark:text-emerald-400"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">New hire onboarded!</p>
-                    <p className="text-xs text-slate-500">Type-safe profile created</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="absolute -right-4 bottom-24 animate-float-delayed rounded-2xl border border-white/60 bg-white/95 p-4 shadow-xl backdrop-blur-sm dark:border-slate-700 dark:bg-slate-800/95">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
-                    <i className="fa-brands fa-typescript text-violet-600 dark:text-violet-400"></i>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">0 type errors</p>
-                    <p className="text-xs text-slate-500">100% type-safe</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Logos Section - from first design */}
-      <section className={`mx-auto max-w-7xl px-6 py-20 md:px-12 ${mounted ? 'animate-fadeIn stagger-3' : 'opacity-0'}`}>
-        <p className="text-center text-sm font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">Trusted by industry leaders</p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-8 opacity-60 grayscale">
-          {['Stripe', 'Notion', 'Figma', 'Linear', 'Vercel', 'Raycast'].map((brand) => (
-            <div key={brand} className="text-2xl font-bold tracking-tight text-slate-400 transition-all hover:text-slate-600 hover:grayscale-0 dark:text-slate-600 dark:hover:text-slate-400">
-              {brand}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features Section - merged both designs */}
-      <section className="mx-auto max-w-7xl px-6 py-20 md:px-12">
-        <div className={`text-center ${mounted ? 'animate-slideUp' : 'opacity-0'}`}>
-          <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-100 to-indigo-100 px-4 py-2 text-sm font-semibold text-violet-700 dark:from-violet-900/50 dark:to-indigo-900/50 dark:text-violet-300">
-            <i className="fa-solid fa-bolt text-sm"></i>
-            Powerful Features ·  Core
-          </span>
-          <h2 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl dark:text-white">
-            Type safety meets <br />
-            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">human experience</span>
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-400">
-            From employee management to vendor relationships, client tracking to seamless onboarding — all in one beautifully crafted platform.
-          </p>
-        </div>
-
-        <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: 'TypeScript Core',
-              description: 'End-to-end  from DB schema to UI props. Catch errors at compile time, not in production.',
-              icon: 'fa-brands fa-typescript',
-              gradient: 'from-violet-500 to-indigo-500',
-              bg: 'from-violet-50 to-indigo-50 dark:from-violet-950/50 dark:to-indigo-950/50',
-              code: 'interface Employee { readonly id: string; }'
-            },
-            {
-              title: 'Employee Management',
-              description: 'Complete employee lifecycle management with profiles, documents, time-off tracking, and performance reviews.',
-              icon: 'fa-users',
-              gradient: 'from-sky-500 to-cyan-500',
-              bg: 'from-sky-50 to-cyan-50 dark:from-sky-950/50 dark:to-cyan-950/50',
-              code: null
-            },
-            {
-              title: 'Vendor Portal',
-              description: 'Centralized vendor management with contracts, compliance tracking, payment schedules, and performance metrics.',
-              icon: 'fa-building',
-              gradient: 'from-emerald-500 to-teal-500',
-              bg: 'from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50',
-              code: null
-            },
-            {
-              title: 'Client Relationships',
-              description: 'Track client interactions, manage accounts, monitor project status, and maintain strong business relationships.',
-              icon: 'fa-handshake',
-              gradient: 'from-amber-500 to-orange-500',
-              bg: 'from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50',
-              code: null
-            },
-            {
-              title: 'Smart Onboarding',
-              description: 'Automated onboarding workflows with task assignments, document collection, training modules, and progress tracking.',
-              icon: 'fa-rocket',
-              gradient: 'from-pink-500 to-rose-500',
-              bg: 'from-pink-50 to-rose-50 dark:from-pink-950/50 dark:to-rose-950/50',
-              code: null
-            },
-            {
-              title: 'Zero-Trust Security',
-              description: 'Every access logged, every role strictly typed. SOC2, GDPR, and ISO27001 certified by design.',
-              icon: 'fa-lock',
-              gradient: 'from-slate-500 to-zinc-500',
-              bg: 'from-slate-50 to-zinc-50 dark:from-slate-950/50 dark:to-zinc-950/50',
-              code: null
-            }
-          ].map((feature, index) => (
-            <div 
-              key={feature.title}
-              className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${feature.bg} p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${mounted ? 'animate-slideUp' : 'opacity-0'}`}
-              style={{ animationDelay: `${(index + 1) * 100}ms` }}
-            >
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br opacity-20 blur-2xl transition-opacity group-hover:opacity-40" />
-              
-              <div className={`mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg`}>
-                <i className={`${feature.icon} text-2xl text-white`}></i>
-              </div>
-              
-              <h3 className="mb-3 text-xl font-bold text-slate-900 dark:text-white">{feature.title}</h3>
-              <p className="text-slate-600 leading-relaxed dark:text-slate-400">{feature.description}</p>
-              
-              {feature.code && (
-                <div className="mt-6 rounded-lg bg-slate-100 p-3 font-mono text-xs text-slate-800 dark:bg-slate-800 dark:text-slate-300">
-                  <span className="text-indigo-700 dark:text-indigo-400">{feature.code}</span>
-                </div>
-              )}
-              
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-violet-600 transition-colors group-hover:text-violet-700 dark:text-violet-400">
-                Learn more
-                <i className="fa-solid fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* What Makes Us Different - from second design */}
-      <section className="mx-auto max-w-7xl px-6 pb-28 md:px-12">
-        <div className="grid items-center gap-12 rounded-3xl border border-white/40 bg-white/75 p-8 backdrop-blur-md lg:grid-cols-2 lg:p-12 dark:border-white/10 dark:bg-black/50">
-          <div>
-            <h2 className="text-3xl font-bold leading-tight md:text-4xl dark:text-slate-100">
-              What makes us <span className="text-indigo-700 dark:text-indigo-400">different?</span>
-            </h2>
-            <p className="mt-4 max-w-md text-lg text-slate-700 dark:text-slate-300">
-              Dashboards that don't just display — they tell stories. With built-in TypeScript contracts, your data is always in shape.
-            </p>
-            <ul className="mt-8 space-y-5">
-              <li className="flex gap-4">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">✓</span>
-                <span className="dark:text-slate-300"><span className="font-semibold">Type-safe by default</span> — no more runtime schema mismatches</span>
-              </li>
-              <li className="flex gap-4">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">✓</span>
-                <span className="dark:text-slate-300"><span className="font-semibold">Real-time dashboards</span> — websocket sync with full TypeScript inference</span>
-              </li>
-              <li className="flex gap-4">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">✓</span>
-                <span className="dark:text-slate-300"><span className="font-semibold">Role-based views</span> — exactly what each role needs, nothing less</span>
-              </li>
-            </ul>
-          </div>
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white p-6 dark:from-indigo-950 dark:to-black">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400">vs traditional HR systems</span>
-              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">ZenHr advantage</span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Static types</span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">TypeScript end-to-end</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Dashboard latency</span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">&lt;100ms realtime</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Customization</span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">Tailwind + theming</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600 dark:text-slate-400">Dev experience</span>
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">Autocompletion · Generics</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section - from first design */}
-      <section className="mx-auto max-w-7xl px-6 py-20 md:px-12">
-        <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-violet-700 p-12 md:p-16 ${mounted ? 'animate-fadeIn' : 'opacity-0'}`}>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZjA4IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30" />
-          
-          <div className="relative grid gap-8 md:grid-cols-4">
             {[
-              { value: '99.9%', label: 'Uptime SLA' },
-              { value: '50K+', label: 'Active Users' },
-              { value: '150+', label: 'Countries' },
-              { value: '4.9', label: 'Average Rating' }
-            ].map((stat, i) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-4xl font-bold text-white md:text-5xl">{stat.value}</div>
-                <div className="mt-2 text-violet-200">{stat.label}</div>
-              </div>
+              { href: '#features', label: 'Features' },
+              { href: '#preview', label: 'Preview' },
+              { href: '#classes', label: 'Workforce' },
+              { href: '#workflow', label: 'How it works' },
+            ].map((l) => (
+              <a key={l.href} href={l.href} onClick={() => setNavOpen(false)} className="rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                {l.label}
+              </a>
             ))}
+            <Link href="/login" onClick={() => setNavOpen(false)} className="mt-3 border-t border-slate-100 pt-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+              Sign in
+            </Link>
+            <Link href="/dashboard" onClick={() => setNavOpen(false)} className="mt-2 rounded-xl bg-indigo-600 px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700">
+              Open dashboard
+            </Link>
           </div>
         </div>
-      </section>
+      )}
 
-      {/* CTA Section - merged */}
-      <section className="mx-auto max-w-7xl px-6 py-20 md:px-12">
-        <div className={`text-center ${mounted ? 'animate-slideUp' : 'opacity-0'}`}>
-          <h2 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl dark:text-white">
-            Ready to transform your HR?
-          </h2>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-slate-600 dark:text-slate-400">
-            Join thousands of companies already using ZenHr to manage their workforce more efficiently.
-          </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <a href="/signup" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-violet-500/30 transition-all hover:shadow-violet-500/40">
-              <span className="relative z-10">Start Free Trial</span>
-              <i className="fa-solid fa-arrow-right relative z-10"></i>
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-indigo-700 opacity-0 transition-opacity group-hover:opacity-100" />
-            </a>
-            <a href="/contact" className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-8 py-4 text-lg font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
-              Talk to Sales
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* ────────────── HERO ────────────── */}
+      <section className="border-b border-slate-100 bg-white">
+        <div className="mx-auto max-w-7xl px-5 pb-12 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:px-12 lg:pb-24 lg:pt-20">
+          <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+            {/* LEFT */}
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+                <LiveDot tone="indigo" /> Workforce operations · v2
+              </span>
 
-      {/* Footer - merged from both designs */}
-      <footer className="border-t border-slate-200 bg-white/50 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/50">
-        <div className="mx-auto max-w-7xl px-6 py-12 md:px-12">
-          <div className="grid gap-8 md:grid-cols-5">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600">
-                  <i className="fa-solid fa-cubes text-white"></i>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent dark:from-violet-400 dark:to-indigo-400">ZenHr</span>
-              </div>
-              <p className="mt-4 max-w-xs text-slate-600 dark:text-slate-400">
-                The modern  HR platform for growing teams. Manage employees, vendors, and clients all in one place.
+              <h1
+                className="mt-5 text-[2.5rem] font-bold leading-[0.96] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem] xl:text-[5.25rem]"
+                style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.025em' }}
+              >
+                Manage your<br />
+                workforce with{' '}
+                <span className="relative inline-block">
+                  <span className="relative z-10 text-indigo-600">clarity</span>
+                  <span className="absolute -inset-x-1 bottom-1 -z-0 h-3 bg-indigo-100 sm:bottom-2 sm:h-4 lg:bottom-3 lg:h-5" />
+                </span>
+                <span className="text-indigo-600">.</span>
+              </h1>
+
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:mt-8 sm:text-lg">
+                A workforce operations platform for W-2, contract, 1099 and offshore staffing.
+                Live KPIs, compliance you can act on, and every employee event surfaced in one place.
               </p>
-            </div>
-            
-            {[
-              { title: 'Product', links: ['Features', 'Pricing', 'Integrations', 'API'] },
-              { title: 'Company', links: ['About', 'Careers', 'Blog', 'Press'] },
-              { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'GDPR'] }
-            ].map((section) => (
-              <div key={section.title}>
-                <h4 className="font-semibold text-slate-900 dark:text-white">{section.title}</h4>
-                <ul className="mt-4 space-y-3">
-                  {section.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-slate-600 transition-colors hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-400">
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 dark:border-slate-800 md:flex-row">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              © 2026 ZenHr. All rights reserved. · Built with Next.js, Tailwind, TypeScript
-            </p>
-            <div className="flex gap-4">
-              {['github', 'twitter', 'linkedin'].map((social) => (
-                <a key={social} href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-colors hover:bg-violet-100 hover:text-violet-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-violet-900 dark:hover:text-violet-400">
-                  <i className={`fa-brands fa-${social} text-lg`}></i>
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md active:translate-y-px"
+                >
+                  Launch dashboard
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <a
+                  href="#preview"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Preview the product
+                  <ChevronRight className="h-4 w-4" />
                 </a>
-              ))}
+              </div>
+
+              {/* Inline trust row */}
+              <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3 text-xs sm:mt-12">
+                <span className="inline-flex items-center gap-1.5 text-slate-500">
+                  <LiveDot tone="emerald" /> Live data from your records
+                </span>
+                <span className="hidden h-3 w-px bg-slate-200 sm:inline-block" />
+                <span className="inline-flex items-center gap-1.5 text-slate-500">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Four employment classes
+                </span>
+                <span className="hidden h-3 w-px bg-slate-200 sm:inline-block" />
+                <span className="inline-flex items-center gap-1.5 text-slate-500">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Zero setup
+                </span>
+              </div>
             </div>
+
+            {/* RIGHT — Dashboard preview card */}
+            <HeroDashboardMock />
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────── STATS ────────────── */}
+      <StatsSection />
+
+      {/* ────────────── FEATURE BENTO ────────────── */}
+      <section id="features" className="border-t border-slate-100 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <SectionHeader
+            eyebrow="What's inside"
+            title={<>Every workforce concern,<br className="hidden sm:inline" /> on a single canvas.</>}
+            subtitle="Eight discrete capabilities, each one a click away. Nothing buried in nested menus."
+          />
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Operational Attention — wide tile */}
+            <FeatureCard className="sm:col-span-2 lg:row-span-2" tone="rose" icon={AlertOctagon} title="Operational Attention" body="Expired authorizations, bench staff, fresh hires — surfaced at the top. Every row drills into the people behind the number.">
+              <div className="mt-4 space-y-2">
+                <AttentionRow tone="rose" icon={AlertOctagon} label="3 auths expired" cta="Review" />
+                <AttentionRow tone="amber" icon={AlertTriangle} label="7 expire in 30 days" cta="Renew" />
+                <AttentionRow tone="amber" icon={UserMinus} label="8 on bench" cta="Assign" />
+                <AttentionRow tone="emerald" icon={Sparkles} label="4 new this week" cta="Welcome" />
+              </div>
+            </FeatureCard>
+
+            <FeatureCard tone="indigo" icon={PieChart} title="Live Analytics" body="Real-time KPIs derived live from your data, charted with native SVG.">
+              <div className="mt-3 flex items-center justify-center">
+                <MiniDonut />
+              </div>
+            </FeatureCard>
+
+            <FeatureCard tone="amber" icon={Shield} title="Compliance" body="Work auth expiry buckets at a glance — Expired through 90+ days.">
+              <div className="mt-3"><MiniBars /></div>
+            </FeatureCard>
+
+            <FeatureCard className="sm:col-span-2" tone="lime" icon={Users} title="Multi-class workforce" body="One platform for every employment relationship — each class has its own fields, payroll quirks, and compliance.">
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ClassChip label="W-2" hex="#3b82f6" />
+                <ClassChip label="Contract" hex="#a855f7" />
+                <ClassChip label="1099" hex="#14b8a6" />
+                <ClassChip label="Offshore" hex="#ec4899" />
+              </div>
+            </FeatureCard>
+
+            <FeatureCard tone="emerald" icon={TrendingUp} title="Hiring trend" body="Last 24 weeks, charted live with trend deltas.">
+              <div className="mt-3"><MiniSparkline /></div>
+            </FeatureCard>
+
+            <FeatureCard tone="sky" icon={Building2} title="Client + vendor chains" body="Including end-client &amp; end-vendor for staffing chains.">
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-600">
+                <ChainNode label="VEN" />
+                <ChainArrow />
+                <ChainNode label="CLI" />
+                <ChainArrow />
+                <ChainNode label="END" />
+              </div>
+            </FeatureCard>
+
+            <FeatureCard className="sm:col-span-2" tone="purple" icon={UserPlus} title="Onboarding wizard" body="Step-by-step intake with drafts that survive refreshes, branched by employment class, with bulk client / vendor assignments.">
+              <div className="mt-3 flex items-center gap-3">
+                <StepPill n={1} label="Type" active />
+                <StepLine />
+                <StepPill n={2} label="Details" active />
+                <StepLine />
+                <StepPill n={3} label="Review" />
+              </div>
+            </FeatureCard>
+
+            <FeatureCard tone="pink" icon={Cake} title="Milestones" body="Birthdays + work anniversaries, clickable to see who.">
+              <div className="mt-3 flex -space-x-2">
+                {['S', 'J', 'M', 'A', 'R'].map((c, i) => (
+                  <span key={i} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-pink-100 text-[10px] font-bold text-pink-700">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </FeatureCard>
+
+            <FeatureCard tone="slate" icon={FileText} title="Reports &amp; export" body="Filtered CSV / PDF / JSON exports, on demand.">
+              <div className="mt-3 flex gap-2">
+                <ExportPill label="CSV" />
+                <ExportPill label="PDF" />
+                <ExportPill label="JSON" />
+              </div>
+            </FeatureCard>
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────── LIVE PREVIEW (tabbed) ────────────── */}
+      <section id="preview" className="border-t border-slate-100 bg-white">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+            <SectionHeader
+              eyebrow="Live preview"
+              title={<>Click through the<br className="hidden sm:inline" /> actual product.</>}
+            />
+            <div className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {([
+                { id: 'operations', label: 'Operations', icon: Activity },
+                { id: 'analytics',  label: 'Analytics',  icon: PieChart },
+                { id: 'onboard',    label: 'Onboard',    icon: UserPlus },
+              ] as const).map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3 sm:text-sm',
+                      activeTab === t.id ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'text-slate-600 hover:bg-slate-50'
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+              <span className="ml-3 truncate text-[11px] text-slate-400" style={{ fontFamily: 'var(--font-jb-mono), ui-monospace, monospace' }}>
+                zenhr.app/dashboard/{activeTab}
+              </span>
+              <span className="ml-auto hidden items-center gap-1.5 text-[10px] font-medium text-slate-400 sm:inline-flex">
+                <LiveDot tone="emerald" /> Connected
+              </span>
+            </div>
+            {/* Body */}
+            <div className="p-4 sm:p-6 lg:p-8">
+              {activeTab === 'operations' && <PreviewOperations />}
+              {activeTab === 'analytics' && <PreviewAnalytics />}
+              {activeTab === 'onboard' && <PreviewOnboard />}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────── EMPLOYEE CLASSES ────────────── */}
+      <section id="classes" className="border-t border-slate-100 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <SectionHeader
+            eyebrow="Four classes, one mental model"
+            title={<>Every employment<br className="hidden sm:inline" /> relationship handled.</>}
+            subtitle="The wizard branches into the right fields. Reports filter by class. KPIs are computed per class."
+          />
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ClassCard
+              hex="#3b82f6"
+              accentBg="bg-blue-50"
+              accentText="text-blue-700"
+              accentRing="ring-blue-200"
+              label="W-2"
+              title="Full-time staff"
+              icon={Briefcase}
+              fields={['Office email', 'Work authorization', 'Medical, 401(k)', 'Salary type / pay', 'Revenue: B / NB']}
+            />
+            <ClassCard
+              hex="#a855f7"
+              accentBg="bg-purple-50"
+              accentText="text-purple-700"
+              accentRing="ring-purple-200"
+              label="Contract"
+              title="Contract workers"
+              icon={FileText}
+              fields={['Contractor name', 'Work authorization', 'Subcontractor status', 'Revenue tracking', 'Auth expiry alerts']}
+            />
+            <ClassCard
+              hex="#14b8a6"
+              accentBg="bg-teal-50"
+              accentText="text-teal-700"
+              accentRing="ring-teal-200"
+              label="1099"
+              title="Independent contractors"
+              icon={FileText}
+              fields={['Office email', 'Work authorization', 'Hourly / annual pay', 'Subcontractor status', 'Rehire tracking']}
+            />
+            <ClassCard
+              hex="#ec4899"
+              accentBg="bg-pink-50"
+              accentText="text-pink-700"
+              accentRing="ring-pink-200"
+              label="Offshore"
+              title="International remote"
+              icon={Globe}
+              fields={['Vonage number', 'Aadhar / PAN', 'PF number (optional)', 'LLP or Pvt Ltd', 'Medical reimbursement']}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────── WORKFLOW STEPS ────────────── */}
+      <section id="workflow" className="border-t border-slate-100 bg-white">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <SectionHeader
+            eyebrow="How it works"
+            title={<>From new face to fully<br className="hidden sm:inline" /> billable, in four moves.</>}
+          />
+          <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <WorkflowStep n="01" title="Onboard" body="Pick a class. The form branches into the right fields. Drafts auto-save through refresh." icon={Sparkles} tone="indigo" />
+            <WorkflowStep n="02" title="Assign" body="Hook them up to clients, vendors — including end-client and end-vendor chains." icon={Building2} tone="emerald" />
+            <WorkflowStep n="03" title="Monitor" body="Live KPIs, compliance buckets, attention rows. Click any number, see the people." icon={Activity} tone="purple" />
+            <WorkflowStep n="04" title="Report" body="Filtered CSV / PDF / JSON exports. Print-style reports for any client or vendor." icon={BarChart3} tone="amber" />
+          </ol>
+        </div>
+      </section>
+
+      {/* ────────────── CTA ────────────── */}
+      <section className="border-t border-slate-100 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-8 shadow-sm sm:p-12 lg:p-16">
+            {/* Corner color blocks (solid, no gradients) */}
+            <div className="absolute right-6 top-6 hidden flex-col gap-1.5 sm:flex">
+              <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-rose-500" />
+            </div>
+
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+              <LiveDot tone="emerald" /> Ready when you are
+            </span>
+            <h2
+              className="mt-4 max-w-3xl text-3xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-4xl lg:text-6xl"
+              style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.02em' }}
+            >
+              Stop chasing<br className="hidden sm:inline" /> spreadsheets.
+            </h2>
+            <p className="mt-4 max-w-md text-base text-slate-600">
+              Open the dashboard, browse the data, see the alerts. No demo, no sales call.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md active:translate-y-px"
+              >
+                Launch dashboard
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Request access
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ────────────── FOOTER ────────────── */}
+      <footer className="border-t border-slate-100 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-5 py-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-8 lg:px-12">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
+              <Layers className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="font-bold tracking-tight text-slate-900">ZenHR</span>
+            <span>· Workforce Operations Platform</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span className="inline-flex items-center gap-1.5"><LiveDot tone="emerald" /> All systems operational</span>
+            <Link href="/login" className="hover:text-slate-900">Sign in</Link>
+            <Link href="/signup" className="hover:text-slate-900">Request access</Link>
+            <a href="#features" className="hover:text-slate-900">Features</a>
           </div>
         </div>
       </footer>
+    </main>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Sub-components
+// ──────────────────────────────────────────────────────────────
+
+function SiteNav({ onOpenMobile }: { onOpenMobile: () => void }) {
+  return (
+    <nav className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-5 sm:h-16 sm:px-8 lg:px-12">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600">
+            <Layers className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-[15px] font-bold tracking-tight text-slate-900">ZenHR</span>
+          <span className="hidden items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-emerald-700 sm:inline-flex">
+            <LiveDot tone="emerald" /> Operational
+          </span>
+        </Link>
+
+        <div className="hidden items-center gap-6 lg:flex">
+          <a href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900">Features</a>
+          <a href="#preview" className="text-sm font-medium text-slate-600 hover:text-slate-900">Preview</a>
+          <a href="#classes" className="text-sm font-medium text-slate-600 hover:text-slate-900">Workforce</a>
+          <a href="#workflow" className="text-sm font-medium text-slate-600 hover:text-slate-900">How it works</a>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link href="/login" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 sm:inline-block">
+            Sign in
+          </Link>
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700">
+            Open dashboard
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <button onClick={onOpenMobile} className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 lg:hidden" aria-label="Open menu">
+            <Menu className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function LiveDot({ tone = 'emerald' }: { tone?: 'emerald' | 'indigo' | 'amber' | 'rose' }) {
+  const color = tone === 'indigo' ? 'bg-indigo-500' : tone === 'amber' ? 'bg-amber-500' : tone === 'rose' ? 'bg-rose-500' : 'bg-emerald-500';
+  return (
+    <span className="relative inline-flex h-1.5 w-1.5">
+      <span className={cn('absolute inset-0 animate-ping rounded-full opacity-60', color)} />
+      <span className={cn('relative inline-block h-1.5 w-1.5 rounded-full', color)} />
+    </span>
+  );
+}
+
+function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: React.ReactNode; subtitle?: string }) {
+  return (
+    <header>
+      <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-600">
+        <span className="h-px w-8 bg-indigo-300" /> {eyebrow}
+      </span>
+      <h2
+        className="mt-3 text-3xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl"
+        style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.02em' }}
+      >
+        {title}
+      </h2>
+      {subtitle && <p className="mt-3 max-w-xl text-[15px] text-slate-600">{subtitle}</p>}
+    </header>
+  );
+}
+
+// ──────── Hero dashboard mock ────────
+function HeroDashboardMock() {
+  return (
+    <div className="relative">
+      {/* corner registration marks */}
+      <span className="absolute -left-2 -top-2 h-3 w-3 border-l-2 border-t-2 border-indigo-400" aria-hidden />
+      <span className="absolute -right-2 -top-2 h-3 w-3 border-r-2 border-t-2 border-indigo-400" aria-hidden />
+      <span className="absolute -bottom-2 -left-2 h-3 w-3 border-b-2 border-l-2 border-indigo-400" aria-hidden />
+      <span className="absolute -bottom-2 -right-2 h-3 w-3 border-b-2 border-r-2 border-indigo-400" aria-hidden />
+
+      <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-md sm:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Workforce Brief</p>
+            <p className="mt-0.5 text-sm font-bold text-slate-900">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+            <LiveDot tone="emerald" /> Live
+          </span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-4 gap-2 border-y border-slate-100 py-4">
+          <MockNumeral label="Active"  value="195" />
+          <MockNumeral label="Revenue" value="$1.2M" tone="emerald" />
+          <MockNumeral label="Util"    value="67%" tone="indigo" />
+          <MockNumeral label="Expire"  value="07" tone="amber" />
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <AttentionRow tone="rose"    icon={AlertOctagon}  label="3 auths expired"      cta="Review" />
+          <AttentionRow tone="amber"   icon={AlertTriangle} label="7 expire in 30 days" cta="Renew" />
+          <AttentionRow tone="emerald" icon={Sparkles}      label="4 new this week"     cta="Welcome" />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span className="font-semibold uppercase tracking-wider text-slate-400">By class</span>
+            <span className="font-bold tabular-nums text-slate-900">195</span>
+          </div>
+          <ul className="mt-2 space-y-1.5">
+            <MockBar label="W-2"      value={124} max={124} hex="#3b82f6" />
+            <MockBar label="Contract" value={38}  max={124} hex="#a855f7" />
+            <MockBar label="1099"     value={12}  max={124} hex="#14b8a6" />
+            <MockBar label="Offshore" value={21}  max={124} hex="#ec4899" />
+          </ul>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function MockNumeral({ label, value, tone }: { label: string; value: string; tone?: 'emerald' | 'indigo' | 'amber' }) {
+  const color = tone === 'emerald' ? 'text-emerald-700' : tone === 'indigo' ? 'text-indigo-700' : tone === 'amber' ? 'text-amber-700' : 'text-slate-900';
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className={cn('mt-0.5 text-base font-bold tabular-nums', color)}>{value}</p>
+    </div>
+  );
+}
+
+function MockBar({ label, value, max, hex }: { label: string; value: number; max: number; hex: string }) {
+  return (
+    <li className="flex items-center gap-2 text-[11px]">
+      <span className="w-16 text-slate-500">{label}</span>
+      <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full" style={{ width: `${(value / max) * 100}%`, backgroundColor: hex }} />
+      </div>
+      <span className="w-7 text-right font-bold tabular-nums text-slate-900">{value}</span>
+    </li>
+  );
+}
+
+// ──────── Stats ────────
+function StatsSection() {
+  const { ref, seen } = useInView<HTMLDivElement>(0.25);
+  const employees = useCountUp(195, seen);
+  const revenue = useCountUp(1.2, seen, 1500);
+  const utilization = useCountUp(67, seen, 1400);
+  const clients = useCountUp(42, seen, 1100);
+
+  return (
+    <section ref={ref} className="border-b border-slate-100 bg-white">
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-14 lg:px-12">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatTile icon={Users} label="Active employees" value={`${Math.round(employees)}`} tone="indigo" />
+          <StatTile icon={TrendingUp} label="Monthly run-rate" value={`$${revenue.toFixed(1)}M`} tone="emerald" />
+          <StatTile icon={UserCheck} label="Utilization" value={`${Math.round(utilization)}%`} tone="purple" />
+          <StatTile icon={Building2} label="Active clients" value={`${Math.round(clients)}`} tone="amber" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const TONE_COLORS: Record<string, { iconBg: string; iconText: string; value: string }> = {
+  indigo:  { iconBg: 'bg-indigo-100',  iconText: 'text-indigo-600',  value: 'text-slate-900' },
+  emerald: { iconBg: 'bg-emerald-100', iconText: 'text-emerald-600', value: 'text-slate-900' },
+  purple:  { iconBg: 'bg-purple-100',  iconText: 'text-purple-600',  value: 'text-slate-900' },
+  amber:   { iconBg: 'bg-amber-100',   iconText: 'text-amber-600',   value: 'text-slate-900' },
+  rose:    { iconBg: 'bg-rose-100',    iconText: 'text-rose-600',    value: 'text-slate-900' },
+  sky:     { iconBg: 'bg-sky-100',     iconText: 'text-sky-600',     value: 'text-slate-900' },
+  pink:    { iconBg: 'bg-pink-100',    iconText: 'text-pink-600',    value: 'text-slate-900' },
+  lime:    { iconBg: 'bg-lime-100',    iconText: 'text-lime-700',    value: 'text-slate-900' },
+  slate:   { iconBg: 'bg-slate-100',   iconText: 'text-slate-600',   value: 'text-slate-900' },
+};
+
+function StatTile({ icon: Icon, label, value, tone }: { icon: React.ElementType; label: string; value: string; tone: keyof typeof TONE_COLORS }) {
+  const t = TONE_COLORS[tone];
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl sm:h-10 sm:w-10', t.iconBg)}>
+          <Icon className={cn('h-4 w-4 sm:h-5 sm:w-5', t.iconText)} />
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">{label}</span>
+      </div>
+      <p className={cn('mt-3 font-bold tabular-nums', t.value)} style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', fontSize: 'clamp(1.625rem, 3.5vw, 2.5rem)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// ──────── Feature card (bento) ────────
+function FeatureCard({
+  className, tone, icon: Icon, title, body, children,
+}: {
+  className?: string;
+  tone: keyof typeof TONE_COLORS;
+  icon: React.ElementType;
+  title: React.ReactNode;
+  body: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  const t = TONE_COLORS[tone];
+  return (
+    <article className={cn('group relative flex flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6', className)}>
+      <div className="flex items-center gap-2.5">
+        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', t.iconBg)}>
+          <Icon className={cn('h-4 w-4', t.iconText)} />
+        </div>
+        <h3 className="text-sm font-bold tracking-tight text-slate-900 sm:text-base">{title}</h3>
+      </div>
+      <p className="mt-2 text-[13px] leading-relaxed text-slate-600 sm:text-sm">{body}</p>
+      {children}
+    </article>
+  );
+}
+
+// ──────── Attention row (matches dashboard) ────────
+function AttentionRow({ tone, icon: Icon, label, cta }: { tone: 'rose' | 'amber' | 'emerald' | 'sky'; icon: React.ElementType; label: string; cta: string }) {
+  const map: Record<string, { dot: string; iconBg: string; iconText: string; ctaText: string; ctaBg: string }> = {
+    rose:    { dot: 'bg-rose-500',    iconBg: 'bg-rose-50',    iconText: 'text-rose-600',    ctaText: 'text-rose-700',    ctaBg: 'bg-rose-50 ring-rose-200' },
+    amber:   { dot: 'bg-amber-500',   iconBg: 'bg-amber-50',   iconText: 'text-amber-600',   ctaText: 'text-amber-700',   ctaBg: 'bg-amber-50 ring-amber-200' },
+    emerald: { dot: 'bg-emerald-500', iconBg: 'bg-emerald-50', iconText: 'text-emerald-600', ctaText: 'text-emerald-700', ctaBg: 'bg-emerald-50 ring-emerald-200' },
+    sky:     { dot: 'bg-sky-500',     iconBg: 'bg-sky-50',     iconText: 'text-sky-600',     ctaText: 'text-sky-700',     ctaBg: 'bg-sky-50 ring-sky-200' },
+  };
+  const s = map[tone];
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-slate-100 bg-white px-2.5 py-2">
+      <span className={cn('h-1.5 w-1.5 flex-shrink-0 rounded-full', s.dot)} />
+      <div className={cn('flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md', s.iconBg)}>
+        <Icon className={cn('h-3 w-3', s.iconText)} />
+      </div>
+      <span className="flex-1 text-[12px] font-medium text-slate-700">{label}</span>
+      <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1', s.ctaBg, s.ctaText)}>{cta}</span>
+    </div>
+  );
+}
+
+function MiniDonut() {
+  const segs = [
+    { value: 124, color: '#3b82f6' },
+    { value: 38,  color: '#a855f7' },
+    { value: 21,  color: '#ec4899' },
+    { value: 12,  color: '#14b8a6' },
+  ];
+  const total = segs.reduce((s, x) => s + x.value, 0);
+  const r = 28, c = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <div className="flex items-center gap-3">
+      <svg width={80} height={80} viewBox="0 0 80 80" className="-rotate-90">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth={10} />
+        {segs.map((seg, i) => {
+          const len = (seg.value / total) * c;
+          const off = -acc;
+          acc += len;
+          return <circle key={i} cx="40" cy="40" r={r} fill="none" stroke={seg.color} strokeWidth={10} strokeDasharray={`${len} ${c}`} strokeDashoffset={off} />;
+        })}
+      </svg>
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class mix</p>
+        <p className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">{total}</p>
+      </div>
+    </div>
+  );
+}
+
+function MiniBars() {
+  const data = [
+    { label: 'Exp',  value: 3,  color: '#ef4444' },
+    { label: '30',  value: 7,  color: '#f59e0b' },
+    { label: '60',  value: 4,  color: '#eab308' },
+    { label: '90',  value: 8,  color: '#0ea5e9' },
+    { label: '90+', value: 12, color: '#94a3b8' },
+  ];
+  const max = Math.max(...data.map((d) => d.value));
+  return (
+    <div className="flex h-16 items-end gap-1.5">
+      {data.map((d) => (
+        <div key={d.label} className="group flex flex-1 flex-col items-center gap-1">
+          <div className="w-full rounded-t" style={{ height: `${(d.value / max) * 100}%`, backgroundColor: d.color, minHeight: 6 }} title={`${d.label}: ${d.value}`} />
+          <span className="text-[9px] font-medium uppercase tracking-wider text-slate-400">{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MiniSparkline() {
+  const data = [2, 3, 1, 4, 5, 3, 6, 4, 7, 5, 8, 6, 9, 7, 10, 8, 6, 9, 11, 8, 12, 10, 13, 11];
+  const max = Math.max(...data);
+  const w = 240, h = 56, pad = 4;
+  const step = (w - pad * 2) / (data.length - 1);
+  const pts = data.map((v, i) => [pad + i * step, h - pad - (v / max) * (h - pad * 2)] as const);
+  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none" height={56}>
+      <path d={line} fill="none" stroke="#10b981" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map(([x, y], i) => i % 4 === 0 && <circle key={i} cx={x} cy={y} r={1.75} fill="#10b981" />)}
+    </svg>
+  );
+}
+
+function ClassChip({ label, hex }: { label: string; hex: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-100 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 shadow-sm">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: hex }} />
+      {label}
+    </span>
+  );
+}
+
+function ChainNode({ label }: { label: string }) {
+  return <span className="rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">{label}</span>;
+}
+function ChainArrow() {
+  return <span className="text-slate-300">→</span>;
+}
+
+function StepPill({ n, label, active }: { n: number; label: string; active?: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn(
+        'flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold',
+        active ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-400'
+      )}>{n}</span>
+      <span className={cn('text-[11px] font-medium', active ? 'text-slate-700' : 'text-slate-400')}>{label}</span>
+    </div>
+  );
+}
+function StepLine() {
+  return <span className="h-px w-4 bg-slate-200" />;
+}
+
+function ExportPill({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-slate-100 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+      <FileText className="h-2.5 w-2.5" />
+      {label}
+    </span>
+  );
+}
+
+// ──────── Tab preview content ────────
+function PreviewOperations() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="space-y-3 lg:col-span-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Needs your attention</p>
+        <AttentionRow tone="rose"    icon={AlertOctagon}  label="3 work authorizations expired"  cta="Review" />
+        <AttentionRow tone="amber"   icon={AlertTriangle} label="7 expire in the next 30 days"  cta="Renew"  />
+        <AttentionRow tone="amber"   icon={UserMinus}     label="8 active staff on bench"       cta="Assign" />
+        <AttentionRow tone="emerald" icon={Sparkles}      label="4 new hires this week"         cta="Welcome" />
+        <div className="mt-5 grid grid-cols-3 gap-2 rounded-xl border border-slate-100 bg-white p-3 sm:gap-3 sm:p-4">
+          <MockNumeral label="Active"  value="195" />
+          <MockNumeral label="Revenue" value="$1.2M" tone="emerald" />
+          <MockNumeral label="Util"    value="67%" tone="indigo" />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Headcount by class</p>
+        <div className="rounded-xl border border-slate-100 bg-white p-4">
+          <ul className="space-y-2">
+            <MockBar label="W-2"      value={124} max={124} hex="#3b82f6" />
+            <MockBar label="Contract" value={38}  max={124} hex="#a855f7" />
+            <MockBar label="1099"     value={12}  max={124} hex="#14b8a6" />
+            <MockBar label="Offshore" value={21}  max={124} hex="#ec4899" />
+          </ul>
+        </div>
+        <div className="rounded-xl border border-slate-100 bg-white p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Upcoming birthdays</p>
+          <ul className="mt-2 space-y-2">
+            {[
+              { name: 'Sarah Chen', date: 'May 15', avatar: 'bg-pink-100 text-pink-700' },
+              { name: 'John Doe',   date: 'May 22', avatar: 'bg-blue-100 text-blue-700' },
+              { name: 'Maria L.',   date: 'May 28', avatar: 'bg-emerald-100 text-emerald-700' },
+            ].map((p) => (
+              <li key={p.name} className="flex items-center gap-2">
+                <span className={cn('flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold', p.avatar)}>{p.name.charAt(0)}</span>
+                <span className="flex-1 truncate text-[12px] font-medium text-slate-700">{p.name}</span>
+                <span className="text-[11px] text-slate-500">{p.date}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewAnalytics() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="rounded-xl border border-slate-100 bg-white p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Class distribution</p>
+        <div className="mt-3 flex justify-center"><MiniDonut /></div>
+      </div>
+      <div className="rounded-xl border border-slate-100 bg-white p-4 lg:col-span-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Hires · last 24 weeks</p>
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+            <TrendingUp className="h-2.5 w-2.5" /> 23%
+          </span>
+        </div>
+        <div className="mt-3"><MiniSparkline /></div>
+      </div>
+      <div className="rounded-xl border border-slate-100 bg-white p-4 lg:col-span-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Authorization expiry buckets</p>
+        <div className="mt-4"><MiniBars /></div>
+      </div>
+      <div className="rounded-xl border border-slate-100 bg-white p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Compliance</p>
+        <div className="mt-3 space-y-2.5">
+          <RingLine label="Email" pct={94} color="#6366f1" />
+          <RingLine label="Phone" pct={88} color="#a855f7" />
+          <RingLine label="ID"    pct={76} color="#10b981" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RingLine({ label, pct, color }: { label: string; pct: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-12 text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</span>
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+      <span className="w-9 text-right text-xs font-bold tabular-nums text-slate-900">{pct}%</span>
+    </div>
+  );
+}
+
+function PreviewOnboard() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+      <div className="space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pick a class</p>
+        {[
+          { label: 'W-2 Employee',   desc: 'Full-time, benefits',     hex: '#3b82f6', active: true },
+          { label: 'Contract',       desc: 'Project-based',           hex: '#a855f7' },
+          { label: '1099 Contractor',desc: 'Independent',             hex: '#14b8a6' },
+          { label: 'Offshore',       desc: 'International remote',    hex: '#ec4899' },
+        ].map((c) => (
+          <div key={c.label} className={cn('flex items-center gap-3 rounded-lg border px-3 py-2.5', c.active ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-100 bg-white')}>
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.hex }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-900">{c.label}</p>
+              <p className="text-[10px] text-slate-500">{c.desc}</p>
+            </div>
+            {c.active && <ChevronRight className="h-3.5 w-3.5 text-indigo-600" />}
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-slate-100 bg-white p-4">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <StepPill n={1} label="Type" active />
+          <StepLine />
+          <StepPill n={2} label="Details" active />
+          <StepLine />
+          <StepPill n={3} label="Review" />
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {['Full name', 'Position', 'Hire date', 'Work auth', 'Office email', 'Salary type'].map((f) => (
+            <div key={f}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{f}</p>
+              <div className="mt-1 h-8 rounded-md border border-slate-200 bg-slate-50" />
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+          <Clock className="h-3 w-3" />
+          Draft auto-saved · just now
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClassCard({
+  hex, accentBg, accentText, accentRing, label, title, icon: Icon, fields,
+}: {
+  hex: string;
+  accentBg: string;
+  accentText: string;
+  accentRing: string;
+  label: string;
+  title: string;
+  icon: React.ElementType;
+  fields: string[];
+}) {
+  return (
+    <article className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6">
+      {/* Color bar on left */}
+      <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: hex }} aria-hidden />
+      <div className="flex items-center justify-between gap-2">
+        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', accentBg)}>
+          <Icon className={cn('h-4 w-4', accentText)} />
+        </div>
+        <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-bold ring-1', accentBg, accentText, accentRing)}>{label}</span>
+      </div>
+      <h3 className="text-base font-bold tracking-tight text-slate-900">{title}</h3>
+      <ul className="space-y-1.5 text-[12px] text-slate-600 sm:text-sm">
+        {fields.map((f) => (
+          <li key={f} className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: hex }} />
+            {f}
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function WorkflowStep({
+  n, title, body, icon: Icon, tone,
+}: { n: string; title: string; body: string; icon: React.ElementType; tone: keyof typeof TONE_COLORS }) {
+  const t = TONE_COLORS[tone];
+  return (
+    <article className="group relative flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center justify-between">
+        <span className="text-3xl font-bold tabular-nums tracking-tight text-slate-200" style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans)' }}>
+          {n}
+        </span>
+        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-110', t.iconBg)}>
+          <Icon className={cn('h-4 w-4', t.iconText)} />
+        </div>
+      </div>
+      <h3 className="text-base font-bold tracking-tight text-slate-900">{title}</h3>
+      <p className="text-[13px] leading-relaxed text-slate-600 sm:text-sm">{body}</p>
+    </article>
   );
 }
