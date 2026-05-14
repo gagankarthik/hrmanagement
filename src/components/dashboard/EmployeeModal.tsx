@@ -13,6 +13,8 @@ import {
   getFieldsByType,
   EmployeeClientAssignment,
   EmployeeVendorAssignment,
+  EmployeeEndClientAssignment,
+  EmployeeEndVendorAssignment,
 } from '@/types/employee';
 import { useToast } from '@/components/ui/toast';
 
@@ -73,10 +75,26 @@ export default function EmployeeModal({
             ? [{ vendorId: data.vendorId, startDate: '', endDate: '' }]
             : [];
         }
+        if (!data.endClientAssignments) {
+          data.endClientAssignments = data.endClientId
+            ? [{ clientId: data.endClientId, startDate: '', endDate: '' }]
+            : [];
+        }
+        if (!data.endVendorAssignments) {
+          data.endVendorAssignments = data.endVendorId
+            ? [{ vendorId: data.endVendorId, startDate: '', endDate: '' }]
+            : [];
+        }
         setFormData(data);
       }
     } else {
-      setFormData({ type: selectedType, clientAssignments: [], vendorAssignments: [] });
+      setFormData({
+        type: selectedType,
+        clientAssignments: [],
+        vendorAssignments: [],
+        endClientAssignments: [],
+        endVendorAssignments: [],
+      });
     }
   }, [mode, employee, selectedType]);
 
@@ -189,13 +207,35 @@ export default function EmployeeModal({
         || vendorAssignments[vendorAssignments.length - 1]?.vendorId
         || '';
 
+      const endClientAssignments = (formData.endClientAssignments as EmployeeEndClientAssignment[] || [])
+        .filter((a) => a.clientId);
+      const activeEndClient = endClientAssignments.find(
+        (a) => !a.endDate || new Date(a.endDate) >= now
+      );
+      const primaryEndClientId = activeEndClient?.clientId
+        || endClientAssignments[endClientAssignments.length - 1]?.clientId
+        || '';
+
+      const endVendorAssignments = (formData.endVendorAssignments as EmployeeEndVendorAssignment[] || [])
+        .filter((a) => a.vendorId);
+      const activeEndVendor = endVendorAssignments.find(
+        (a) => !a.endDate || new Date(a.endDate) >= now
+      );
+      const primaryEndVendorId = activeEndVendor?.vendorId
+        || endVendorAssignments[endVendorAssignments.length - 1]?.vendorId
+        || '';
+
       const employeeData = {
         ...formData,
         type: selectedType,
         clientAssignments,
         vendorAssignments,
+        endClientAssignments,
+        endVendorAssignments,
         clientId: primaryClientId || (formData.clientId as string) || '',
         vendorId: primaryVendorId || (formData.vendorId as string) || '',
+        endClientId: primaryEndClientId || (formData.endClientId as string) || '',
+        endVendorId: primaryEndVendorId || (formData.endVendorId as string) || '',
       };
 
       const name = (formData.name as string | undefined) || 'Employee';
@@ -601,6 +641,202 @@ export default function EmployeeModal({
                           onClick={() => {
                             const list = ((formData.vendorAssignments as EmployeeVendorAssignment[])).filter((_, i) => i !== idx);
                             setFormData((prev) => ({ ...prev, vendorAssignments: list }));
+                          }}
+                          className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* End Client Assignments */}
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  End Client Assignments
+                </h4>
+                {mode !== 'view' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = [...((formData.endClientAssignments as EmployeeEndClientAssignment[]) || [])];
+                      list.push({ clientId: '', startDate: '', endDate: '' });
+                      setFormData((prev) => ({ ...prev, endClientAssignments: list }));
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-100 dark:bg-sky-950/50 dark:text-sky-400"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add End Client
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {((formData.endClientAssignments as EmployeeEndClientAssignment[]) || []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    {mode === 'view' ? 'No end client assignments' : 'No end clients added. Click "Add End Client" to assign one.'}
+                  </p>
+                ) : (
+                  ((formData.endClientAssignments as EmployeeEndClientAssignment[]) || []).map((assignment, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="grid flex-1 grid-cols-3 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Client</label>
+                          <select
+                            value={assignment.clientId || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endClientAssignments as EmployeeEndClientAssignment[]))];
+                              list[idx] = { ...list[idx], clientId: e.target.value };
+                              setFormData((prev) => ({ ...prev, endClientAssignments: list }));
+                            }}
+                            disabled={mode === 'view' || clientsLoading}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          >
+                            <option value="">{clientsLoading ? 'Loading...' : 'Select End Client'}</option>
+                            {clients.filter((c) => c?.id && c?.name).map((c) => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+                          <input
+                            type="date"
+                            value={assignment.startDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endClientAssignments as EmployeeEndClientAssignment[]))];
+                              list[idx] = { ...list[idx], startDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, endClientAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                          <input
+                            type="date"
+                            value={assignment.endDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endClientAssignments as EmployeeEndClientAssignment[]))];
+                              list[idx] = { ...list[idx], endDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, endClientAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      {mode !== 'view' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = ((formData.endClientAssignments as EmployeeEndClientAssignment[])).filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, endClientAssignments: list }));
+                          }}
+                          className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* End Vendor Assignments */}
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  End Vendor Assignments
+                </h4>
+                {mode !== 'view' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = [...((formData.endVendorAssignments as EmployeeEndVendorAssignment[]) || [])];
+                      list.push({ vendorId: '', startDate: '', endDate: '' });
+                      setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-400"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add End Vendor
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {((formData.endVendorAssignments as EmployeeEndVendorAssignment[]) || []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    {mode === 'view' ? 'No end vendor assignments' : 'No end vendors added. Click "Add End Vendor" to assign one.'}
+                  </p>
+                ) : (
+                  ((formData.endVendorAssignments as EmployeeEndVendorAssignment[]) || []).map((assignment, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="grid flex-1 grid-cols-3 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Vendor</label>
+                          <select
+                            value={assignment.vendorId || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endVendorAssignments as EmployeeEndVendorAssignment[]))];
+                              list[idx] = { ...list[idx], vendorId: e.target.value };
+                              setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view' || vendorsLoading}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          >
+                            <option value="">{vendorsLoading ? 'Loading...' : 'Select End Vendor'}</option>
+                            {vendors.filter((v) => v?.id && v?.name).map((v) => (
+                              <option key={v.id} value={v.id}>{v.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+                          <input
+                            type="date"
+                            value={assignment.startDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endVendorAssignments as EmployeeEndVendorAssignment[]))];
+                              list[idx] = { ...list[idx], startDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                          <input
+                            type="date"
+                            value={assignment.endDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.endVendorAssignments as EmployeeEndVendorAssignment[]))];
+                              list[idx] = { ...list[idx], endDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-amber-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      {mode !== 'view' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = ((formData.endVendorAssignments as EmployeeEndVendorAssignment[])).filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
                           }}
                           className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                         >
