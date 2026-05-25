@@ -39,18 +39,18 @@ export function StatCard({
 
   const content = (
     <>
-      <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl', t.iconBg)}>
+      <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ring-black/[0.03]', t.iconBg)}>
         <Icon className={cn('h-5 w-5', t.iconColor)} />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold text-slate-900 leading-tight">{value}</p>
-        <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{label}</p>
+        <p className="font-display text-[1.7rem] font-bold leading-none text-slate-900">{value}</p>
+        <p className="mt-1.5 truncate text-xs font-medium text-slate-500">{label}</p>
         {hint && <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>}
       </div>
     </>
   );
 
-  const base = 'flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm';
+  const base = 'surface flex items-center gap-3.5 p-4';
 
   if (interactive) {
     return (
@@ -59,7 +59,7 @@ export function StatCard({
         onClick={onClick}
         className={cn(
           base,
-          'text-left transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200',
+          'surface-hover text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200',
           className
         )}
       >

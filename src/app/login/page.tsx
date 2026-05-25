@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f8fb]">
         <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-indigo-600" />
       </div>
     );
@@ -45,60 +45,108 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left brand panel */}
-      <div className="hidden lg:flex lg:w-[45%] flex-col justify-between bg-indigo-600 px-12 py-10">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">
+      <div className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[46%]">
+        {/* Brand atmosphere — deep indigo→violet wash with radial bloom + faint grid */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-700" aria-hidden />
+        <div
+          className="absolute inset-0"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.16) 0%, transparent 45%), radial-gradient(90% 90% at 0% 100%, rgba(56,189,248,0.22) 0%, transparent 50%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.18]"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
+            backgroundSize: "34px 34px",
+            maskImage: "radial-gradient(120% 120% at 30% 20%, black 0%, transparent 75%)",
+            WebkitMaskImage: "radial-gradient(120% 120% at 30% 20%, black 0%, transparent 75%)",
+          }}
+        />
+
+        <div className="relative flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm">
             <Layers className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">ZenHR</span>
+          <span className="font-display text-xl font-bold tracking-tight text-white">ZenHR</span>
         </div>
 
-        <div className="space-y-10">
+        <div className="relative space-y-10">
           <div>
-            <h1 className="text-4xl font-bold text-white leading-snug">
-              HR Management<br />for Modern Teams
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-200">Workforce Platform</p>
+            <h1 className="font-display mt-3 text-[2.75rem] font-bold leading-[1.04] text-white">
+              HR management<br />for modern teams
             </h1>
-            <p className="mt-4 text-indigo-200 text-base leading-relaxed">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-indigo-100/90">
               One platform to manage employees, vendors, clients, and compliance — all in one place.
             </p>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-3">
             {[
               { icon: Users, title: "Workforce Management", body: "W2, Contract, 1099 & Offshore employees" },
               { icon: ShieldCheck, title: "Compliance Tracking", body: "Work authorization alerts & expiry monitoring" },
               { icon: BarChart3, title: "Real-time Analytics", body: "Insights across your entire workforce" },
             ].map(({ icon: Icon, title, body }) => (
-              <div key={title} className="flex items-start gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
+              <div
+                key={title}
+                className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3.5 backdrop-blur-sm transition-colors hover:bg-white/[0.12]"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
                   <Icon className="h-4.5 w-4.5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-sm text-indigo-200">{body}</p>
+                  <p className="text-sm text-indigo-100/80">{body}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-xs text-indigo-300">© 2024 ZenHR · Secure HR Platform</p>
+        <p className="relative text-xs text-indigo-200/80">© 2024 ZenHR · Secure HR Platform</p>
       </div>
 
       {/* Right sign-in panel */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-white px-8 py-12">
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f7f8fb] px-6 py-12 sm:px-8">
+        {/* Subtle light-theme atmosphere behind the card */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(110% 80% at 50% -10%, rgba(99,102,241,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(139,92,246,0.08) 0%, transparent 50%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.5]"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(15,23,42,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.025) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+            maskImage: "radial-gradient(80% 60% at 50% 40%, black 0%, transparent 80%)",
+            WebkitMaskImage: "radial-gradient(80% 60% at 50% 40%, black 0%, transparent 80%)",
+          }}
+        />
+
         {/* Mobile logo */}
-        <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
+        <div className="relative mb-8 flex items-center gap-2.5 lg:hidden">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
             <Layers className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-900">ZenHR</span>
+          <span className="font-display text-xl font-bold text-slate-900">ZenHR</span>
         </div>
 
-        <div className="w-full max-w-[380px] space-y-6">
+        <div className="surface relative w-full max-w-[400px] space-y-6 p-7 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
-            <p className="mt-1 text-sm text-slate-500">Sign in to access your HR dashboard</p>
+            <p className="eyebrow">Welcome back</p>
+            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to ZenHR</h2>
+            <p className="mt-1.5 text-sm text-slate-500">Access your HR dashboard and live workforce insights.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,7 +162,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
 
@@ -136,7 +184,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                 />
                 <button
                   type="button"
@@ -158,7 +206,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-3"
             >
               {submitting ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

@@ -21,8 +21,8 @@ export default function DashboardLayout({
             <EmployeeProvider>
               <div className="flex min-h-screen bg-slate-50">
                 <Sidebar />
-                <main className="flex-1 min-w-0 overflow-y-auto">
-                  <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 pt-14 lg:pt-6 bg-[#f4f5f7]">
+                <main className="app-canvas flex-1 min-w-0 overflow-y-auto">
+                  <div className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 pt-16 sm:px-6 lg:px-10 lg:py-8 lg:pt-8">
                     {children}
                   </div>
                 </main>

@@ -11,15 +11,33 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
-const nav = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-  { label: 'Employees', href: '/dashboard/employees', icon: Users },
-  { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
-  { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
-  { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserCheck },
-  { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
-  { label: 'Analytics', href: '/dashboard/analytics', icon: PieChart },
-  { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean };
+type NavSection = { heading: string; items: NavItem[] };
+
+const sections: NavSection[] = [
+  {
+    heading: 'Overview',
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
+      { label: 'Analytics', href: '/dashboard/analytics', icon: PieChart },
+      { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+    ],
+  },
+  {
+    heading: 'People',
+    items: [
+      { label: 'Employees', href: '/dashboard/employees', icon: Users },
+      { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
+    ],
+  },
+  {
+    heading: 'Partners',
+    items: [
+      { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
+      { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
+      { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserCheck },
+    ],
+  },
 ];
 
 const STORAGE_KEY = 'zenhr:sidebar-collapsed';
@@ -34,23 +52,23 @@ function SidebarContent({
   const pathname = usePathname();
   const { user, signOut } = useAuth();
 
-  const isActive = (item: typeof nav[0]) =>
+  const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
   const initials = (user?.name ?? user?.email ?? 'U')
     .split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="flex h-full flex-col border-r border-slate-200 bg-white">
+    <div className="flex h-full flex-col border-r border-slate-200/70 bg-white/95 backdrop-blur-sm">
       {/* Logo */}
       <div className={cn('flex h-16 items-center border-b border-slate-100', collapsed ? 'justify-center px-2' : 'gap-2.5 px-5')}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600">
-          <Layers className="h-4 w-4 text-white" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
+          <Layers className="h-4.5 w-4.5 text-white" />
         </div>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold leading-none text-slate-900">ZenHR</p>
-            <p className="mt-0.5 text-[11px] text-slate-400">Workforce Platform</p>
+            <p className="font-display text-[17px] font-bold leading-none text-slate-900">ZenHR</p>
+            <p className="mt-1 text-[11px] tracking-wide text-slate-400">Workforce Platform</p>
           </div>
         )}
         {onClose && (
@@ -62,36 +80,43 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className={cn('flex-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')}>
-        {!collapsed && (
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Menu</p>
-        )}
-        <div className="space-y-0.5">
-          {nav.map((item) => {
-            const active = isActive(item);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  'group relative flex items-center rounded-lg text-sm font-medium transition-colors',
-                  collapsed ? 'h-10 w-full justify-center px-0' : 'gap-3 px-3 py-2.5',
-                  active
-                    ? collapsed
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'border-l-[3px] border-indigo-600 bg-indigo-50 pl-[9px] text-indigo-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                )}
-              >
-                <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600')} />
-                {!collapsed && item.label}
-                {collapsed && active && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-indigo-600" />}
-              </Link>
-            );
-          })}
-        </div>
+        {sections.map((section, si) => (
+          <div key={section.heading} className={cn(si > 0 && (collapsed ? 'mt-3' : 'mt-5'))}>
+            {!collapsed ? (
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{section.heading}</p>
+            ) : (
+              si > 0 && <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
+            )}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const active = isActive(item);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-150',
+                      collapsed ? 'h-10 w-full justify-center px-0' : 'gap-3 px-3 py-2.5',
+                      active
+                        ? 'bg-gradient-to-r from-indigo-50 to-violet-50/60 text-indigo-700 shadow-sm shadow-indigo-100'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    )}
+                  >
+                    {active && !collapsed && (
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-600" />
+                    )}
+                    <Icon className={cn('h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600')} />
+                    {!collapsed && item.label}
+                    {collapsed && active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-600" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User + collapse toggle */}
@@ -100,7 +125,7 @@ function SidebarContent({
           <div className="flex flex-col items-center gap-2">
             <button
               title={user?.email ?? 'Profile'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-sm"
             >
               {initials}
             </button>
@@ -123,12 +148,12 @@ function SidebarContent({
           </div>
         ) : (
           <div className="space-y-1">
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-sm">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-800">
+                <p className="truncate text-sm font-semibold text-slate-800">
                   {user?.name ?? user?.email?.split('@')[0] ?? 'User'}
                 </p>
                 <p className="truncate text-xs text-slate-400">{user?.email ?? ''}</p>
@@ -180,14 +205,14 @@ export default function Sidebar() {
   };
 
   // Avoid SSR mismatch flicker — only render desktop chrome once hydrated
-  const desktopWidth = collapsed ? 68 : 240;
+  const desktopWidth = collapsed ? 68 : 248;
 
   return (
     <>
       {/* Mobile toggle */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden"
+        className="fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-600 shadow-sm backdrop-blur lg:hidden"
         aria-label="Open menu"
       >
         <Menu className="h-4 w-4" />
@@ -209,11 +234,11 @@ export default function Sidebar() {
       {/* Desktop — reserves space + fixed-position content; both use the same width */}
       <div
         className="hidden shrink-0 transition-[width] duration-200 lg:block"
-        style={{ width: hydrated ? desktopWidth : 240 }}
+        style={{ width: hydrated ? desktopWidth : 248 }}
       >
         <div
-          className="fixed inset-y-0 left-0 transition-[width] duration-200"
-          style={{ width: hydrated ? desktopWidth : 240 }}
+          className="fixed inset-y-0 left-0 z-30 transition-[width] duration-200"
+          style={{ width: hydrated ? desktopWidth : 248 }}
         >
           <SidebarContent collapsed={hydrated ? collapsed : false} onToggleCollapse={toggleCollapsed} />
         </div>

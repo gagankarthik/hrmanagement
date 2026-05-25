@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight
 } from 'lucide-react';
 import SubcontractorModal from '@/components/dashboard/SubcontractorModal';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Subcontractor } from '@/types/subcontractor';
@@ -95,25 +96,21 @@ export default function SubcontractorsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-teal-100 sm:h-12 sm:w-12">
-            <UserCheck className="h-5 w-5 text-teal-600 sm:h-6 sm:w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Subcontractors</h1>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-              Manage subcontractor firms and the employees assigned to them
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-          className="inline-flex flex-shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md"
-        >
-          <Plus className="h-4 w-4" /> Add Subcontractor
-        </button>
-      </header>
+      <PageHeader
+        icon={UserCheck}
+        eyebrow="Partners"
+        title="Subcontractors"
+        description="Manage subcontractor firms and the employees assigned to them"
+        tone="teal"
+        actions={
+          <button
+            onClick={() => setModalState({ isOpen: true, mode: 'create' })}
+            className="btn-primary"
+          >
+            <Plus className="h-4 w-4" /> Add Subcontractor
+          </button>
+        }
+      />
 
       {/* Stats */}
       <StatGrid cols={3}>
@@ -123,7 +120,7 @@ export default function SubcontractorsPage() {
       </StatGrid>
 
       {/* Table card */}
-      <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
+      <div className="surface">
         {/* Toolbar */}
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-xs flex-1">
@@ -163,7 +160,7 @@ export default function SubcontractorsPage() {
                 !searchQuery ? (
                   <button
                     onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+                    className="btn-primary"
                   >
                     <Plus className="h-4 w-4" /> Add Subcontractor
                   </button>

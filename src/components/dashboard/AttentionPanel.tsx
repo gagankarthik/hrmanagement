@@ -181,13 +181,13 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
 
   if (visible.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="surface p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900">All clear</p>
+            <p className="font-display text-base font-bold text-slate-900">All clear</p>
             <p className="text-xs text-slate-500">No action items right now — your workforce is in good shape.</p>
           </div>
         </div>
@@ -197,10 +197,10 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
 
   return (
     <>
-      <section className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <section className="surface">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 sm:text-base">Needs your attention</h2>
+            <h2 className="font-display text-lg font-bold text-slate-900">Needs your attention</h2>
             <p className="mt-0.5 text-[11px] text-slate-500 sm:text-xs">{visible.length} item{visible.length === 1 ? '' : 's'} · click any row to see who</p>
           </div>
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
@@ -216,7 +216,7 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
                 <button
                   type="button"
                   onClick={() => setOpenId(cat.id)}
-                  className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50/60 sm:gap-4 sm:px-5 sm:py-3.5"
+                  className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 sm:gap-4 sm:px-5 sm:py-3.5"
                 >
                   <span className={cn('h-2 w-2 flex-shrink-0 rounded-full', s.dot)} />
                   <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl', s.iconBg)}>

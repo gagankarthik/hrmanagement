@@ -301,10 +301,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         title="Employee Not Found"
         description="We couldn't find that employee. They may have been deleted or the link is invalid."
         action={
-          <button
-            onClick={() => router.push('/dashboard/employees')}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
-          >
+          <button onClick={() => router.push('/dashboard/employees')} className="btn-primary">
             Back to Employees
           </button>
         }
@@ -337,22 +334,19 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push('/dashboard/employees')}
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all"
+          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Employees
         </button>
-        <div className="flex gap-2">
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
-          >
+        <div className="flex gap-2.5">
+          <button onClick={handlePrint} className="btn-ghost">
             <Printer className="h-4 w-4" />
             Print / PDF
           </button>
           <button
             onClick={handleDelete}
-            className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3.5 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
           >
             <Trash2 className="h-4 w-4" />
             Delete
@@ -364,11 +358,11 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-lg">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
-          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 text-3xl font-bold backdrop-blur-sm">
+          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 font-display text-3xl font-bold backdrop-blur-sm">
             {employee.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold truncate">{employee.name}</h1>
+            <h1 className="font-display text-2xl font-bold truncate">{employee.name}</h1>
             <p className="mt-0.5 text-white/80 truncate">{employee.position}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold bg-white/20 text-white')}>
@@ -397,46 +391,46 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
       {(age !== null || yearsOfService !== null) && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {age !== null && (
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="surface flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100">
                 <Cake className="h-5 w-5 text-pink-600" />
               </div>
               <div>
                 <p className="text-xs text-slate-500">Age</p>
-                <p className="text-xl font-bold text-slate-900">{age}</p>
+                <p className="font-display text-xl font-bold text-slate-900">{age}</p>
               </div>
             </div>
           )}
           {yearsOfService !== null && (
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="surface flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
                 <Award className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
                 <p className="text-xs text-slate-500">Years</p>
-                <p className="text-xl font-bold text-slate-900">{yearsOfService}</p>
+                <p className="font-display text-xl font-bold text-slate-900">{yearsOfService}</p>
               </div>
             </div>
           )}
           {employee.hireDate && (
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="surface flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
                 <Calendar className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-xs text-slate-500">Hire Date</p>
-                <p className="text-sm font-bold text-slate-900">{format(new Date(employee.hireDate), 'MMM d, yyyy')}</p>
+                <p className="font-display text-sm font-bold text-slate-900">{format(new Date(employee.hireDate), 'MMM d, yyyy')}</p>
               </div>
             </div>
           )}
           {pay?.pay && (
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <div className="surface flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
                 <DollarSign className="h-5 w-5 text-amber-600" />
               </div>
               <div>
                 <p className="text-xs text-slate-500">{pay.salaryType === 'Hourly' ? '/hr' : '/yr'}</p>
-                <p className="text-sm font-bold text-slate-900">${pay.pay.toLocaleString()}</p>
+                <p className="font-display text-sm font-bold text-slate-900">${pay.pay.toLocaleString()}</p>
               </div>
             </div>
           )}
@@ -445,12 +439,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Personal Info */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
               <User className="h-4 w-4 text-indigo-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Personal Information</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Personal Information</h2>
           </div>
           <div className="space-y-4">
             <InfoRow icon={Mail} label="Email" value={employee.personalEmail} />
@@ -461,12 +455,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         </div>
 
         {/* Employment Info */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
               <Briefcase className="h-4 w-4 text-indigo-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Employment Information</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Employment Information</h2>
           </div>
           <div className="space-y-4">
             <InfoRow icon={FileText} label="Employee Type" value={employee.type} />
@@ -495,12 +489,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         </div>
 
         {/* Client Assignments */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
               <Building2 className="h-4 w-4 text-emerald-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Client Assignments</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Client Assignments</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{clientAssignmentNames.length}</span>
           </div>
           {clientAssignmentNames.length === 0 ? (
@@ -538,12 +532,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         </div>
 
         {/* Vendor Assignments */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
               <Package className="h-4 w-4 text-purple-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Vendor Assignments</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Vendor Assignments</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{vendorAssignmentNames.length}</span>
           </div>
           {vendorAssignmentNames.length === 0 ? (
@@ -581,12 +575,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         </div>
 
         {/* Subcontractor Assignments */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
               <UserCheck className="h-4 w-4 text-teal-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Subcontractor Assignments</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Subcontractor Assignments</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{subcontractorAssignmentNames.length}</span>
           </div>
           {subcontractorAssignmentNames.length === 0 ? (
@@ -625,12 +619,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 
         {/* Work Authorization */}
         {workAuth && employee.type !== 'Offshore' && (
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="surface p-6">
             <div className="mb-4 flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
                 <Shield className="h-4 w-4 text-indigo-600" />
               </div>
-              <h2 className="text-sm font-semibold text-slate-900">Work Authorization</h2>
+              <h2 className="font-display text-base font-bold text-slate-900">Work Authorization</h2>
             </div>
             <div className="space-y-4">
               <InfoRow icon={FileText} label="Authorization Type" value={workAuth.workAuthorization} />
@@ -661,12 +655,12 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 
         {/* India Tax Info */}
         {offshore && (
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="surface p-6">
             <div className="mb-4 flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
                 <CreditCard className="h-4 w-4 text-indigo-600" />
               </div>
-              <h2 className="text-sm font-semibold text-slate-900">India Tax &amp; Provident Fund</h2>
+              <h2 className="font-display text-base font-bold text-slate-900">India Tax &amp; Provident Fund</h2>
             </div>
             <div className="space-y-4">
               <InfoRow icon={Globe} label="Aadhar Number" value={offshore.aadharNumber} />
@@ -679,7 +673,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
       </div>
 
       {/* Timestamps */}
-      <div className="rounded-2xl border border-slate-100 bg-white px-5 py-3 shadow-sm">
+      <div className="surface px-5 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
           <span><span className="font-medium text-slate-700">Created:</span> {format(new Date(employee.createdAt), 'MMMM d, yyyy h:mm a')}</span>
           <span><span className="font-medium text-slate-700">Updated:</span> {format(new Date(employee.updatedAt), 'MMMM d, yyyy h:mm a')}</span>

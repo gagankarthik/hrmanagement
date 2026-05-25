@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 
 const HOURS_PER_MONTH = 173;
 
@@ -570,20 +571,13 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8 sm:space-y-10">
       {/* HEADER */}
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100">
-            <PieChart className="h-6 w-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">HR Analytics</h1>
-            <p className="mt-0.5 text-sm text-slate-500">
-              Every workforce metric, derived live from {employees.length.toLocaleString()} employee record{employees.length === 1 ? '' : 's'}.
-              Click any chart segment to see the people behind the number.
-            </p>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        icon={PieChart}
+        eyebrow="Insights"
+        title="HR Analytics"
+        tone="indigo"
+        description={`Every workforce metric, derived live from ${employees.length.toLocaleString()} employee record${employees.length === 1 ? '' : 's'}. Click any chart segment to see the people behind the number.`}
+      />
 
       {/* CRITICAL ALERTS — TOP, biggest cards */}
       <section>
@@ -937,7 +931,7 @@ export default function AnalyticsPage() {
         </section>
       )}
 
-      <footer className="rounded-2xl border border-slate-100 bg-white px-5 py-3 shadow-sm text-xs text-slate-500">
+      <footer className="surface px-5 py-3 text-xs text-slate-500">
         Derived live from {employees.length.toLocaleString()} record{employees.length === 1 ? '' : 's'} ·
         Currently showing {filtered.length.toLocaleString()} after filters ·
         Last refreshed {format(new Date(), 'MMM d, yyyy · HH:mm')}
@@ -985,7 +979,7 @@ function CelebrationCard({
       type="button"
       onClick={onOpen}
       disabled={people.length === 0}
-      className="group flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+      className="surface surface-hover group flex h-full w-full flex-col text-left disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center gap-3">
@@ -993,7 +987,7 @@ function CelebrationCard({
             <Icon className={cn('h-5 w-5', t.iconColor)} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900">{title}</h3>
+            <h3 className="font-display text-base font-bold text-slate-900">{title}</h3>
             <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
           </div>
         </div>
@@ -1075,7 +1069,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
           <span className="h-px w-6 bg-indigo-300" />
           Section
         </span>
-        <h2 className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h2>
+        <h2 className="mt-1.5 font-display text-xl font-bold text-slate-900 sm:text-2xl">{title}</h2>
         {subtitle && <p className="mt-1 text-xs text-slate-500 sm:text-sm">{subtitle}</p>}
       </div>
     </div>
@@ -1088,7 +1082,7 @@ function ChartCard({
   title: string; hint?: string; icon?: React.ElementType; className?: string; children: React.ReactNode;
 }) {
   return (
-    <div className={cn('rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:shadow-md sm:p-6', className)}>
+    <div className={cn('surface surface-hover p-5 sm:p-6', className)}>
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
           {Icon && (
@@ -1097,7 +1091,7 @@ function ChartCard({
             </div>
           )}
           <div>
-            <h3 className="text-sm font-bold text-slate-900 sm:text-[15px]">{title}</h3>
+            <h3 className="font-display text-sm font-bold text-slate-900 sm:text-[15px]">{title}</h3>
             {hint && <p className="mt-0.5 text-[11px] text-slate-400 sm:text-xs">{hint}</p>}
           </div>
         </div>
@@ -1155,7 +1149,7 @@ function AlertCard({
         {onClick && <ChevronRight className={cn('h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100', t.iconColor)} />}
       </div>
       <div>
-        <p className={cn('text-4xl font-bold tabular-nums leading-none', t.textValue)}>{value.toLocaleString()}</p>
+        <p className={cn('font-display text-4xl font-bold tabular-nums leading-none', t.textValue)}>{value.toLocaleString()}</p>
         <p className="mt-2 text-sm font-semibold text-slate-900">{label}</p>
         {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
       </div>
@@ -1174,14 +1168,14 @@ function KpiTile({
 }) {
   const t = TONE[tone];
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <div className="surface p-4">
       <div className="flex items-center justify-between">
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', t.iconBg)}>
           <Icon className={cn('h-4 w-4', t.iconColor)} />
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{label}</span>
       </div>
-      <p className="mt-3 text-2xl font-bold tabular-nums text-slate-900 leading-tight">{value}</p>
+      <p className="mt-3 font-display text-2xl font-bold tabular-nums text-slate-900 leading-tight">{value}</p>
       {sub && <p className="mt-0.5 truncate text-xs text-slate-500">{sub}</p>}
     </div>
   );

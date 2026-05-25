@@ -68,8 +68,8 @@ export default function MetricsStrip({ employees }: MetricsStripProps) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-slate-100 bg-white px-5 py-3 shadow-sm">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Metrics</span>
+    <div className="surface flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Metrics</span>
       {items.map((item, i) => {
         const Icon = item.icon;
         return (
@@ -77,7 +77,7 @@ export default function MetricsStrip({ employees }: MetricsStripProps) {
             {i > 0 && <span className="h-4 w-px bg-slate-200" />}
             <div className="flex items-center gap-2">
               <Icon className="h-3.5 w-3.5 text-slate-400" />
-              <span className={cn('text-sm font-bold tabular-nums', item.tone)}>{item.value}</span>
+              <span className={cn('font-display text-base font-bold tabular-nums', item.tone)}>{item.value}</span>
               <span className="text-xs text-slate-500">{item.label}</span>
             </div>
           </React.Fragment>

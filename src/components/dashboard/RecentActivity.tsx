@@ -63,13 +63,13 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
   }, [employees, limit]);
 
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <section className="surface">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
             <Activity className="h-4 w-4 text-indigo-600" />
           </div>
-          <h2 className="text-base font-semibold text-slate-900">Recent activity</h2>
+          <h2 className="font-display text-lg font-bold text-slate-900">Recent activity</h2>
         </div>
         <Link
           href="/dashboard/employees"
@@ -100,7 +100,7 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
               <li key={entry.id}>
                 <Link
                   href={`/dashboard/employees/${entry.employee.id}`}
-                  className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50/60"
+                  className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
                 >
                   <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl', tone.iconBg)}>
                     <Icon className={cn('h-4 w-4', tone.iconColor)} />

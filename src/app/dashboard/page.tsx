@@ -13,7 +13,9 @@ import {
   Briefcase,
   CheckCircle2,
   XCircle,
+  LayoutDashboard,
 } from 'lucide-react';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -207,46 +209,50 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Clean header */}
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{greeting}</h1>
-          <p className="mt-0.5 flex items-center gap-2 text-sm text-slate-500">
+      <PageHeader
+        icon={LayoutDashboard}
+        eyebrow="Overview"
+        title={greeting}
+        description={
+          <span className="inline-flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5" />
             Workforce overview — {format(now, 'EEEE, MMMM d, yyyy')}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-          </button>
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all',
-              showFilters || hasActiveFilters
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700'
-                : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-            )}
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-            {hasActiveFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                {[selectedType !== 'all', selectedStatus !== 'all', selectedRevenue !== 'all', selectedClient !== 'all', selectedVendor !== 'all'].filter(Boolean).length}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
+          </span>
+        }
+        actions={
+          <>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            </button>
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
+                showFilters || hasActiveFilters
+                  ? 'btn-primary'
+                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              )}
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+              {hasActiveFilters && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
+                  {[selectedType !== 'all', selectedStatus !== 'all', selectedRevenue !== 'all', selectedClient !== 'all', selectedVendor !== 'all'].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+          </>
+        }
+      />
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="surface p-5 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <FilterSelect label="Type" value={selectedType} onChange={(v) => setSelectedType(v as EmployeeType | 'all')} options={employeeTypes} />
             <FilterSelect label="Status" value={selectedStatus} onChange={(v) => setSelectedStatus(v as 'Active' | 'Terminated' | 'all')} options={statusOptions} />
@@ -281,10 +287,10 @@ export default function DashboardPage() {
       {/* Headcount distribution */}
       <section className="grid gap-6 lg:grid-cols-5">
         {/* By type */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-3">
+        <div className="surface p-5 lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Headcount by type</h2>
+              <h2 className="font-display text-lg font-bold text-slate-900">Headcount by type</h2>
               <p className="mt-0.5 text-xs text-slate-500">{totalHeadcount} total employees</p>
             </div>
             <Users className="h-4 w-4 text-slate-400" />
@@ -321,9 +327,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Status donut */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-2">
+        <div className="surface p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">Status</h2>
+            <h2 className="font-display text-lg font-bold text-slate-900">Status</h2>
             <Briefcase className="h-4 w-4 text-slate-400" />
           </div>
           {statusBreakdown.total === 0 ? (
@@ -422,7 +428,7 @@ function StatusDonut({ active, terminated }: { active: number; terminated: numbe
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold tabular-nums text-slate-900">{pct}%</span>
+        <span className="font-display text-3xl font-bold tabular-nums text-slate-900">{pct}%</span>
         <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">active</span>
       </div>
     </div>
@@ -450,13 +456,13 @@ function TopList({
   const max = Math.max(...items.map((i) => i.count), 1);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <div className="surface">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-2">
           <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', accent.iconBg)}>
             <Icon className={cn('h-4 w-4', accent.iconColor)} />
           </div>
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
         </div>
         <Link
           href={basePath}

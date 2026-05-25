@@ -16,6 +16,7 @@ import { Employee, EmployeeType } from '@/types/employee';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 
 const HOURS_PER_MONTH = 173;
 
@@ -252,56 +253,43 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-indigo-100">
-            <BarChart3 className="h-6 w-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Workforce Reports</h1>
-            <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-              Filter the data, switch sections, and export a print-ready PDF or raw CSV.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all',
-              showFilters || hasFilters
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700'
-                : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-            )}
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-            {hasFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                {[filterType, filterStatus, filterRevenue, filterClient, filterVendor, filterState].filter((f) => f !== 'all').length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={exportCurrentCSV}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <Download className="h-4 w-4 text-emerald-600" />
-            CSV
-          </button>
-          <button
-            onClick={exportPDF}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md"
-          >
-            <Printer className="h-4 w-4" />
-            Export PDF
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        icon={BarChart3}
+        eyebrow="Reporting"
+        title="Workforce Reports"
+        tone="indigo"
+        description="Filter the data, switch sections, and export a print-ready PDF or raw CSV."
+        actions={
+          <>
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={cn(
+                showFilters || hasFilters ? 'btn-primary' : 'btn-ghost'
+              )}
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+              {hasFilters && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
+                  {[filterType, filterStatus, filterRevenue, filterClient, filterVendor, filterState].filter((f) => f !== 'all').length}
+                </span>
+              )}
+            </button>
+            <button onClick={exportCurrentCSV} className="btn-ghost">
+              <Download className="h-4 w-4 text-emerald-600" />
+              CSV
+            </button>
+            <button onClick={exportPDF} className="btn-primary">
+              <Printer className="h-4 w-4" />
+              Export PDF
+            </button>
+          </>
+        }
+      />
 
       {/* FILTERS */}
       {showFilters && (
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="surface p-5">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FilterSelect label="Class" value={filterType} onChange={(v) => setFilterType(v as EmployeeType | 'all')} options={[
               { value: 'all', label: 'All classes' }, { value: 'W2', label: 'W-2' }, { value: 'Contract', label: 'Contract' },
@@ -337,11 +325,11 @@ export default function ReportsPage() {
       )}
 
       {/* EXEC SUMMARY */}
-      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+      <section className="surface p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Executive Summary</p>
-            <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+            <p className="eyebrow">Executive Summary</p>
+            <h2 className="mt-1 font-display text-lg font-bold text-slate-900 sm:text-xl">
               Workforce snapshot — {format(new Date(), 'MMMM d, yyyy')}
             </h2>
             <p className="mt-1 text-xs text-slate-500 sm:text-sm">
@@ -360,7 +348,7 @@ export default function ReportsPage() {
       </section>
 
       {/* TAB SWITCHER */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div className="surface overflow-x-auto">
         <div className="flex min-w-max items-center gap-1 p-1">
           {TABS.map((t) => {
             const Icon = t.icon;
@@ -393,7 +381,7 @@ export default function ReportsPage() {
         {activeTab === 'network'    && <NetworkTab    filtered={filtered} clients={clients} vendors={vendors} />}
       </div>
 
-      <footer className="rounded-2xl border border-slate-100 bg-white px-5 py-3 text-xs text-slate-500 shadow-sm">
+      <footer className="surface px-5 py-3 text-xs text-slate-500">
         Generated live · {filtered.length.toLocaleString()} of {employees.length.toLocaleString()} records ·
         Last refreshed {format(new Date(), 'MMM d, yyyy · HH:mm')}
       </footer>
@@ -674,7 +662,7 @@ function BenefitRow({ icon: Icon, label, enrolled, total, color }: { icon: React
         <span className="text-sm font-semibold text-slate-700">{label}</span>
       </div>
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums text-slate-900">{pct}%</span>
+        <span className="font-display text-3xl font-bold tabular-nums text-slate-900">{pct}%</span>
         <span className="text-xs text-slate-500">{enrolled} of {total} enrolled</span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
@@ -1048,7 +1036,7 @@ function SummaryStat({ icon: Icon, label, value, sub, tone }: { icon: React.Elem
       </div>
       <div className="min-w-0">
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-        <p className={cn('mt-0.5 text-lg font-bold tabular-nums leading-tight sm:text-xl', t.value)}>{value}</p>
+        <p className={cn('mt-0.5 font-display text-lg font-bold tabular-nums leading-tight sm:text-xl', t.value)}>{value}</p>
         {sub && <p className="truncate text-[11px] text-slate-500">{sub}</p>}
       </div>
     </div>
@@ -1057,14 +1045,14 @@ function SummaryStat({ icon: Icon, label, value, sub, tone }: { icon: React.Elem
 
 function ReportCard({ title, subtitle, icon: Icon, children }: { title: string; subtitle?: string; icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+    <section className="surface overflow-hidden">
       <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-100">
             <Icon className="h-4 w-4 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-900 sm:text-base">{title}</h2>
+            <h2 className="font-display text-sm font-bold text-slate-900 sm:text-base">{title}</h2>
             {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
           </div>
         </div>

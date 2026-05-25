@@ -174,7 +174,7 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
         action={
           <button
             onClick={() => router.push('/dashboard/clients')}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700 hover:shadow-md transition-all"
+            className="btn-primary"
           >
             Back to Clients
           </button>
@@ -202,10 +202,7 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
           <ArrowLeft className="h-4 w-4" />
           Back to Clients
         </button>
-        <button
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
-        >
+        <button onClick={handlePrint} className="btn-ghost">
           <Printer className="h-4 w-4" />
           Export PDF
         </button>
@@ -219,7 +216,7 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
             {client.name.charAt(0)}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold truncate">{client.name}</h1>
+            <h1 className="font-display text-2xl font-bold truncate">{client.name}</h1>
             {client.address && (
               <p className="mt-0.5 flex items-center gap-1 text-white/80 truncate">
                 <MapPin className="h-3.5 w-3.5" />{client.address}
@@ -249,12 +246,12 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
           { label: 'W2', value: typeDistribution.W2 || 0, bg: 'bg-indigo-100', color: 'text-indigo-600', icon: Briefcase },
           { label: 'Offshore', value: typeDistribution.Offshore || 0, bg: 'bg-pink-100', color: 'text-pink-600', icon: Globe },
         ].map((s) => (
-          <div key={s.label} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div key={s.label} className="surface flex items-center gap-3 p-4">
             <div className={cn('flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl', s.bg)}>
               <s.icon className={cn('h-5 w-5', s.color)} />
             </div>
             <div>
-              <p className="text-xl font-bold text-slate-900">{s.value}</p>
+              <p className="font-display text-xl font-bold text-slate-900">{s.value}</p>
               <p className="text-xs font-medium text-slate-500">{s.label}</p>
             </div>
           </div>
@@ -263,12 +260,12 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Contact Info */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
               <Building2 className="h-4 w-4 text-emerald-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Client Information</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Client Information</h2>
           </div>
           <div className="space-y-4">
             {client.contactPerson && (
@@ -319,12 +316,12 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
         </div>
 
         {/* Type breakdown */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
               <FileText className="h-4 w-4 text-emerald-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Employee Type Breakdown</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Employee Type Breakdown</h2>
           </div>
           {clientEmployees.length === 0 ? (
             <p className="text-sm text-slate-400">No employees assigned</p>
@@ -355,13 +352,13 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
       </div>
 
       {/* Employees table */}
-      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div className="surface">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
               <Users className="h-4 w-4 text-emerald-600" />
             </div>
-            <h2 className="text-sm font-semibold text-slate-900">Employees</h2>
+            <h2 className="font-display text-base font-bold text-slate-900">Employees</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{clientEmployees.length}</span>
           </div>
         </div>

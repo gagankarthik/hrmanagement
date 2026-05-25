@@ -57,15 +57,15 @@ export default function VendorModal({ isOpen, onClose, mode, vendor }: {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center">
+      <div className="surface w-full max-w-md">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100">
             <Package className="h-4.5 w-4.5 text-purple-600" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="font-display text-base font-bold text-slate-900">
               {mode === 'create' ? 'Add Vendor' : 'Edit Vendor'}
             </h2>
             <p className="text-xs text-slate-400">{mode === 'create' ? 'Create a new vendor record' : 'Update vendor details'}</p>
@@ -113,12 +113,10 @@ export default function VendorModal({ isOpen, onClose, mode, vendor }: {
           </div>
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={onClose} disabled={submitting}
-              className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
+            <button type="button" onClick={onClose} disabled={submitting} className="btn-ghost disabled:opacity-50">
               Cancel
             </button>
-            <button type="submit" disabled={submitting}
-              className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50">
+            <button type="submit" disabled={submitting} className="btn-primary">
               {submitting ? 'Saving…' : mode === 'create' ? 'Create Vendor' : 'Save Changes'}
             </button>
           </div>

@@ -55,7 +55,17 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<'operations' | 'analytics' | 'onboard'>('operations');
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main className="relative min-h-screen bg-[#f7f8fb] text-slate-900">
+      {/* Page atmosphere — soft indigo/violet radial tints + a whisper-faint grid (light theme). */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        aria-hidden
+        style={{
+          backgroundImage:
+            "radial-gradient(110% 80% at 0% 0%, rgba(99,102,241,0.07) 0%, transparent 42%), radial-gradient(110% 80% at 100% 0%, rgba(139,92,246,0.06) 0%, transparent 42%), radial-gradient(90% 70% at 100% 100%, rgba(56,189,248,0.05) 0%, transparent 45%), linear-gradient(to right, rgba(15,23,42,0.022) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.022) 1px, transparent 1px)",
+          backgroundSize: "100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px",
+        }}
+      />
       <SiteNav onOpenMobile={() => setNavOpen(true)} />
 
       {/* Mobile nav drawer */}
@@ -64,7 +74,12 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setNavOpen(false)} />
           <div className="absolute right-0 top-0 flex h-full w-72 flex-col gap-1 border-l border-slate-100 bg-white p-5 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900">Menu</span>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
+                  <Layers className="h-3.5 w-3.5 text-white" />
+                </div>
+                <span className="font-display text-sm font-bold text-slate-900">ZenHR</span>
+              </div>
               <button onClick={() => setNavOpen(false)} className="rounded-md p-1 text-slate-500"><X className="h-4 w-4" /></button>
             </div>
             {[
@@ -80,7 +95,7 @@ export default function LandingPage() {
             <Link href="/login" onClick={() => setNavOpen(false)} className="mt-3 border-t border-slate-100 pt-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
               Sign in
             </Link>
-            <Link href="/dashboard" onClick={() => setNavOpen(false)} className="mt-2 rounded-xl bg-indigo-600 px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm shadow-indigo-200 hover:bg-indigo-700">
+            <Link href="/dashboard" onClick={() => setNavOpen(false)} className="btn-primary mt-2 w-full">
               Open dashboard
             </Link>
           </div>
@@ -88,26 +103,23 @@ export default function LandingPage() {
       )}
 
       {/* ────────────── HERO ────────────── */}
-      <section className="border-b border-slate-100 bg-white">
+      <section className="border-b border-slate-200/60">
         <div className="mx-auto max-w-7xl px-5 pb-12 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:px-12 lg:pb-24 lg:pt-20">
           <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
             {/* LEFT */}
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+            <div className="animate-in fade-in slide-in-from-bottom-3 duration-700">
+              <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700 backdrop-blur-sm">
                 <LiveDot tone="indigo" /> Workforce operations · v2
               </span>
 
-              <h1
-                className="mt-5 text-[2.5rem] font-bold leading-[0.96] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.5rem] xl:text-[5.25rem]"
-                style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.025em' }}
-              >
+              <h1 className="font-display mt-5 text-[2.5rem] font-bold leading-[0.96] text-slate-900 sm:text-6xl lg:text-[4.5rem] xl:text-[5.25rem]">
                 Manage your<br />
                 workforce with{' '}
                 <span className="relative inline-block">
-                  <span className="relative z-10 text-indigo-600">clarity</span>
-                  <span className="absolute -inset-x-1 bottom-1 -z-0 h-3 bg-indigo-100 sm:bottom-2 sm:h-4 lg:bottom-3 lg:h-5" />
+                  <span className="relative z-10 bg-gradient-to-br from-indigo-600 to-violet-600 bg-clip-text text-transparent">clarity</span>
+                  <span className="absolute -inset-x-1 bottom-1 -z-0 h-3 rounded-sm bg-indigo-100 sm:bottom-2 sm:h-4 lg:bottom-3 lg:h-5" />
                 </span>
-                <span className="text-indigo-600">.</span>
+                <span className="text-violet-600">.</span>
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-600 sm:mt-8 sm:text-lg">
@@ -116,17 +128,11 @@ export default function LandingPage() {
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
-                <Link
-                  href="/dashboard"
-                  className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md active:translate-y-px"
-                >
+                <Link href="/dashboard" className="btn-primary group px-5 py-3">
                   Launch dashboard
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
-                <a
-                  href="#preview"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                >
+                <a href="#preview" className="btn-ghost px-5 py-3">
                   Preview the product
                   <ChevronRight className="h-4 w-4" />
                 </a>
@@ -149,7 +155,9 @@ export default function LandingPage() {
             </div>
 
             {/* RIGHT — Dashboard preview card */}
-            <HeroDashboardMock />
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 [animation-delay:120ms] [animation-fill-mode:both]">
+              <HeroDashboardMock />
+            </div>
           </div>
         </div>
       </section>
@@ -158,7 +166,7 @@ export default function LandingPage() {
       <StatsSection />
 
       {/* ────────────── FEATURE BENTO ────────────── */}
-      <section id="features" className="border-t border-slate-100 bg-slate-50">
+      <section id="features" className="border-t border-slate-200/60">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
           <SectionHeader
             eyebrow="What's inside"
@@ -242,7 +250,7 @@ export default function LandingPage() {
       </section>
 
       {/* ────────────── LIVE PREVIEW (tabbed) ────────────── */}
-      <section id="preview" className="border-t border-slate-100 bg-white">
+      <section id="preview" className="border-t border-slate-200/60 bg-white/55 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
           <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
             <SectionHeader
@@ -262,8 +270,10 @@ export default function LandingPage() {
                     type="button"
                     onClick={() => setActiveTab(t.id)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3 sm:text-sm',
-                      activeTab === t.id ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'text-slate-600 hover:bg-slate-50'
+                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all sm:px-3 sm:text-sm',
+                      activeTab === t.id
+                        ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm shadow-indigo-300/50'
+                        : 'text-slate-600 hover:bg-slate-50'
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -274,7 +284,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+          <div className="surface mt-8 overflow-hidden bg-slate-50/80">
             {/* Browser chrome */}
             <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-red-300" />
@@ -298,7 +308,7 @@ export default function LandingPage() {
       </section>
 
       {/* ────────────── EMPLOYEE CLASSES ────────────── */}
-      <section id="classes" className="border-t border-slate-100 bg-slate-50">
+      <section id="classes" className="border-t border-slate-200/60">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
           <SectionHeader
             eyebrow="Four classes, one mental model"
@@ -352,7 +362,7 @@ export default function LandingPage() {
       </section>
 
       {/* ────────────── WORKFLOW STEPS ────────────── */}
-      <section id="workflow" className="border-t border-slate-100 bg-white">
+      <section id="workflow" className="border-t border-slate-200/60 bg-white/55 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
           <SectionHeader
             eyebrow="How it works"
@@ -368,9 +378,15 @@ export default function LandingPage() {
       </section>
 
       {/* ────────────── CTA ────────────── */}
-      <section className="border-t border-slate-100 bg-slate-50">
+      <section className="border-t border-slate-200/60">
         <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white p-8 shadow-sm sm:p-12 lg:p-16">
+          <div className="surface relative overflow-hidden rounded-3xl p-8 sm:p-12 lg:p-16">
+            {/* Soft indigo→violet bloom in the corner for depth */}
+            <div
+              className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-60 blur-3xl"
+              aria-hidden
+              style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)' }}
+            />
             {/* Corner color blocks (solid, no gradients) */}
             <div className="absolute right-6 top-6 hidden flex-col gap-1.5 sm:flex">
               <span className="h-2.5 w-2.5 rounded-sm bg-indigo-500" />
@@ -379,30 +395,21 @@ export default function LandingPage() {
               <span className="h-2.5 w-2.5 rounded-sm bg-rose-500" />
             </div>
 
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+            <span className="relative inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
               <LiveDot tone="emerald" /> Ready when you are
             </span>
-            <h2
-              className="mt-4 max-w-3xl text-3xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-4xl lg:text-6xl"
-              style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.02em' }}
-            >
+            <h2 className="font-display relative mt-4 max-w-3xl text-3xl font-bold leading-[1.05] text-slate-900 sm:text-4xl lg:text-6xl">
               Stop chasing<br className="hidden sm:inline" /> spreadsheets.
             </h2>
-            <p className="mt-4 max-w-md text-base text-slate-600">
+            <p className="relative mt-4 max-w-md text-base text-slate-600">
               Open the dashboard, browse the data, see the alerts. No demo, no sales call.
             </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md active:translate-y-px"
-              >
+            <div className="relative mt-7 flex flex-wrap items-center gap-3">
+              <Link href="/dashboard" className="btn-primary group px-6 py-3.5">
                 Launch dashboard
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </Link>
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
+              <Link href="/signup" className="btn-ghost px-6 py-3.5">
                 Request access
               </Link>
             </div>
@@ -411,13 +418,13 @@ export default function LandingPage() {
       </section>
 
       {/* ────────────── FOOTER ────────────── */}
-      <footer className="border-t border-slate-100 bg-white">
+      <footer className="border-t border-slate-200/60 bg-white/55 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-5 py-8 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-8 lg:px-12">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
               <Layers className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-bold tracking-tight text-slate-900">ZenHR</span>
+            <span className="font-display font-bold tracking-tight text-slate-900">ZenHR</span>
             <span>· Workforce Operations Platform</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -438,13 +445,13 @@ export default function LandingPage() {
 
 function SiteNav({ onOpenMobile }: { onOpenMobile: () => void }) {
   return (
-    <nav className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-5 sm:h-16 sm:px-8 lg:px-12">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
             <Layers className="h-4 w-4 text-white" />
           </div>
-          <span className="text-[15px] font-bold tracking-tight text-slate-900">ZenHR</span>
+          <span className="font-display text-[15px] font-bold tracking-tight text-slate-900">ZenHR</span>
           <span className="hidden items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-emerald-700 sm:inline-flex">
             <LiveDot tone="emerald" /> Operational
           </span>
@@ -461,7 +468,7 @@ function SiteNav({ onOpenMobile }: { onOpenMobile: () => void }) {
           <Link href="/login" className="hidden rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 sm:inline-block">
             Sign in
           </Link>
-          <Link href="/dashboard" className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-colors hover:bg-indigo-700">
+          <Link href="/dashboard" className="btn-primary px-3 py-1.5">
             Open dashboard
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -487,13 +494,10 @@ function LiveDot({ tone = 'emerald' }: { tone?: 'emerald' | 'indigo' | 'amber' |
 function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: React.ReactNode; subtitle?: string }) {
   return (
     <header>
-      <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-indigo-600">
+      <span className="eyebrow inline-flex items-center gap-2">
         <span className="h-px w-8 bg-indigo-300" /> {eyebrow}
       </span>
-      <h2
-        className="mt-3 text-3xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-4xl lg:text-5xl"
-        style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', letterSpacing: '-0.02em' }}
-      >
+      <h2 className="font-display mt-3 text-3xl font-bold leading-[1.05] text-slate-900 sm:text-4xl lg:text-5xl">
         {title}
       </h2>
       {subtitle && <p className="mt-3 max-w-xl text-[15px] text-slate-600">{subtitle}</p>}
@@ -511,7 +515,7 @@ function HeroDashboardMock() {
       <span className="absolute -bottom-2 -left-2 h-3 w-3 border-b-2 border-l-2 border-indigo-400" aria-hidden />
       <span className="absolute -bottom-2 -right-2 h-3 w-3 border-b-2 border-r-2 border-indigo-400" aria-hidden />
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-md sm:p-6">
+      <div className="surface relative overflow-hidden p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Workforce Brief</p>
@@ -585,7 +589,7 @@ function StatsSection() {
   const clients = useCountUp(42, seen, 1100);
 
   return (
-    <section ref={ref} className="border-b border-slate-100 bg-white">
+    <section ref={ref} className="border-b border-slate-200/60 bg-white/55 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-14 lg:px-12">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatTile icon={Users} label="Active employees" value={`${Math.round(employees)}`} tone="indigo" />
@@ -613,14 +617,14 @@ const TONE_COLORS: Record<string, { iconBg: string; iconText: string; value: str
 function StatTile({ icon: Icon, label, value, tone }: { icon: React.ElementType; label: string; value: string; tone: keyof typeof TONE_COLORS }) {
   const t = TONE_COLORS[tone];
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+    <div className="surface surface-hover p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl sm:h-10 sm:w-10', t.iconBg)}>
           <Icon className={cn('h-4 w-4 sm:h-5 sm:w-5', t.iconText)} />
         </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:text-[11px]">{label}</span>
       </div>
-      <p className={cn('mt-3 font-bold tabular-nums', t.value)} style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans), system-ui, sans-serif', fontSize: 'clamp(1.625rem, 3.5vw, 2.5rem)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+      <p className={cn('font-display mt-3 font-bold tabular-nums', t.value)} style={{ fontSize: 'clamp(1.625rem, 3.5vw, 2.5rem)', lineHeight: 1 }}>
         {value}
       </p>
     </div>
@@ -640,7 +644,7 @@ function FeatureCard({
 }) {
   const t = TONE_COLORS[tone];
   return (
-    <article className={cn('group relative flex flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6', className)}>
+    <article className={cn('surface surface-hover group relative flex flex-col p-5 sm:p-6', className)}>
       <div className="flex items-center gap-2.5">
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', t.iconBg)}>
           <Icon className={cn('h-4 w-4', t.iconText)} />
@@ -929,7 +933,7 @@ function ClassCard({
   fields: string[];
 }) {
   return (
-    <article className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-6">
+    <article className="surface surface-hover group relative flex flex-col gap-3 overflow-hidden p-5 sm:p-6">
       {/* Color bar on left */}
       <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: hex }} aria-hidden />
       <div className="flex items-center justify-between gap-2">
@@ -956,9 +960,9 @@ function WorkflowStep({
 }: { n: string; title: string; body: string; icon: React.ElementType; tone: keyof typeof TONE_COLORS }) {
   const t = TONE_COLORS[tone];
   return (
-    <article className="group relative flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <article className="surface surface-hover group relative flex flex-col gap-3 p-6">
       <div className="flex items-center justify-between">
-        <span className="text-3xl font-bold tabular-nums tracking-tight text-slate-200" style={{ fontFamily: 'var(--font-funnel), var(--font-geist-sans)' }}>
+        <span className="font-display text-3xl font-bold tabular-nums text-slate-200">
           {n}
         </span>
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-110', t.iconBg)}>

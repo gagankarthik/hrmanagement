@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, ArrowLeft, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -311,7 +312,7 @@ export default function OnboardPage() {
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 ring-8 ring-emerald-50 animate-in zoom-in-50 duration-300">
               <Check className="h-10 w-10 text-emerald-600" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">
+            <h2 className="font-display text-2xl font-bold text-slate-900">
               {((formData.name as string | undefined) || 'Employee')} onboarded!
             </h2>
             <p className="mt-2 text-sm text-slate-500">Welcome aboard. Redirecting to the employees list…</p>
@@ -324,37 +325,32 @@ export default function OnboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/dashboard/employees"
-          className="rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-sm transition-all"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100">
-            <UserPlus className="h-6 w-6 text-indigo-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Onboard New Employee</h1>
-            <p className="text-sm text-slate-500">
-              {step === 1 ? 'Step 1 of 2 — Select employee type' : `Step 2 of 2 — ${selectedType} employee details`}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={UserPlus}
+        eyebrow="Onboarding"
+        title="Onboard New Employee"
+        description={
+          step === 1 ? 'Step 1 of 2 — Select employee type' : `Step 2 of 2 — ${selectedType} employee details`
+        }
+        actions={
+          <Link href="/dashboard/employees" className="btn-ghost">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Link>
+        }
+      />
 
       {/* Progress steps */}
-      <div className="flex items-center gap-0">
+      <div className="surface flex items-center gap-0 px-5 py-4">
         {[
           { n: 1, label: 'Select Type' },
           { n: 2, label: 'Employee Details' },
         ].map((s, i) => (
           <React.Fragment key={s.n}>
             {i > 0 && (
-              <div className={cn('h-0.5 flex-1 transition-colors', step > i ? 'bg-indigo-600' : 'bg-slate-200')} />
+              <div className={cn('mx-3 h-0.5 flex-1 rounded-full transition-colors', step > i ? 'bg-indigo-600' : 'bg-slate-200')} />
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all',
                 step > s.n
@@ -366,7 +362,7 @@ export default function OnboardPage() {
                 {step > s.n ? <Check className="h-4 w-4" /> : s.n}
               </div>
               <span className={cn(
-                'text-sm font-medium',
+                'font-display text-sm font-semibold',
                 step >= s.n ? 'text-indigo-600' : 'text-slate-400'
               )}>
                 {s.label}
@@ -384,14 +380,14 @@ export default function OnboardPage() {
               key={type.value}
               onClick={() => handleTypeSelect(type.value)}
               className={cn(
-                'group rounded-2xl border-2 border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:shadow-md',
+                'group surface surface-hover p-6 text-left',
                 type.border
               )}
             >
               <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-colors', type.iconBg)}>
                 <type.icon className={cn('h-6 w-6', type.iconColor)} />
               </div>
-              <h3 className="text-base font-semibold text-slate-900">{type.label}</h3>
+              <h3 className="font-display text-base font-bold text-slate-900">{type.label}</h3>
               <p className="mt-1 text-sm text-slate-500">{type.description}</p>
             </button>
           ))}
@@ -426,9 +422,9 @@ export default function OnboardPage() {
               </button>
             </div>
           )}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-base font-semibold text-slate-900">{selectedType} Employee Details</h2>
+              <h2 className="font-display text-base font-bold text-slate-900">{selectedType} Employee Details</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -443,7 +439,7 @@ export default function OnboardPage() {
                   setSubcontractorAssignments([]);
                   clearDraft();
                 }}
-                className="text-sm text-indigo-600 hover:text-indigo-700"
+                className="text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
               >
                 Change Type
               </button>
@@ -469,13 +465,13 @@ export default function OnboardPage() {
           </div>
 
           {/* Client Assignments */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
                   <Users className="h-4 w-4 text-emerald-600" />
                 </div>
-                <h2 className="text-base font-semibold text-slate-900">Client Assignments</h2>
+                <h2 className="font-display text-base font-bold text-slate-900">Client Assignments</h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {clientAssignments.length}
                 </span>
@@ -505,7 +501,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], clientId: e.target.value };
                             setClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                         >
                           <option value="">Select Client</option>
                           {clients.filter((c) => c?.id && c?.name).map((c) => (
@@ -523,7 +519,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], startDate: e.target.value };
                             setClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                         />
                       </div>
                       <div>
@@ -536,7 +532,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], endDate: e.target.value };
                             setClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                         />
                       </div>
                       <button
@@ -554,13 +550,13 @@ export default function OnboardPage() {
           </div>
 
           {/* Vendor Assignments */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
                   <Users className="h-4 w-4 text-purple-600" />
                 </div>
-                <h2 className="text-base font-semibold text-slate-900">Vendor Assignments</h2>
+                <h2 className="font-display text-base font-bold text-slate-900">Vendor Assignments</h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {vendorAssignments.length}
                 </span>
@@ -590,7 +586,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], vendorId: e.target.value };
                             setVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                         >
                           <option value="">Select Vendor</option>
                           {vendors.filter((v) => v?.id && v?.name).map((v) => (
@@ -608,7 +604,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], startDate: e.target.value };
                             setVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                         />
                       </div>
                       <div>
@@ -621,7 +617,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], endDate: e.target.value };
                             setVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
                         />
                       </div>
                       <button
@@ -639,13 +635,13 @@ export default function OnboardPage() {
           </div>
 
           {/* End Client Assignments */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
                   <Briefcase className="h-4 w-4 text-sky-600" />
                 </div>
-                <h2 className="text-base font-semibold text-slate-900">End Client Assignments</h2>
+                <h2 className="font-display text-base font-bold text-slate-900">End Client Assignments</h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {endClientAssignments.length}
                 </span>
@@ -675,7 +671,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], clientId: e.target.value };
                             setEndClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                         >
                           <option value="">Select End Client</option>
                           {clients.filter((c) => c?.id && c?.name).map((c) => (
@@ -693,7 +689,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], startDate: e.target.value };
                             setEndClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                         />
                       </div>
                       <div>
@@ -706,7 +702,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], endDate: e.target.value };
                             setEndClientAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                         />
                       </div>
                       <button
@@ -724,13 +720,13 @@ export default function OnboardPage() {
           </div>
 
           {/* End Vendor Assignments */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
                   <Briefcase className="h-4 w-4 text-amber-600" />
                 </div>
-                <h2 className="text-base font-semibold text-slate-900">End Vendor Assignments</h2>
+                <h2 className="font-display text-base font-bold text-slate-900">End Vendor Assignments</h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {endVendorAssignments.length}
                 </span>
@@ -760,7 +756,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], vendorId: e.target.value };
                             setEndVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                         >
                           <option value="">Select End Vendor</option>
                           {vendors.filter((v) => v?.id && v?.name).map((v) => (
@@ -778,7 +774,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], startDate: e.target.value };
                             setEndVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                         />
                       </div>
                       <div>
@@ -791,7 +787,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], endDate: e.target.value };
                             setEndVendorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                         />
                       </div>
                       <button
@@ -809,13 +805,13 @@ export default function OnboardPage() {
           </div>
 
           {/* Subcontractor Assignments */}
-          <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="surface">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
                   <UserCheck className="h-4 w-4 text-teal-600" />
                 </div>
-                <h2 className="text-base font-semibold text-slate-900">Subcontractor Assignments</h2>
+                <h2 className="font-display text-base font-bold text-slate-900">Subcontractor Assignments</h2>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
                   {subcontractorAssignments.length}
                 </span>
@@ -845,7 +841,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], subcontractorId: e.target.value };
                             setSubcontractorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                         >
                           <option value="">Select Subcontractor</option>
                           {subcontractors.filter((s) => s?.id && s?.name).map((s) => (
@@ -863,7 +859,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], startDate: e.target.value };
                             setSubcontractorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                         />
                       </div>
                       <div>
@@ -876,7 +872,7 @@ export default function OnboardPage() {
                             next[idx] = { ...next[idx], endDate: e.target.value };
                             setSubcontractorAssignments(next);
                           }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                         />
                       </div>
                       <button
@@ -907,11 +903,7 @@ export default function OnboardPage() {
             >
               Cancel
             </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <button type="submit" disabled={isSubmitting} className="btn-primary px-6">
               {isSubmitting ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Users, Plus, UserCheck, UserX, Globe, Briefcase, FileText, AlertTriangle } from 'lucide-react';
+import { Users, Plus, UserCheck, UserX, AlertTriangle } from 'lucide-react';
 import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
 import EmployeeModal from '@/components/dashboard/EmployeeModal';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Employee, EmployeeType } from '@/types/employee';
 import Link from 'next/link';
@@ -51,19 +52,18 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Employees</h1>
-          <p className="mt-0.5 text-sm text-slate-500">Manage your entire workforce in one place</p>
-        </div>
-        <Link
-          href="/dashboard/onboard"
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md"
-        >
-          <Plus className="h-4 w-4" />
-          Add Employee
-        </Link>
-      </div>
+      <PageHeader
+        icon={Users}
+        eyebrow="Workforce"
+        title="Employees"
+        description="Manage your entire workforce in one place"
+        actions={
+          <Link href="/dashboard/onboard" className="btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Employee
+          </Link>
+        }
+      />
 
       {/* Summary Stats */}
       <StatGrid cols={4}>
@@ -74,8 +74,8 @@ export default function EmployeesPage() {
       </StatGrid>
 
       {/* Tab navigation */}
-      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="flex items-center gap-1 border-b border-slate-100 px-4">
+      <div className="surface overflow-hidden">
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-4">
           {tabs.map((tab) => {
             const count = getTabCount(tab.id);
             const isActive = activeTab === tab.id;

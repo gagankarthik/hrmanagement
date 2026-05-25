@@ -176,7 +176,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
     <button
       type="button"
       onClick={onOpen}
-      className="group flex h-full w-full flex-col rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+      className="surface surface-hover group flex h-full w-full flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5 sm:px-5 sm:py-4">
         <div className="flex items-center gap-2.5">
@@ -184,7 +184,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
             <Icon className={cn('h-4 w-4', t.iconColor)} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 sm:text-base">{title}</h3>
+            <h3 className="font-display text-base font-bold text-slate-900">{title}</h3>
             <p className="text-[11px] text-slate-500 sm:text-xs">{subtitle}</p>
           </div>
         </div>
