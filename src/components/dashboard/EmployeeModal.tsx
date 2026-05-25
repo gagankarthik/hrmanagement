@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
+import { useSubcontractors } from '@/context/SubcontractorContext';
 import {
   Employee,
   EmployeeType,
@@ -15,6 +16,7 @@ import {
   EmployeeVendorAssignment,
   EmployeeEndClientAssignment,
   EmployeeEndVendorAssignment,
+  EmployeeSubcontractorAssignment,
 } from '@/types/employee';
 import { useToast } from '@/components/ui/toast';
 
@@ -44,6 +46,7 @@ export default function EmployeeModal({
   const toast = useToast();
   const { clients, isLoading: clientsLoading, fetchClients } = useClients();
   const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
+  const { subcontractors, isLoading: subcontractorsLoading, fetchSubcontractors } = useSubcontractors();
   const [selectedType, setSelectedType] = useState<EmployeeType>(defaultType);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,8 +57,9 @@ export default function EmployeeModal({
     if (isOpen) {
       fetchClients();
       fetchVendors();
+      fetchSubcontractors();
     }
-  }, [isOpen, fetchClients, fetchVendors]);
+  }, [isOpen, fetchClients, fetchVendors, fetchSubcontractors]);
 
   // Initialize form data
   useEffect(() => {
@@ -85,6 +89,11 @@ export default function EmployeeModal({
             ? [{ vendorId: data.endVendorId, startDate: '', endDate: '' }]
             : [];
         }
+        if (!data.subcontractorAssignments) {
+          data.subcontractorAssignments = data.subcontractorId
+            ? [{ subcontractorId: data.subcontractorId, startDate: '', endDate: '' }]
+            : [];
+        }
         setFormData(data);
       }
     } else {
@@ -94,6 +103,7 @@ export default function EmployeeModal({
         vendorAssignments: [],
         endClientAssignments: [],
         endVendorAssignments: [],
+        subcontractorAssignments: [],
       });
     }
   }, [mode, employee, selectedType]);
@@ -225,6 +235,15 @@ export default function EmployeeModal({
         || endVendorAssignments[endVendorAssignments.length - 1]?.vendorId
         || '';
 
+      const subcontractorAssignments = (formData.subcontractorAssignments as EmployeeSubcontractorAssignment[] || [])
+        .filter((a) => a.subcontractorId);
+      const activeSubcontractor = subcontractorAssignments.find(
+        (a) => !a.endDate || new Date(a.endDate) >= now
+      );
+      const primarySubcontractorId = activeSubcontractor?.subcontractorId
+        || subcontractorAssignments[subcontractorAssignments.length - 1]?.subcontractorId
+        || '';
+
       const employeeData = {
         ...formData,
         type: selectedType,
@@ -232,10 +251,12 @@ export default function EmployeeModal({
         vendorAssignments,
         endClientAssignments,
         endVendorAssignments,
+        subcontractorAssignments,
         clientId: primaryClientId || (formData.clientId as string) || '',
         vendorId: primaryVendorId || (formData.vendorId as string) || '',
         endClientId: primaryEndClientId || (formData.endClientId as string) || '',
         endVendorId: primaryEndVendorId || (formData.endVendorId as string) || '',
+        subcontractorId: primarySubcontractorId || (formData.subcontractorId as string) || '',
       };
 
       const name = (formData.name as string | undefined) || 'Employee';
@@ -837,6 +858,104 @@ export default function EmployeeModal({
                           onClick={() => {
                             const list = ((formData.endVendorAssignments as EmployeeEndVendorAssignment[])).filter((_, i) => i !== idx);
                             setFormData((prev) => ({ ...prev, endVendorAssignments: list }));
+                          }}
+                          className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Subcontractor Assignments */}
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Subcontractor Assignments
+                </h4>
+                {mode !== 'view' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list = [...((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]) || [])];
+                      list.push({ subcontractorId: '', startDate: '', endDate: '' });
+                      setFormData((prev) => ({ ...prev, subcontractorAssignments: list }));
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-600 transition-colors hover:bg-teal-100 dark:bg-teal-950/50 dark:text-teal-400"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Subcontractor
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]) || []).length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    {mode === 'view' ? 'No subcontractor assignments' : 'No subcontractors added. Click "Add Subcontractor" to assign one.'}
+                  </p>
+                ) : (
+                  ((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]) || []).map((assignment, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="grid flex-1 grid-cols-3 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Subcontractor</label>
+                          <select
+                            value={assignment.subcontractorId || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]))];
+                              list[idx] = { ...list[idx], subcontractorId: e.target.value };
+                              setFormData((prev) => ({ ...prev, subcontractorAssignments: list }));
+                            }}
+                            disabled={mode === 'view' || subcontractorsLoading}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          >
+                            <option value="">{subcontractorsLoading ? 'Loading...' : 'Select Subcontractor'}</option>
+                            {subcontractors.filter((s) => s?.id && s?.name).map((s) => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Start Date</label>
+                          <input
+                            type="date"
+                            value={assignment.startDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]))];
+                              list[idx] = { ...list[idx], startDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, subcontractorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Date</label>
+                          <input
+                            type="date"
+                            value={assignment.endDate || ''}
+                            onChange={(e) => {
+                              const list = [...((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[]))];
+                              list[idx] = { ...list[idx], endDate: e.target.value };
+                              setFormData((prev) => ({ ...prev, subcontractorAssignments: list }));
+                            }}
+                            disabled={mode === 'view'}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-teal-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      {mode !== 'view' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = ((formData.subcontractorAssignments as EmployeeSubcontractorAssignment[])).filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, subcontractorAssignments: list }));
                           }}
                           className="mt-5 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                         >

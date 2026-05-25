@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
+import { useSubcontractors } from '@/context/SubcontractorContext';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import {
   DollarSign,
   Building2,
   Package,
+  UserCheck,
   FileText,
   Shield,
   Globe,
@@ -69,6 +71,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
   const { employees, deleteEmployee, isLoading } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
+  const { subcontractors } = useSubcontractors();
   const toast = useToast();
   const [employeeId, setEmployeeId] = React.useState<string>('');
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -118,6 +121,21 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
     }
     return [];
   }, [employee, vendors]);
+
+  const subcontractorAssignmentNames = useMemo(() => {
+    if (!employee) return [];
+    if (employee.subcontractorAssignments?.length) {
+      return employee.subcontractorAssignments.map((a) => ({
+        ...a,
+        name: subcontractors.find((s) => s.id === a.subcontractorId)?.name || a.subcontractorId,
+      }));
+    }
+    if (employee.subcontractorId) {
+      const name = subcontractors.find((s) => s.id === employee.subcontractorId)?.name || employee.subcontractorId;
+      return [{ subcontractorId: employee.subcontractorId, name, startDate: undefined, endDate: undefined }];
+    }
+    return [];
+  }, [employee, subcontractors]);
 
   const age = useMemo(() => {
     if (!employee?.dob) return null;
@@ -300,7 +318,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
   const pay = 'pay' in employee ? (employee as { pay?: number; salaryType?: string }) : null;
   const revenueStatus = 'revenueStatus' in employee ? (employee as { revenueStatus?: string }).revenueStatus : null;
   const offshore = employee.type === 'Offshore' && 'panNumber' in employee
-    ? (employee as { panNumber?: string; aadharNumber?: string; pfNumber?: string })
+    ? (employee as { panNumber?: string; aadharNumber?: string; pfNumber?: string; uanNumber?: string })
     : null;
 
   const isAuthExpired = workAuth?.expiryDate && new Date(workAuth.expiryDate) < new Date();
@@ -562,6 +580,49 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
           )}
         </div>
 
+        {/* Subcontractor Assignments */}
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
+              <UserCheck className="h-4 w-4 text-teal-600" />
+            </div>
+            <h2 className="text-sm font-semibold text-slate-900">Subcontractor Assignments</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{subcontractorAssignmentNames.length}</span>
+          </div>
+          {subcontractorAssignmentNames.length === 0 ? (
+            <p className="text-sm text-slate-400">No subcontractor assignments</p>
+          ) : (
+            <div className="space-y-2">
+              {subcontractorAssignmentNames.map((a, i) => {
+                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
+                return (
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
+                        {a.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
+                        {(a.startDate || a.endDate) && (
+                          <p className="text-xs text-slate-500">
+                            {a.startDate || '—'} → {a.endDate || 'Present'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-semibold',
+                      isActive ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-500'
+                    )}>
+                      {isActive ? 'Active' : 'Ended'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Work Authorization */}
         {workAuth && employee.type !== 'Offshore' && (
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -611,6 +672,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
               <InfoRow icon={Globe} label="Aadhar Number" value={offshore.aadharNumber} />
               <InfoRow icon={FileText} label="PAN Number" value={offshore.panNumber} />
               {offshore.pfNumber && <InfoRow icon={CreditCard} label="PF Number" value={offshore.pfNumber} />}
+              {offshore.uanNumber && <InfoRow icon={CreditCard} label="UAN No." value={offshore.uanNumber} />}
             </div>
           </div>
         )}

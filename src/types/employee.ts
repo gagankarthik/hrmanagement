@@ -22,6 +22,12 @@ export interface EmployeeEndVendorAssignment {
   endDate?: string;
 }
 
+export interface EmployeeSubcontractorAssignment {
+  subcontractorId: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 // Base employee interface with common fields
 export interface BaseEmployee {
   id: string;
@@ -41,11 +47,13 @@ export interface BaseEmployee {
   vendorId?: string;
   endClientId?: string;
   endVendorId?: string;
+  subcontractorId?: string;
   // Multi-assignment support
   clientAssignments?: EmployeeClientAssignment[];
   vendorAssignments?: EmployeeVendorAssignment[];
   endClientAssignments?: EmployeeEndClientAssignment[];
   endVendorAssignments?: EmployeeEndVendorAssignment[];
+  subcontractorAssignments?: EmployeeSubcontractorAssignment[];
   // Legacy fields for backward compatibility
   client?: string;
   vendorName?: string;
@@ -106,6 +114,7 @@ export interface OffshoreEmployee extends BaseEmployee {
   aadharNumber: string; // Aadhar Number - India unique identification number
   panNumber: string; // PAN Number - India tax ID
   pfNumber?: string; // PF Number - Provident Fund number (optional)
+  uanNumber?: string; // UAN - Universal Account Number (India PF, optional)
   status: 'Active' | 'Terminated';
   revenueStatus: 'B' | 'NB'; // Billable / Non-Billable
   subcontractorStatus?: 'Active' | 'Inactive';
@@ -313,6 +322,7 @@ export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'aadharNumber', label: 'Aadhar Number', type: 'text', required: false, placeholder: 'XXXX-XXXX-XXXX' },
   { name: 'panNumber', label: 'PAN Number', type: 'text', required: false, placeholder: 'ABCDE1234F' },
   { name: 'pfNumber', label: 'PF Number', type: 'text', required: false, placeholder: 'PF Number (Optional)' },
+  { name: 'uanNumber', label: 'UAN No.', type: 'text', required: false, placeholder: 'Universal Account Number' },
   { name: 'salary', label: 'Salary (Monthly)', type: 'number', required: false, placeholder: '0.00' },
   { name: 'medicalReimbursement', label: 'Medical Reimbursement', type: 'number', required: false, placeholder: '0.00' },
   { name: 'payrollEntity', label: 'Payroll Entity', type: 'select', required: false, options: [

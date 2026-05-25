@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Building2, Package,
+  LayoutDashboard, Users, Building2, Package, UserCheck,
   UserPlus, BarChart3, LogOut, Menu, X, Layers, PieChart,
   PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ const nav = [
   { label: 'Employees', href: '/dashboard/employees', icon: Users },
   { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
   { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
+  { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserCheck },
   { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
   { label: 'Analytics', href: '/dashboard/analytics', icon: PieChart },
   { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
