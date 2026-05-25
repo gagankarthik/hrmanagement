@@ -28,9 +28,38 @@ export async function PUT(request: NextRequest) {
     if (!type) return NextResponse.json({ success: false, error: 'employeeType is required' }, { status: 400 });
     const now = new Date().toISOString();
 
+    // DynamoDB rejects `undefined`, so coerce optional values to null.
+    const optNum = (v: unknown): number | null =>
+      v === undefined || v === null || v === '' || Number.isNaN(Number(v)) ? null : Number(v);
+    const optStr = (v: unknown): string | null =>
+      v === undefined || v === null || v === '' ? null : String(v);
+
+    // Normalize accrual tiers, dropping undefined fields to null.
+    const accrualTiers = Array.isArray(body.accrualTiers)
+      ? body.accrualTiers.map((t: Record<string, unknown>) => ({
+          label: optStr(t?.label),
+          minYears: Number(t?.minYears) || 0,
+          maxYears: optNum(t?.maxYears),
+          monthlyHours: optNum(t?.monthlyHours),
+          annualDays: optNum(t?.annualDays),
+        }))
+      : [];
+
     const item = {
       employeeType: type,
+      definition: optStr(body.definition),
+      eligible: body.eligible === undefined ? true : Boolean(body.eligible),
+      proRata: Boolean(body.proRata),
       annualLeaveAllowance: Number(body.annualLeaveAllowance) || 0,
+      entitlementWeeks: optNum(body.entitlementWeeks),
+      accrualTiers,
+      noticeStandardWeeks: optNum(body.noticeStandardWeeks),
+      noticeExtendedWeeks: optNum(body.noticeExtendedWeeks),
+      carryOverCapDays: optNum(body.carryOverCapDays),
+      cashOutMaxDays: optNum(body.cashOutMaxDays),
+      minUsageDays: optNum(body.minUsageDays),
+      publicHolidayNotDeducted: Boolean(body.publicHolidayNotDeducted),
+      documentationRequired: optStr(body.documentationRequired),
       rules: body.rules || '',
       documents: body.documents || [],
       PK: `POLICY#${type}`,

@@ -2,21 +2,22 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  UserCheck, Plus, Pencil, Trash2, Users, Search,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight
+  UserCheck, Plus, Eye, Pencil, Trash2, Users, Search,
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
 } from 'lucide-react';
-import SubcontractorModal from '@/components/dashboard/SubcontractorModal';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Subcontractor } from '@/types/subcontractor';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { exportToCsv } from '@/lib/export';
 
 export default function SubcontractorsPage() {
   const { subcontractors, isLoading, deleteSubcontractor } = useSubcontractors();
@@ -24,9 +25,6 @@ export default function SubcontractorsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
-  const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; subcontractor?: Subcontractor }>({
-    isOpen: false, mode: 'create',
-  });
   const [deleteState, setDeleteState] = useState<{ subcontractor: Subcontractor | null; isDeleting: boolean }>({
     subcontractor: null, isDeleting: false,
   });
@@ -61,8 +59,18 @@ export default function SubcontractorsPage() {
   const totalActive = enriched.filter((s) => s.status === 'Active').length;
   const totalInactive = enriched.filter((s) => s.status === 'Inactive').length;
 
-  const handleDelete = (e: React.MouseEvent, subcontractor: Subcontractor) => {
-    e.stopPropagation();
+  const handleExport = () => {
+    exportToCsv('subcontractors', filtered, [
+      { key: 'name', label: 'Name' },
+      { key: 'contactPerson', label: 'Contact Person' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'status', label: 'Status' },
+      { key: 'empCount', label: 'Employees' },
+    ]);
+  };
+
+  const handleDelete = (subcontractor: Subcontractor) => {
     setDeleteState({ subcontractor, isDeleting: false });
   };
 
@@ -103,12 +111,21 @@ export default function SubcontractorsPage() {
         description="Manage subcontractor firms and the employees assigned to them"
         tone="teal"
         actions={
-          <button
-            onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" /> Add Subcontractor
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              className="btn-ghost"
+            >
+              <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/subcontractors/new')}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" /> Add Subcontractor
+            </button>
+          </div>
         }
       />
 
@@ -159,7 +176,7 @@ export default function SubcontractorsPage() {
               action={
                 !searchQuery ? (
                   <button
-                    onClick={() => setModalState({ isOpen: true, mode: 'create' })}
+                    onClick={() => router.push('/dashboard/subcontractors/new')}
                     className="btn-primary"
                   >
                     <Plus className="h-4 w-4" /> Add Subcontractor
@@ -250,22 +267,29 @@ export default function SubcontractorsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                        <button
-                          onClick={() => setModalState({ isOpen: true, mode: 'edit', subcontractor })}
-                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, subcontractor)}
-                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                        <ChevronRight className="h-4 w-4 text-slate-300" />
+                      <div className="flex items-center justify-end gap-1">
+                        <ActionMenu
+                          items={[
+                            {
+                              label: 'View',
+                              icon: Eye,
+                              onClick: () => router.push(`/dashboard/subcontractors/${subcontractor.id}`),
+                            },
+                            {
+                              label: 'Edit',
+                              icon: Pencil,
+                              onClick: () => router.push(`/dashboard/subcontractors/${subcontractor.id}/edit`),
+                            },
+                            {
+                              label: 'Delete',
+                              icon: Trash2,
+                              danger: true,
+                              separatorBefore: true,
+                              onClick: () => handleDelete(subcontractor),
+                            },
+                          ] satisfies ActionMenuItem[]}
+                        />
+                        <ChevronRight className="hidden h-4 w-4 text-slate-300 transition-opacity sm:block sm:opacity-0 sm:group-hover:opacity-100" />
                       </div>
                     </td>
                   </tr>
@@ -281,13 +305,6 @@ export default function SubcontractorsPage() {
           </p>
         </div>
       </div>
-
-      <SubcontractorModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, mode: 'create' })}
-        mode={modalState.mode}
-        subcontractor={modalState.subcontractor}
-      />
 
       <ConfirmDialog
         isOpen={deleteState.subcontractor !== null}

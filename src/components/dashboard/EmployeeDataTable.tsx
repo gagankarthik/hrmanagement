@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Employee, EmployeeType } from '@/types/employee';
 import { format } from 'date-fns';
 import { SkeletonTable } from '@/components/ui/skeleton';
+import { ActionMenu } from '@/components/ui/action-menu';
 
 interface Props {
   employees: Employee[];
@@ -193,25 +194,16 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
                   )}
                 </td>
                 <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                    {onView && (
-                      <button onClick={() => onView(emp)} title="View"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600 transition-colors">
-                        <Eye className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {onEdit && (
-                      <button onClick={() => onEdit(emp)} title="Edit"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-amber-50 hover:text-amber-600 transition-colors">
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button onClick={() => onDelete(emp)} title="Delete"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                  <div className="flex justify-end">
+                    <ActionMenu
+                      items={[
+                        ...(onView ? [{ label: 'View', icon: Eye, onClick: () => onView(emp) }] : []),
+                        ...(onEdit ? [{ label: 'Edit', icon: Edit2, onClick: () => onEdit(emp) }] : []),
+                        ...(onDelete
+                          ? [{ label: 'Delete', icon: Trash2, onClick: () => onDelete(emp), danger: true, separatorBefore: true }]
+                          : []),
+                      ]}
+                    />
                   </div>
                 </td>
               </tr>

@@ -1,11 +1,34 @@
 import { EmployeeType } from './employee';
 import { UploadedDoc } from './uploads';
 
-// Per-employee-category policy: annual leave allowance + rules + policy documents.
+// One accrual tier of the leave framework (accrual scales with length of service).
+export interface LeaveAccrualTier {
+  label?: string;        // e.g. "0–5 years"
+  minYears: number;      // service-years lower bound (inclusive)
+  maxYears?: number;     // upper bound (omit = "and above")
+  monthlyHours?: number; // monthly accrual in hours
+  annualDays?: number;   // annual equivalent in days
+}
+
+// Per-employee-category leave policy — a structured "Company Leave Policy Framework".
+// `annualLeaveAllowance` (days) stays the canonical balance figure consumed by the
+// Leaves balances tab and employee profile; all the richer fields are optional metadata.
 export interface CategoryPolicy {
   employeeType: EmployeeType; // 'W2' | 'Contract' | '1099' | 'Offshore'
-  annualLeaveAllowance: number; // total annual leave days for this category
-  rules?: string; // free-text policy / rules
+  definition?: string;        // category definition / eligibility note
+  eligible?: boolean;         // eligible for paid annual leave (default true)
+  proRata?: boolean;          // pro-rata entitlement (e.g. part-time)
+  annualLeaveAllowance: number; // canonical total annual leave DAYS for this category
+  entitlementWeeks?: number;  // standard weeks of entitlement (e.g. 4, shift = 5)
+  accrualTiers?: LeaveAccrualTier[]; // accrual schedule by length of service
+  noticeStandardWeeks?: number;      // notice required for standard requests (e.g. 4)
+  noticeExtendedWeeks?: number;      // notice required for extended leave (e.g. 8)
+  carryOverCapDays?: number;  // max days carried over (e.g. 2× annual)
+  cashOutMaxDays?: number;    // max days cashed out per 12 months (e.g. 10)
+  minUsageDays?: number;      // minimum days to be used per anniversary year
+  publicHolidayNotDeducted?: boolean; // public holidays within leave not deducted
+  documentationRequired?: string;     // required documents / process notes
+  rules?: string;             // free-text policy / rules
   documents?: UploadedDoc[];
   updatedAt?: string;
 }

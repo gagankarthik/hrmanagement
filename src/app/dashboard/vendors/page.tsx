@@ -2,10 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Package, Plus, Pencil, Trash2, Users, Search,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight
+  Package, Plus, Pencil, Trash2, Users, Search, Eye,
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
 } from 'lucide-react';
-import VendorModal from '@/components/dashboard/VendorModal';
+import { exportToCsv } from '@/lib/export';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useVendors } from '@/context/VendorContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -13,6 +13,7 @@ import { Vendor } from '@/types/vendor';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
@@ -24,9 +25,6 @@ export default function VendorsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
-  const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; vendor?: Vendor }>({
-    isOpen: false, mode: 'create',
-  });
   const [deleteState, setDeleteState] = useState<{ vendor: Vendor | null; isDeleting: boolean }>({
     vendor: null, isDeleting: false,
   });
@@ -62,9 +60,16 @@ export default function VendorsPage() {
   const totalActive = enriched.filter((v) => v.status === 'Active').length;
   const totalInactive = enriched.filter((v) => v.status === 'Inactive').length;
 
-  const handleDelete = (e: React.MouseEvent, vendor: Vendor) => {
-    e.stopPropagation();
-    setDeleteState({ vendor, isDeleting: false });
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+    exportToCsv('vendors', filtered, [
+      { key: 'name', label: 'Name' },
+      { key: 'contactPerson', label: 'Contact Person' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'status', label: 'Status' },
+      { key: 'empCount', label: 'Employees' },
+    ]);
   };
 
   const confirmDelete = async () => {
@@ -104,12 +109,21 @@ export default function VendorsPage() {
         description="Manage vendor partnerships and contractor firms placed through them"
         tone="purple"
         actions={
-          <button
-            onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" /> Add Vendor
-          </button>
+          <>
+            <button
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/vendors/new')}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" /> Add Vendor
+            </button>
+          </>
         }
       />
 
@@ -160,7 +174,7 @@ export default function VendorsPage() {
               action={
                 !searchQuery ? (
                   <button
-                    onClick={() => setModalState({ isOpen: true, mode: 'create' })}
+                    onClick={() => router.push('/dashboard/vendors/new')}
                     className="btn-primary"
                   >
                     <Plus className="h-4 w-4" /> Add Vendor
@@ -251,21 +265,14 @@ export default function VendorsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                        <button
-                          onClick={() => setModalState({ isOpen: true, mode: 'edit', vendor })}
-                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, vendor)}
-                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <ActionMenu
+                          items={[
+                            { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/vendors/${vendor.id}`) },
+                            { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/vendors/${vendor.id}/edit`) },
+                            { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ vendor, isDeleting: false }) },
+                          ]}
+                        />
                         <ChevronRight className="h-4 w-4 text-slate-300" />
                       </div>
                     </td>
@@ -282,13 +289,6 @@ export default function VendorsPage() {
           </p>
         </div>
       </div>
-
-      <VendorModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, mode: 'create' })}
-        mode={modalState.mode}
-        vendor={modalState.vendor}
-      />
 
       <ConfirmDialog
         isOpen={deleteState.vendor !== null}

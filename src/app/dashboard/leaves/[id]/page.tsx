@@ -10,8 +10,8 @@ import { useLeaves } from '@/context/LeaveContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { resolveName } from '@/lib/names';
 import { cn } from '@/lib/utils';
-import LeaveModal from '@/components/dashboard/LeaveModal';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,7 +64,6 @@ function LeaveDetailContent({ params }: PageProps) {
   const toast = useToast();
 
   const [leaveId, setLeaveId] = useState('');
-  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [acting, setActing] = useState(false);
@@ -155,15 +154,26 @@ function LeaveDetailContent({ params }: PageProps) {
           <ArrowLeft className="h-4 w-4" /> Back to Leaves
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={() => setEditOpen(true)} className="btn-ghost">
+          <button onClick={() => router.push(`/dashboard/leaves/${leave.id}/edit`)} className="btn-ghost">
             <Pencil className="h-4 w-4" /> Edit
           </button>
-          <button
-            onClick={() => setDeleteOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" /> Delete
-          </button>
+          <ActionMenu
+            items={[
+              {
+                label: 'Edit request',
+                icon: Pencil,
+                onClick: () => router.push(`/dashboard/leaves/${leave.id}/edit`),
+              },
+              {
+                label: 'Delete request',
+                icon: Trash2,
+                danger: true,
+                separatorBefore: true,
+                onClick: () => setDeleteOpen(true),
+              },
+            ]}
+            buttonClassName="h-10 w-10 border border-slate-200 bg-white"
+          />
         </div>
       </div>
 
@@ -238,8 +248,6 @@ function LeaveDetailContent({ params }: PageProps) {
         </div>
         <DocumentUploader value={leave.documents || []} onChange={saveDocs} folder="leaves" label="" />
       </div>
-
-      <LeaveModal isOpen={editOpen} onClose={() => setEditOpen(false)} mode="edit" leave={leave} />
 
       <ConfirmDialog
         isOpen={deleteOpen}

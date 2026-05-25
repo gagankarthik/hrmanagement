@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { format } from 'date-fns';
@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   XCircle,
   Printer,
+  Pencil,
+  Trash2,
   Briefcase,
   FileText,
   AlertTriangle,
@@ -24,10 +26,9 @@ import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-
-interface SubcontractorDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
 
 const typeBadge: Record<string, string> = {
   W2: 'bg-blue-100 text-blue-700',
@@ -36,15 +37,15 @@ const typeBadge: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps) {
+function SubcontractorDetailPageContent() {
+  const params = useParams<{ id: string }>();
+  const subcontractorId = params?.id ?? '';
   const router = useRouter();
+  const toast = useToast();
   const { employees } = useEmployees();
-  const { subcontractors, isLoading } = useSubcontractors();
-  const [subcontractorId, setSubcontractorId] = React.useState<string>('');
-
-  React.useEffect(() => {
-    params.then((p) => setSubcontractorId(p.id));
-  }, [params]);
+  const { subcontractors, isLoading, deleteSubcontractor } = useSubcontractors();
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const subcontractor = useMemo(() => {
     if (!subcontractorId) return undefined;
@@ -69,6 +70,20 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
     subconEmployees.forEach((e) => { dist[e.type] = (dist[e.type] || 0) + 1; });
     return dist;
   }, [subconEmployees]);
+
+  const handleDelete = async () => {
+    if (!subcontractor) return;
+    setDeleting(true);
+    try {
+      await deleteSubcontractor(subcontractor.id);
+      toast.success('Subcontractor deleted', `${subcontractor.name} has been removed.`);
+      router.push('/dashboard/subcontractors');
+    } catch (err) {
+      toast.error('Failed to delete subcontractor', err instanceof Error ? err.message : 'Please try again.');
+      setDeleting(false);
+      setConfirmOpen(false);
+    }
+  };
 
   const handlePrint = () => {
     if (!subcontractor) return;
@@ -183,8 +198,8 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
 
   return (
     <div className="space-y-6">
-      {/* Nav */}
-      <div className="flex items-center justify-between">
+      {/* Nav + actions */}
+      <div className="flex items-center justify-between gap-3">
         <button
           onClick={() => router.push('/dashboard/subcontractors')}
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all"
@@ -192,10 +207,35 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
           <ArrowLeft className="h-4 w-4" />
           Back to Subcontractors
         </button>
-        <button onClick={handlePrint} className="btn-ghost">
-          <Printer className="h-4 w-4" />
-          Export PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handlePrint} className="btn-ghost">
+            <Printer className="h-4 w-4" />
+            Export PDF
+          </button>
+          <button
+            onClick={() => router.push(`/dashboard/subcontractors/${subcontractor.id}/edit`)}
+            className="btn-primary"
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </button>
+          <ActionMenu
+            items={[
+              {
+                label: 'Edit',
+                icon: Pencil,
+                onClick: () => router.push(`/dashboard/subcontractors/${subcontractor.id}/edit`),
+              },
+              {
+                label: 'Delete',
+                icon: Trash2,
+                danger: true,
+                separatorBefore: true,
+                onClick: () => setConfirmOpen(true),
+              },
+            ] satisfies ActionMenuItem[]}
+          />
+        </div>
       </div>
 
       {/* Hero */}
@@ -301,6 +341,9 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
                   <p className="mt-0.5 text-sm font-semibold text-slate-900">{subcontractor.address}</p>
                 </div>
               </div>
+            )}
+            {!subcontractor.contactPerson && !subcontractor.email && !subcontractor.phone && !subcontractor.address && (
+              <p className="text-sm text-slate-400">No contact details on record.</p>
             )}
           </div>
         </div>
@@ -423,14 +466,30 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
           <p className="text-xs text-slate-400">Showing {subconEmployees.length} employees</p>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Subcontractor"
+        description={
+          <>
+            Are you sure you want to delete{' '}
+            <span className="font-semibold text-slate-900">{subcontractor.name}</span>?
+            This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete Subcontractor"
+        isLoading={deleting}
+      />
     </div>
   );
 }
 
-export default function SubcontractorDetailPage(props: SubcontractorDetailPageProps) {
+export default function SubcontractorDetailPage() {
   return (
     <ErrorBoundary>
-      <SubcontractorDetailPageContent {...props} />
+      <SubcontractorDetailPageContent />
     </ErrorBoundary>
   );
 }

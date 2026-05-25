@@ -4,9 +4,10 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Building2, Package, UserCheck,
-  UserPlus, BarChart3, X, PieChart,
-  PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, BookOpen, ShieldCheck,
+  LayoutDashboard, UsersRound, Building2, Package, UserRoundCheck,
+  UserRoundPlus, BarChart3, X,
+  PanelLeftClose, PanelLeftOpen, CalendarOff, CalendarCheck, BookOpen, ScrollText,
+  HeartPulse, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/ui/brand-mark';
@@ -19,21 +20,20 @@ const sections: NavSection[] = [
     heading: 'Overview',
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-      { label: 'Analytics', href: '/dashboard/analytics', icon: PieChart },
       { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
     ],
   },
   {
     heading: 'People',
     items: [
-      { label: 'Employees', href: '/dashboard/employees', icon: Users },
-      { label: 'Onboard', href: '/dashboard/onboard', icon: UserPlus },
+      { label: 'Employees', href: '/dashboard/employees', icon: UsersRound },
+      { label: 'Onboard', href: '/dashboard/onboard', icon: UserRoundPlus },
     ],
   },
   {
     heading: 'Time & Leave',
     items: [
-      { label: 'Leaves', href: '/dashboard/leaves', icon: CalendarDays },
+      { label: 'Leaves', href: '/dashboard/leaves', icon: CalendarOff },
       { label: 'Attendance', href: '/dashboard/attendance', icon: CalendarCheck },
     ],
   },
@@ -42,14 +42,16 @@ const sections: NavSection[] = [
     items: [
       { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
       { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
-      { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserCheck },
+      { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserRoundCheck },
     ],
   },
   {
     heading: 'Company',
     items: [
       { label: 'Handbook', href: '/dashboard/handbook', icon: BookOpen },
-      { label: 'Policies', href: '/dashboard/policies', icon: ShieldCheck },
+      { label: 'Policies', href: '/dashboard/policies', icon: ScrollText },
+      { label: 'Benefits', href: '/dashboard/benefits', icon: HeartPulse },
+      { label: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
     ],
   },
 ];
@@ -116,7 +118,7 @@ function SidebarContent({
                     {active && !collapsed && (
                       <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-gradient-to-b from-brand-500 to-brand-600" />
                     )}
-                    <Icon className={cn('h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
+                    <Icon strokeWidth={1.75} className={cn('h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
                     {!collapsed && item.label}
                     {collapsed && active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-brand-500 to-brand-600" />}
                   </Link>

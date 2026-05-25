@@ -2,9 +2,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, ArrowLeft, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck } from 'lucide-react';
+import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { Stepper } from '@/components/ui/stepper';
+import { SectionCard, DetailField, DetailGrid } from '@/components/ui/section-card';
+import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -28,61 +31,69 @@ const employeeTypes: {
   label: string;
   description: string;
   icon: React.ElementType;
-  color: string;
   iconBg: string;
   iconColor: string;
-  border: string;
+  ring: string;
+  selectedBorder: string;
 }[] = [
   {
     value: 'W2',
     label: 'W2 Employee',
     description: 'Full-time employees with benefits and standard payroll',
     icon: Briefcase,
-    color: 'blue',
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
-    border: 'hover:border-blue-400',
+    ring: 'hover:border-blue-300',
+    selectedBorder: 'border-blue-500 ring-2 ring-blue-200',
   },
   {
     value: 'Contract',
     label: 'Contract',
-    description: 'Temporary contract workers on project basis',
+    description: 'Temporary contract workers on a project basis',
     icon: FileText,
-    color: 'purple',
     iconBg: 'bg-purple-100',
     iconColor: 'text-purple-600',
-    border: 'hover:border-purple-400',
+    ring: 'hover:border-purple-300',
+    selectedBorder: 'border-purple-500 ring-2 ring-purple-200',
   },
   {
     value: '1099',
     label: '1099',
     description: 'Independent contractors filing 1099 forms',
     icon: FileText,
-    color: 'teal',
     iconBg: 'bg-teal-100',
     iconColor: 'text-teal-600',
-    border: 'hover:border-teal-400',
+    ring: 'hover:border-teal-300',
+    selectedBorder: 'border-teal-500 ring-2 ring-teal-200',
   },
   {
     value: 'Offshore',
     label: 'Offshore',
     description: 'International remote employees working offshore',
     icon: Globe,
-    color: 'pink',
     iconBg: 'bg-pink-100',
     iconColor: 'text-pink-600',
-    border: 'hover:border-pink-400',
+    ring: 'hover:border-pink-300',
+    selectedBorder: 'border-pink-500 ring-2 ring-pink-200',
   },
 ];
+
+const WIZARD_STEPS = [
+  { label: 'Select type', description: 'Employee category' },
+  { label: 'Details', description: 'Fill in the fields' },
+  { label: 'Review', description: 'Confirm and add' },
+];
+
+type WizardStep = 0 | 1 | 2;
 
 export default function OnboardPage() {
   const router = useRouter();
   const { createEmployee } = useEmployees();
   const toast = useToast();
-  const { clients, isLoading: clientsLoading, fetchClients } = useClients();
-  const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
+  const { clients, fetchClients } = useClients();
+  const { vendors, fetchVendors } = useVendors();
   const { subcontractors, fetchSubcontractors } = useSubcontractors();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<WizardStep>(0);
   const [selectedType, setSelectedType] = useState<EmployeeType | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -125,7 +136,7 @@ export default function OnboardPage() {
         setEndClientAssignments(draft.endClientAssignments || []);
         setEndVendorAssignments(draft.endVendorAssignments || []);
         setSubcontractorAssignments(draft.subcontractorAssignments || []);
-        setStep(2);
+        setStep(1);
         setDraftRestored(true);
       }
     } catch {
@@ -159,12 +170,37 @@ export default function OnboardPage() {
     setDraftRestored(false);
   };
 
+  const resetAll = () => {
+    setSelectedType(null);
+    setFormData({});
+    setErrors({});
+    setClientAssignments([]);
+    setVendorAssignments([]);
+    setEndClientAssignments([]);
+    setEndVendorAssignments([]);
+    setSubcontractorAssignments([]);
+  };
+
   const fields = useMemo(() => {
     if (!selectedType) return [];
     return getFieldsByType(selectedType).filter(
       (f) => f.name !== 'clientId' && f.name !== 'vendorId'
     );
   }, [selectedType]);
+
+  // Group the applicable fields into the ordered EMPLOYEE_FORM_SECTIONS buckets.
+  const groupedSections = useMemo(() => {
+    return EMPLOYEE_FORM_SECTIONS.map((section) => ({
+      ...section,
+      sectionFields: fields.filter((f) => sectionForField(f.name) === section.id),
+    })).filter((section) => section.sectionFields.length > 0);
+  }, [fields]);
+
+  // Any applicable fields that don't map to a known section.
+  const otherFields = useMemo(
+    () => fields.filter((f) => sectionForField(f.name) === 'other'),
+    [fields]
+  );
 
   const handleTypeSelect = (type: EmployeeType) => {
     setSelectedType(type);
@@ -174,7 +210,7 @@ export default function OnboardPage() {
     setEndClientAssignments([]);
     setEndVendorAssignments([]);
     setSubcontractorAssignments([]);
-    setStep(2);
+    setErrors({});
   };
 
   const handleInputChange = (field: FormField, value: unknown) => {
@@ -207,10 +243,19 @@ export default function OnboardPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Step 2 → Step 3 (validate before moving to review)
+  const goToReview = () => {
     if (!validateForm()) {
       toast.warning('Check the highlighted fields', 'Some required fields need attention.');
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast.warning('Check the highlighted fields', 'Some required fields need attention.');
+      setStep(1);
       return;
     }
     setIsSubmitting(true);
@@ -248,6 +293,27 @@ export default function OnboardPage() {
     }
   };
 
+  // ---- Name resolvers (never show raw UUIDs) ----
+  const clientName = (id?: string) => clients.find((c) => c?.id === id)?.name || id || '—';
+  const vendorName = (id?: string) => vendors.find((v) => v?.id === id)?.name || id || '—';
+  const subcontractorName = (id?: string) => subcontractors.find((s) => s?.id === id)?.name || id || '—';
+
+  const formatDateRange = (start?: string, end?: string) => {
+    if (!start && !end) return 'No dates set';
+    return `${start || '—'} → ${end || 'Ongoing'}`;
+  };
+
+  // Resolve a scalar field's display value (uses option labels for selects).
+  const displayValue = (field: FormField): React.ReactNode => {
+    const raw = formData[field.name];
+    if (field.type === 'checkbox') return raw ? 'Yes' : 'No';
+    if (raw === undefined || raw === null || raw === '') return undefined;
+    if (field.type === 'select' && field.options) {
+      return field.options.find((o) => o.value === String(raw))?.label || String(raw);
+    }
+    return String(raw);
+  };
+
   const renderField = (field: FormField) => {
     const value = formData[field.name] ?? '';
     const error = errors[field.name];
@@ -260,10 +326,9 @@ export default function OnboardPage() {
     );
 
     if (field.type === 'select') {
-      const loading = (field.name === 'clientId' && clientsLoading) || (field.name === 'vendorId' && vendorsLoading);
       return (
-        <select value={String(value)} onChange={(e) => handleInputChange(field, e.target.value)} disabled={loading} className={base}>
-          <option value="">{loading ? `Loading…` : `Select ${field.label}`}</option>
+        <select value={String(value)} onChange={(e) => handleInputChange(field, e.target.value)} className={base}>
+          <option value="">{`Select ${field.label}`}</option>
           {field.options?.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       );
@@ -303,6 +368,129 @@ export default function OnboardPage() {
     );
   };
 
+  // Render a labelled input cell for the details step.
+  const renderFieldCell = (field: FormField) => (
+    <div key={field.name} className={field.type === 'checkbox' ? 'flex items-end pb-1' : ''}>
+      {field.type !== 'checkbox' && (
+        <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          {field.label}
+          {field.required && <span className="ml-1 text-red-500">*</span>}
+        </label>
+      )}
+      {renderField(field)}
+      {errors[field.name] && (
+        <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
+      )}
+    </div>
+  );
+
+  // Generic assignment editor block (reused for all five assignment kinds).
+  const renderAssignmentEditor = <T,>(config: {
+    title: string;
+    icon: React.ElementType;
+    iconBg: string;
+    iconColor: string;
+    addBtn: string;
+    selectLabel: string;
+    selectClasses: string;
+    list: T[];
+    setList: React.Dispatch<React.SetStateAction<T[]>>;
+    options: { id: string; name: string }[];
+    idKey: keyof T;
+    emptyText: string;
+    addLabel: string;
+  }) => {
+    const { icon: Icon } = config;
+    const setField = (idx: number, patch: Record<string, string>) => {
+      config.setList((prev) => {
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...patch } as T;
+        return next;
+      });
+    };
+    return (
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg', config.iconBg)}>
+              <Icon className={cn('h-4 w-4', config.iconColor)} strokeWidth={1.75} />
+            </div>
+            <h4 className="font-display text-sm font-bold text-slate-900">{config.title}</h4>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+              {config.list.length}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => config.setList((prev) => [...prev, { [config.idKey]: '', startDate: '', endDate: '' } as T])}
+            className={cn('inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors', config.addBtn)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {config.addLabel}
+          </button>
+        </div>
+        {config.list.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400">{config.emptyText}</p>
+        ) : (
+          <div className="space-y-3">
+            {config.list.map((assignment, idx) => {
+              const a = assignment as unknown as { startDate?: string; endDate?: string } & Record<string, string>;
+              return (
+                <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
+                  <div>
+                    {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">{config.selectLabel}</label>}
+                    <select
+                      value={(a[config.idKey as string] as string) || ''}
+                      onChange={(e) => setField(idx, { [config.idKey as string]: e.target.value })}
+                      className={cn('w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none', config.selectClasses)}
+                    >
+                      <option value="">{`Select ${config.selectLabel}`}</option>
+                      {config.options.filter((o) => o?.id && o?.name).map((o) => (
+                        <option key={o.id} value={o.id}>{o.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
+                    <input
+                      type="date"
+                      value={a.startDate || ''}
+                      onChange={(e) => setField(idx, { startDate: e.target.value })}
+                      className={cn('w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none', config.selectClasses)}
+                    />
+                  </div>
+                  <div>
+                    {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
+                    <input
+                      type="date"
+                      value={a.endDate || ''}
+                      onChange={(e) => setField(idx, { endDate: e.target.value })}
+                      className={cn('w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none', config.selectClasses)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => config.setList((prev) => prev.filter((_, i) => i !== idx))}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const hasAnyAssignment =
+    clientAssignments.length > 0 ||
+    vendorAssignments.length > 0 ||
+    endClientAssignments.length > 0 ||
+    endVendorAssignments.length > 0 ||
+    subcontractorAssignments.length > 0;
+
   if (success) {
     return (
       <>
@@ -330,7 +518,11 @@ export default function OnboardPage() {
         eyebrow="Onboarding"
         title="Onboard New Employee"
         description={
-          step === 1 ? 'Step 1 of 2 — Select employee type' : `Step 2 of 2 — ${selectedType} employee details`
+          step === 0
+            ? 'Step 1 of 3 — Select employee type'
+            : step === 1
+            ? `Step 2 of 3 — ${selectedType} employee details`
+            : 'Step 3 of 3 — Review & confirm'
         }
         actions={
           <Link href="/dashboard/employees" className="btn-ghost">
@@ -340,554 +532,270 @@ export default function OnboardPage() {
         }
       />
 
-      {/* Progress steps */}
-      <div className="surface flex items-center gap-0 px-5 py-4">
-        {[
-          { n: 1, label: 'Select Type' },
-          { n: 2, label: 'Employee Details' },
-        ].map((s, i) => (
-          <React.Fragment key={s.n}>
-            {i > 0 && (
-              <div className={cn('mx-3 h-0.5 flex-1 rounded-full transition-colors', step > i ? 'bg-brand-600' : 'bg-slate-200')} />
-            )}
-            <div className="flex items-center gap-2.5">
-              <div className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all',
-                step > s.n
-                  ? 'bg-brand-600 text-white'
-                  : step === s.n
-                  ? 'bg-brand-600 text-white ring-4 ring-brand-100'
-                  : 'bg-slate-100 text-slate-400'
-              )}>
-                {step > s.n ? <Check className="h-4 w-4" /> : s.n}
-              </div>
-              <span className={cn(
-                'font-display text-sm font-semibold',
-                step >= s.n ? 'text-brand-600' : 'text-slate-400'
-              )}>
-                {s.label}
-              </span>
-            </div>
-          </React.Fragment>
-        ))}
+      {/* Stepper */}
+      <div className="surface px-5 py-4">
+        <Stepper steps={WIZARD_STEPS} current={step} />
       </div>
 
       {/* Step 1: Type Selection */}
-      {step === 1 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {employeeTypes.map((type) => (
+      {step === 0 && (
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {employeeTypes.map((type) => {
+              const isSelected = selectedType === type.value;
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => handleTypeSelect(type.value)}
+                  className={cn(
+                    'surface p-6 text-left transition-all',
+                    isSelected ? type.selectedBorder : cn('border border-transparent', type.ring)
+                  )}
+                >
+                  <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-colors', type.iconBg)}>
+                    <type.icon className={cn('h-6 w-6', type.iconColor)} strokeWidth={1.75} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-base font-bold text-slate-900">{type.label}</h3>
+                    {isSelected && <Check className="h-4 w-4 text-brand-600" strokeWidth={2.5} />}
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">{type.description}</p>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <Link href="/dashboard/employees" className="btn-ghost">Cancel</Link>
             <button
-              key={type.value}
-              onClick={() => handleTypeSelect(type.value)}
-              className={cn(
-                'group surface surface-hover p-6 text-left',
-                type.border
-              )}
+              type="button"
+              disabled={!selectedType}
+              onClick={() => selectedType && setStep(1)}
+              className="btn-primary px-6 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div className={cn('mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-colors', type.iconBg)}>
-                <type.icon className={cn('h-6 w-6', type.iconColor)} />
-              </div>
-              <h3 className="font-display text-base font-bold text-slate-900">{type.label}</h3>
-              <p className="mt-1 text-sm text-slate-500">{type.description}</p>
+              Next
+              <ArrowRight className="h-4 w-4" />
             </button>
-          ))}
+          </div>
         </div>
       )}
 
-      {/* Step 2: Employee Form */}
-      {step === 2 && selectedType && (
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Step 2: Employee Details */}
+      {step === 1 && selectedType && (
+        <div className="space-y-6">
           {draftRestored && (
             <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
               <p className="text-xs font-medium text-amber-800">
-                Draft restored from your last session. Submit when ready, or discard to start fresh.
+                Draft restored from your last session. Continue when ready, or discard to start fresh.
               </p>
               <button
                 type="button"
-                onClick={() => {
-                  clearDraft();
-                  setSelectedType(null);
-                  setFormData({});
-                  setClientAssignments([]);
-                  setVendorAssignments([]);
-                  setEndClientAssignments([]);
-                  setEndVendorAssignments([]);
-                  setSubcontractorAssignments([]);
-                  setErrors({});
-                  setStep(1);
-                }}
+                onClick={() => { clearDraft(); resetAll(); setStep(0); }}
                 className="text-xs font-semibold text-amber-900 hover:underline"
               >
                 Discard draft
               </button>
             </div>
           )}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="font-display text-base font-bold text-slate-900">{selectedType} Employee Details</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  setSelectedType(null);
-                  setFormData({});
-                  setErrors({});
-                  setClientAssignments([]);
-                  setVendorAssignments([]);
-                  setEndClientAssignments([]);
-                  setEndVendorAssignments([]);
-                  setSubcontractorAssignments([]);
-                  clearDraft();
-                }}
-                className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
-              >
-                Change Type
-              </button>
-            </div>
-            <div className="p-6">
+
+          {/* Grouped scalar field sections */}
+          {groupedSections.map((section) => (
+            <SectionCard key={section.id} title={section.title} description={section.description}>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {fields.map((field) => (
-                  <div key={field.name} className={field.type === 'checkbox' ? 'flex items-end pb-1' : ''}>
-                    {field.type !== 'checkbox' && (
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                        {field.label}
-                        {field.required && <span className="ml-1 text-red-500">*</span>}
-                      </label>
-                    )}
-                    {renderField(field)}
-                    {errors[field.name] && (
-                      <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
-                    )}
-                  </div>
+                {section.sectionFields.map(renderFieldCell)}
+              </div>
+            </SectionCard>
+          ))}
+
+          {otherFields.length > 0 && (
+            <SectionCard title="Additional Details">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {otherFields.map(renderFieldCell)}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Assignments */}
+          <SectionCard
+            icon={Users}
+            title="Assignments"
+            description="Client, vendor, end-client, end-vendor and subcontractor placements"
+          >
+            <div className="space-y-6">
+              {renderAssignmentEditor<EmployeeClientAssignment>({
+                title: 'Client Assignments',
+                icon: Users,
+                iconBg: 'bg-emerald-100',
+                iconColor: 'text-emerald-600',
+                addBtn: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
+                selectLabel: 'Client',
+                selectClasses: 'focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100',
+                list: clientAssignments,
+                setList: setClientAssignments,
+                options: clients,
+                idKey: 'clientId',
+                emptyText: 'No client assignments yet.',
+                addLabel: 'Add Client',
+              })}
+              {renderAssignmentEditor<EmployeeVendorAssignment>({
+                title: 'Vendor Assignments',
+                icon: Users,
+                iconBg: 'bg-purple-100',
+                iconColor: 'text-purple-600',
+                addBtn: 'bg-purple-50 text-purple-700 hover:bg-purple-100',
+                selectLabel: 'Vendor',
+                selectClasses: 'focus:border-purple-400 focus:ring-2 focus:ring-purple-100',
+                list: vendorAssignments,
+                setList: setVendorAssignments,
+                options: vendors,
+                idKey: 'vendorId',
+                emptyText: 'No vendor assignments yet.',
+                addLabel: 'Add Vendor',
+              })}
+              {renderAssignmentEditor<EmployeeEndClientAssignment>({
+                title: 'End Client Assignments',
+                icon: Briefcase,
+                iconBg: 'bg-sky-100',
+                iconColor: 'text-sky-600',
+                addBtn: 'bg-sky-50 text-sky-700 hover:bg-sky-100',
+                selectLabel: 'End Client',
+                selectClasses: 'focus:border-sky-400 focus:ring-2 focus:ring-sky-100',
+                list: endClientAssignments,
+                setList: setEndClientAssignments,
+                options: clients,
+                idKey: 'clientId',
+                emptyText: 'No end client assignments yet.',
+                addLabel: 'Add End Client',
+              })}
+              {renderAssignmentEditor<EmployeeEndVendorAssignment>({
+                title: 'End Vendor Assignments',
+                icon: Briefcase,
+                iconBg: 'bg-amber-100',
+                iconColor: 'text-amber-600',
+                addBtn: 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+                selectLabel: 'End Vendor',
+                selectClasses: 'focus:border-amber-400 focus:ring-2 focus:ring-amber-100',
+                list: endVendorAssignments,
+                setList: setEndVendorAssignments,
+                options: vendors,
+                idKey: 'vendorId',
+                emptyText: 'No end vendor assignments yet.',
+                addLabel: 'Add End Vendor',
+              })}
+              {renderAssignmentEditor<EmployeeSubcontractorAssignment>({
+                title: 'Subcontractor Assignments',
+                icon: UserCheck,
+                iconBg: 'bg-teal-100',
+                iconColor: 'text-teal-600',
+                addBtn: 'bg-teal-50 text-teal-700 hover:bg-teal-100',
+                selectLabel: 'Subcontractor',
+                selectClasses: 'focus:border-teal-400 focus:ring-2 focus:ring-teal-100',
+                list: subcontractorAssignments,
+                setList: setSubcontractorAssignments,
+                options: subcontractors,
+                idKey: 'subcontractorId',
+                emptyText: 'No subcontractor assignments yet.',
+                addLabel: 'Add Subcontractor',
+              })}
+            </div>
+          </SectionCard>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => { setStep(0); }}
+              className="btn-ghost"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+            <button type="button" onClick={goToReview} className="btn-primary px-6">
+              Review
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Review & Confirm */}
+      {step === 2 && selectedType && (
+        <div className="space-y-6">
+          <div className="surface flex flex-wrap items-center gap-3 px-5 py-4">
+            <span
+              className={cn(
+                'inline-flex rounded-full px-3 py-1 text-sm font-semibold',
+                selectedType === 'W2' && 'bg-blue-100 text-blue-700',
+                selectedType === 'Contract' && 'bg-purple-100 text-purple-700',
+                selectedType === '1099' && 'bg-teal-100 text-teal-700',
+                selectedType === 'Offshore' && 'bg-pink-100 text-pink-700'
+              )}
+            >
+              {selectedType} Employee
+            </span>
+            <p className="text-sm text-slate-500">Please review the details below before adding this employee.</p>
+          </div>
+
+          {/* Grouped read-only sections */}
+          {groupedSections.map((section) => (
+            <SectionCard key={section.id} title={section.title} description={section.description}>
+              <DetailGrid>
+                {section.sectionFields.map((field) => (
+                  <DetailField key={field.name} label={field.label} value={displayValue(field)} />
                 ))}
-              </div>
-            </div>
-          </div>
+              </DetailGrid>
+            </SectionCard>
+          ))}
 
-          {/* Client Assignments */}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                </div>
-                <h2 className="font-display text-base font-bold text-slate-900">Client Assignments</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {clientAssignments.length}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setClientAssignments((prev) => [...prev, { clientId: '', startDate: '', endDate: '' }])}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Client
-              </button>
-            </div>
-            <div className="p-6">
-              {clientAssignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No client assignments. Click "Add Client" to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  {clientAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Client</label>}
-                        <select
-                          value={assignment.clientId}
-                          onChange={(e) => {
-                            const next = [...clientAssignments];
-                            next[idx] = { ...next[idx], clientId: e.target.value };
-                            setClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                        >
-                          <option value="">Select Client</option>
-                          {clients.filter((c) => c?.id && c?.name).map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.startDate || ''}
-                          onChange={(e) => {
-                            const next = [...clientAssignments];
-                            next[idx] = { ...next[idx], startDate: e.target.value };
-                            setClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                        />
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.endDate || ''}
-                          onChange={(e) => {
-                            const next = [...clientAssignments];
-                            next[idx] = { ...next[idx], endDate: e.target.value };
-                            setClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setClientAssignments((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {otherFields.length > 0 && (
+            <SectionCard title="Additional Details">
+              <DetailGrid>
+                {otherFields.map((field) => (
+                  <DetailField key={field.name} label={field.label} value={displayValue(field)} />
+                ))}
+              </DetailGrid>
+            </SectionCard>
+          )}
 
-          {/* Vendor Assignments */}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
-                  <Users className="h-4 w-4 text-purple-600" />
-                </div>
-                <h2 className="font-display text-base font-bold text-slate-900">Vendor Assignments</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {vendorAssignments.length}
-                </span>
+          {/* Assignments review (resolved names + date ranges) */}
+          <SectionCard icon={Users} title="Assignments" description="Resolved placements and date ranges">
+            {!hasAnyAssignment ? (
+              <p className="text-sm text-slate-400">No assignments added.</p>
+            ) : (
+              <div className="space-y-5">
+                {clientAssignments.length > 0 && (
+                  <ReviewAssignmentList
+                    label="Client Assignments"
+                    rows={clientAssignments.map((a) => ({ name: clientName(a.clientId), range: formatDateRange(a.startDate, a.endDate) }))}
+                  />
+                )}
+                {vendorAssignments.length > 0 && (
+                  <ReviewAssignmentList
+                    label="Vendor Assignments"
+                    rows={vendorAssignments.map((a) => ({ name: vendorName(a.vendorId), range: formatDateRange(a.startDate, a.endDate) }))}
+                  />
+                )}
+                {endClientAssignments.length > 0 && (
+                  <ReviewAssignmentList
+                    label="End Client Assignments"
+                    rows={endClientAssignments.map((a) => ({ name: clientName(a.clientId), range: formatDateRange(a.startDate, a.endDate) }))}
+                  />
+                )}
+                {endVendorAssignments.length > 0 && (
+                  <ReviewAssignmentList
+                    label="End Vendor Assignments"
+                    rows={endVendorAssignments.map((a) => ({ name: vendorName(a.vendorId), range: formatDateRange(a.startDate, a.endDate) }))}
+                  />
+                )}
+                {subcontractorAssignments.length > 0 && (
+                  <ReviewAssignmentList
+                    label="Subcontractor Assignments"
+                    rows={subcontractorAssignments.map((a) => ({ name: subcontractorName(a.subcontractorId), range: formatDateRange(a.startDate, a.endDate) }))}
+                  />
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setVendorAssignments((prev) => [...prev, { vendorId: '', startDate: '', endDate: '' }])}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Vendor
-              </button>
-            </div>
-            <div className="p-6">
-              {vendorAssignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No vendor assignments. Click "Add Vendor" to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  {vendorAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Vendor</label>}
-                        <select
-                          value={assignment.vendorId}
-                          onChange={(e) => {
-                            const next = [...vendorAssignments];
-                            next[idx] = { ...next[idx], vendorId: e.target.value };
-                            setVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-                        >
-                          <option value="">Select Vendor</option>
-                          {vendors.filter((v) => v?.id && v?.name).map((v) => (
-                            <option key={v.id} value={v.id}>{v.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.startDate || ''}
-                          onChange={(e) => {
-                            const next = [...vendorAssignments];
-                            next[idx] = { ...next[idx], startDate: e.target.value };
-                            setVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-                        />
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.endDate || ''}
-                          onChange={(e) => {
-                            const next = [...vendorAssignments];
-                            next[idx] = { ...next[idx], endDate: e.target.value };
-                            setVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setVendorAssignments((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* End Client Assignments */}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
-                  <Briefcase className="h-4 w-4 text-sky-600" />
-                </div>
-                <h2 className="font-display text-base font-bold text-slate-900">End Client Assignments</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {endClientAssignments.length}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEndClientAssignments((prev) => [...prev, { clientId: '', startDate: '', endDate: '' }])}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add End Client
-              </button>
-            </div>
-            <div className="p-6">
-              {endClientAssignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No end client assignments. Click &quot;Add End Client&quot; to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  {endClientAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Client</label>}
-                        <select
-                          value={assignment.clientId}
-                          onChange={(e) => {
-                            const next = [...endClientAssignments];
-                            next[idx] = { ...next[idx], clientId: e.target.value };
-                            setEndClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                        >
-                          <option value="">Select End Client</option>
-                          {clients.filter((c) => c?.id && c?.name).map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.startDate || ''}
-                          onChange={(e) => {
-                            const next = [...endClientAssignments];
-                            next[idx] = { ...next[idx], startDate: e.target.value };
-                            setEndClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                        />
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.endDate || ''}
-                          onChange={(e) => {
-                            const next = [...endClientAssignments];
-                            next[idx] = { ...next[idx], endDate: e.target.value };
-                            setEndClientAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setEndClientAssignments((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* End Vendor Assignments */}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                  <Briefcase className="h-4 w-4 text-amber-600" />
-                </div>
-                <h2 className="font-display text-base font-bold text-slate-900">End Vendor Assignments</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {endVendorAssignments.length}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEndVendorAssignments((prev) => [...prev, { vendorId: '', startDate: '', endDate: '' }])}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add End Vendor
-              </button>
-            </div>
-            <div className="p-6">
-              {endVendorAssignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No end vendor assignments. Click &quot;Add End Vendor&quot; to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  {endVendorAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Vendor</label>}
-                        <select
-                          value={assignment.vendorId}
-                          onChange={(e) => {
-                            const next = [...endVendorAssignments];
-                            next[idx] = { ...next[idx], vendorId: e.target.value };
-                            setEndVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        >
-                          <option value="">Select End Vendor</option>
-                          {vendors.filter((v) => v?.id && v?.name).map((v) => (
-                            <option key={v.id} value={v.id}>{v.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.startDate || ''}
-                          onChange={(e) => {
-                            const next = [...endVendorAssignments];
-                            next[idx] = { ...next[idx], startDate: e.target.value };
-                            setEndVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        />
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.endDate || ''}
-                          onChange={(e) => {
-                            const next = [...endVendorAssignments];
-                            next[idx] = { ...next[idx], endDate: e.target.value };
-                            setEndVendorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setEndVendorAssignments((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Subcontractor Assignments */}
-          <div className="surface">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
-                  <UserCheck className="h-4 w-4 text-teal-600" />
-                </div>
-                <h2 className="font-display text-base font-bold text-slate-900">Subcontractor Assignments</h2>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  {subcontractorAssignments.length}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSubcontractorAssignments((prev) => [...prev, { subcontractorId: '', startDate: '', endDate: '' }])}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Subcontractor
-              </button>
-            </div>
-            <div className="p-6">
-              {subcontractorAssignments.length === 0 ? (
-                <p className="text-sm text-slate-400">No subcontractor assignments. Click &quot;Add Subcontractor&quot; to assign.</p>
-              ) : (
-                <div className="space-y-3">
-                  {subcontractorAssignments.map((assignment, idx) => (
-                    <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_36px] sm:gap-3 sm:items-end">
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Subcontractor</label>}
-                        <select
-                          value={assignment.subcontractorId}
-                          onChange={(e) => {
-                            const next = [...subcontractorAssignments];
-                            next[idx] = { ...next[idx], subcontractorId: e.target.value };
-                            setSubcontractorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                        >
-                          <option value="">Select Subcontractor</option>
-                          {subcontractors.filter((s) => s?.id && s?.name).map((s) => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">Start Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.startDate || ''}
-                          onChange={(e) => {
-                            const next = [...subcontractorAssignments];
-                            next[idx] = { ...next[idx], startDate: e.target.value };
-                            setSubcontractorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                        />
-                      </div>
-                      <div>
-                        {idx === 0 && <label className="mb-1.5 block text-xs font-medium text-slate-500">End Date</label>}
-                        <input
-                          type="date"
-                          value={assignment.endDate || ''}
-                          onChange={(e) => {
-                            const next = [...subcontractorAssignments];
-                            next[idx] = { ...next[idx], endDate: e.target.value };
-                            setSubcontractorAssignments(next);
-                          }}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSubcontractorAssignments((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+            )}
+          </SectionCard>
 
           {errors.submit && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -896,29 +804,57 @@ export default function OnboardPage() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3">
-            <Link
-              href="/dashboard/employees"
-              className="rounded-xl px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all"
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              disabled={isSubmitting}
+              className="btn-ghost disabled:opacity-50"
             >
-              Cancel
-            </Link>
-            <button type="submit" disabled={isSubmitting} className="btn-primary px-6">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="btn-primary px-6 disabled:cursor-not-allowed disabled:opacity-50"
+            >
               {isSubmitting ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Creating…
+                  Adding…
                 </>
               ) : (
                 <>
                   <UserPlus className="h-4 w-4" />
-                  Add Employee
+                  Confirm & Add Employee
                 </>
               )}
             </button>
           </div>
-        </form>
+        </div>
       )}
+    </div>
+  );
+}
+
+/** Read-only list of resolved assignment rows (name + date range) for the review step. */
+function ReviewAssignmentList({ label, rows }: { label: string; rows: { name: string; range: string }[] }) {
+  return (
+    <div>
+      <h4 className="mb-2 font-display text-sm font-bold text-slate-900">{label}</h4>
+      <ul className="space-y-2">
+        {rows.map((row, idx) => (
+          <li
+            key={idx}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5"
+          >
+            <span className="text-sm font-medium text-slate-800">{row.name}</span>
+            <span className="text-xs text-slate-500">{row.range}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

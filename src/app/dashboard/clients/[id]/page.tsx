@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useMemo, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { format } from 'date-fns';
@@ -12,7 +13,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
   Eye,
   CheckCircle2,
   XCircle,
@@ -21,15 +21,16 @@ import {
   Globe,
   FileText,
   AlertTriangle,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-
-interface ClientDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import { ActionMenu } from '@/components/ui/action-menu';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
 
 const typeBadge: Record<string, string> = {
   W2: 'bg-blue-100 text-blue-700',
@@ -38,15 +39,15 @@ const typeBadge: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-function ClientDetailPageContent({ params }: ClientDetailPageProps) {
+function ClientDetailPageContent() {
   const router = useRouter();
+  const params = useParams();
+  const toast = useToast();
+  const clientId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const { employees } = useEmployees();
-  const { clients, isLoading } = useClients();
-  const [clientId, setClientId] = React.useState<string>('');
-
-  React.useEffect(() => {
-    params.then((p) => setClientId(p.id));
-  }, [params]);
+  const { clients, isLoading, deleteClient } = useClients();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const client = useMemo(() => {
     if (!clientId) return undefined;
@@ -71,6 +72,20 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
     clientEmployees.forEach((e) => { dist[e.type] = (dist[e.type] || 0) + 1; });
     return dist;
   }, [clientEmployees]);
+
+  const handleDelete = async () => {
+    if (!client) return;
+    setIsDeleting(true);
+    try {
+      await deleteClient(client.id);
+      toast.success('Client deleted', `${client.name} has been removed.`);
+      router.push('/dashboard/clients');
+    } catch (err) {
+      toast.error('Failed to delete client', err instanceof Error ? err.message : 'Please try again.');
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
 
   const handlePrint = () => {
     if (!client) return;
@@ -171,12 +186,9 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
         title="Client Not Found"
         description="We couldn't find that client. They may have been deleted or the link is invalid."
         action={
-          <button
-            onClick={() => router.push('/dashboard/clients')}
-            className="btn-primary"
-          >
+          <Link href="/dashboard/clients" className="btn-primary">
             Back to Clients
-          </button>
+          </Link>
         }
         className="mt-12"
       />
@@ -186,18 +198,30 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
   return (
     <div className="space-y-6">
       {/* Nav */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push('/dashboard/clients')}
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/dashboard/clients"
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           Back to Clients
-        </button>
-        <button onClick={handlePrint} className="btn-ghost">
-          <Printer className="h-4 w-4" />
-          Export PDF
-        </button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={handlePrint} className="btn-ghost">
+            <Printer className="h-4 w-4" strokeWidth={1.75} />
+            Export PDF
+          </button>
+          <Link href={`/dashboard/clients/${client.id}/edit`} className="btn-primary">
+            <Pencil className="h-4 w-4" strokeWidth={1.75} />
+            Edit
+          </Link>
+          <ActionMenu
+            items={[
+              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/clients/${client.id}/edit`) },
+              { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setConfirmDelete(true) },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Hero */}
@@ -303,6 +327,9 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
                   <p className="mt-0.5 text-sm font-semibold text-slate-900">{client.address}</p>
                 </div>
               </div>
+            )}
+            {!client.contactPerson && !client.email && !client.phone && !client.address && (
+              <p className="text-sm text-slate-400">No contact details on record.</p>
             )}
           </div>
         </div>
@@ -425,14 +452,29 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
           <p className="text-xs text-slate-400">Showing {clientEmployees.length} employees</p>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Delete Client"
+        description={
+          <>
+            Are you sure you want to delete{' '}
+            <span className="font-semibold text-slate-900">{client.name}</span>? This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete Client"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
 
-export default function ClientDetailPage(props: ClientDetailPageProps) {
+export default function ClientDetailPage() {
   return (
     <ErrorBoundary>
-      <ClientDetailPageContent {...props} />
+      <ClientDetailPageContent />
     </ErrorBoundary>
   );
 }

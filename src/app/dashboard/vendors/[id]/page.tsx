@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useMemo, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useVendors } from '@/context/VendorContext';
 import { format } from 'date-fns';
@@ -17,18 +18,18 @@ import {
   XCircle,
   Printer,
   Briefcase,
-  Globe,
   FileText,
   AlertTriangle,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-
-interface VendorDetailPageProps {
-  params: Promise<{ id: string }>;
-}
+import { ActionMenu } from '@/components/ui/action-menu';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/components/ui/toast';
 
 const typeBadge: Record<string, string> = {
   W2: 'bg-blue-100 text-blue-700',
@@ -37,15 +38,15 @@ const typeBadge: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-function VendorDetailPageContent({ params }: VendorDetailPageProps) {
+function VendorDetailPageContent() {
   const router = useRouter();
+  const params = useParams();
+  const toast = useToast();
+  const vendorId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const { employees } = useEmployees();
-  const { vendors, isLoading } = useVendors();
-  const [vendorId, setVendorId] = React.useState<string>('');
-
-  React.useEffect(() => {
-    params.then((p) => setVendorId(p.id));
-  }, [params]);
+  const { vendors, isLoading, deleteVendor } = useVendors();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const vendor = useMemo(() => {
     if (!vendorId) return undefined;
@@ -70,6 +71,20 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
     vendorEmployees.forEach((e) => { dist[e.type] = (dist[e.type] || 0) + 1; });
     return dist;
   }, [vendorEmployees]);
+
+  const handleDelete = async () => {
+    if (!vendor) return;
+    setIsDeleting(true);
+    try {
+      await deleteVendor(vendor.id);
+      toast.success('Vendor deleted', `${vendor.name} has been removed.`);
+      router.push('/dashboard/vendors');
+    } catch (err) {
+      toast.error('Failed to delete vendor', err instanceof Error ? err.message : 'Please try again.');
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
 
   const handlePrint = () => {
     if (!vendor) return;
@@ -170,12 +185,9 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
         title="Vendor Not Found"
         description="We couldn't find that vendor. They may have been deleted or the link is invalid."
         action={
-          <button
-            onClick={() => router.push('/dashboard/vendors')}
-            className="btn-primary"
-          >
+          <Link href="/dashboard/vendors" className="btn-primary">
             Back to Vendors
-          </button>
+          </Link>
         }
         className="mt-12"
       />
@@ -185,18 +197,30 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
   return (
     <div className="space-y-6">
       {/* Nav */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push('/dashboard/vendors')}
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/dashboard/vendors"
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm transition-all"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           Back to Vendors
-        </button>
-        <button onClick={handlePrint} className="btn-ghost">
-          <Printer className="h-4 w-4" />
-          Export PDF
-        </button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={handlePrint} className="btn-ghost">
+            <Printer className="h-4 w-4" strokeWidth={1.75} />
+            Export PDF
+          </button>
+          <Link href={`/dashboard/vendors/${vendor.id}/edit`} className="btn-primary">
+            <Pencil className="h-4 w-4" strokeWidth={1.75} />
+            Edit
+          </Link>
+          <ActionMenu
+            items={[
+              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/vendors/${vendor.id}/edit`) },
+              { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setConfirmDelete(true) },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Hero */}
@@ -302,6 +326,9 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
                   <p className="mt-0.5 text-sm font-semibold text-slate-900">{vendor.address}</p>
                 </div>
               </div>
+            )}
+            {!vendor.contactPerson && !vendor.email && !vendor.phone && !vendor.address && (
+              <p className="text-sm text-slate-400">No contact details on record.</p>
             )}
           </div>
         </div>
@@ -424,14 +451,29 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
           <p className="text-xs text-slate-400">Showing {vendorEmployees.length} employees</p>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Delete Vendor"
+        description={
+          <>
+            Are you sure you want to delete{' '}
+            <span className="font-semibold text-slate-900">{vendor.name}</span>? This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete Vendor"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
 
-export default function VendorDetailPage(props: VendorDetailPageProps) {
+export default function VendorDetailPage() {
   return (
     <ErrorBoundary>
-      <VendorDetailPageContent {...props} />
+      <VendorDetailPageContent />
     </ErrorBoundary>
   );
 }

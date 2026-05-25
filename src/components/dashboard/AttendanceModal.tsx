@@ -7,6 +7,7 @@ import { useAttendance } from '@/context/AttendanceContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Attendance, AttendanceFormData, AttendanceStatus } from '@/types/attendance';
 import { useToast } from '@/components/ui/toast';
+import { Combobox } from '@/components/ui/combobox';
 
 const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
 const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
@@ -93,13 +94,13 @@ export default function AttendanceModal({ isOpen, onClose, mode, attendance }: {
 
           <div>
             <label className={label}>Employee <span className="text-red-500">*</span></label>
-            <select value={form.employeeId} onChange={(e) => set('employeeId', e.target.value)}
-              className={cn(field, errors.employeeId && 'border-red-300 focus:border-red-400 focus:ring-red-50')}>
-              <option value="">Select an employee…</option>
-              {employees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name}</option>
-              ))}
-            </select>
+            <Combobox
+              value={form.employeeId}
+              onChange={(v) => set('employeeId', v)}
+              options={employees.map((e) => ({ value: e.id, label: e.name, sublabel: e.type }))}
+              placeholder="Select an employee…"
+              className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
+            />
             {errors.employeeId && <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>}
           </div>
 

@@ -1,35 +1,46 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, Package } from 'lucide-react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useVendors } from '@/context/VendorContext';
 import { Vendor, VendorFormData } from '@/types/vendor';
 import { useToast } from '@/components/ui/toast';
+import { SectionCard } from '@/components/ui/section-card';
+import { Package } from 'lucide-react';
 
-const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
+const field =
+  'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
 const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
 
-export default function VendorModal({ isOpen, onClose, mode, vendor }: {
-  isOpen: boolean; onClose: () => void; mode: 'create' | 'edit'; vendor?: Vendor;
-}) {
+export default function VendorForm({ mode, initial }: { mode: 'create' | 'edit'; initial?: Vendor }) {
+  const router = useRouter();
   const { createVendor, updateVendor } = useVendors();
   const toast = useToast();
-  const [form, setForm] = useState<VendorFormData>({ name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' });
+
+  const [form, setForm] = useState<VendorFormData>(
+    mode === 'edit' && initial
+      ? {
+          name: initial.name,
+          contactPerson: initial.contactPerson || '',
+          email: initial.email || '',
+          phone: initial.phone || '',
+          address: initial.address || '',
+          status: initial.status,
+        }
+      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' }
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    setForm(mode === 'edit' && vendor
-      ? { name: vendor.name, contactPerson: vendor.contactPerson || '', email: vendor.email || '', phone: vendor.phone || '', address: vendor.address || '', status: vendor.status }
-      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' }
-    );
-    setErrors({});
-  }, [mode, vendor, isOpen]);
 
   const set = (k: keyof VendorFormData, v: string) => {
     setForm((p) => ({ ...p, [k]: v }));
     if (errors[k]) setErrors((p) => { const e = { ...p }; delete e[k]; return e; });
+  };
+
+  const cancel = () => {
+    if (mode === 'edit' && initial) router.push(`/dashboard/vendors/${initial.id}`);
+    else router.push('/dashboard/vendors');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -40,48 +51,41 @@ export default function VendorModal({ isOpen, onClose, mode, vendor }: {
       if (mode === 'create') {
         await createVendor(form);
         toast.success('Vendor created', `${form.name} has been added.`);
+        router.push('/dashboard/vendors');
       } else {
-        await updateVendor(vendor!.id, form);
+        await updateVendor(initial!.id, form);
         toast.success('Vendor updated', `${form.name} has been saved.`);
+        router.push(`/dashboard/vendors/${initial!.id}`);
       }
-      onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';
       setErrors({ _: message });
       toast.error(mode === 'create' ? 'Could not create vendor' : 'Could not update vendor', message);
-    } finally {
       setSubmitting(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center">
-      <div className="surface w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100">
-            <Package className="h-4.5 w-4.5 text-purple-600" />
-          </div>
-          <div className="flex-1">
-            <h2 className="font-display text-base font-bold text-slate-900">
-              {mode === 'create' ? 'Add Vendor' : 'Edit Vendor'}
-            </h2>
-            <p className="text-xs text-slate-400">{mode === 'create' ? 'Create a new vendor record' : 'Update vendor details'}</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-            <X className="h-4.5 w-4.5" />
-          </button>
-        </div>
+    <form onSubmit={submit} className="space-y-5">
+      <SectionCard
+        icon={Package}
+        title="Vendor Details"
+        description={mode === 'create' ? 'Create a new vendor record' : 'Update vendor details'}
+      >
+        {errors._ && (
+          <p className="mb-4 rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>
+        )}
 
-        <form onSubmit={submit} className="px-6 py-5 space-y-4">
-          {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
-
+        <div className="space-y-4">
           <div>
             <label className={label}>Vendor Name <span className="text-red-500">*</span></label>
-            <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Acme Staffing Inc."
-              className={cn(field, errors.name && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => set('name', e.target.value)}
+              placeholder="e.g. Acme Staffing Inc."
+              className={cn(field, errors.name && 'border-red-300 focus:border-red-400 focus:ring-red-50')}
+            />
             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
           </div>
 
@@ -111,17 +115,17 @@ export default function VendorModal({ isOpen, onClose, mode, vendor }: {
             <label className={label}>Address</label>
             <textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className={cn(field, 'resize-none')} />
           </div>
+        </div>
+      </SectionCard>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={onClose} disabled={submitting} className="btn-ghost disabled:opacity-50">
-              Cancel
-            </button>
-            <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Saving…' : mode === 'create' ? 'Create Vendor' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={cancel} disabled={submitting} className="btn-ghost disabled:opacity-50">
+          Cancel
+        </button>
+        <button type="submit" disabled={submitting} className="btn-primary">
+          {submitting ? 'Saving…' : mode === 'create' ? 'Create Vendor' : 'Save Changes'}
+        </button>
       </div>
-    </div>
+    </form>
   );
 }

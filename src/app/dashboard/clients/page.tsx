@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import {
-  Building2, Plus, Pencil, Trash2, Users, Search,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight
+  Building2, Plus, Pencil, Trash2, Users, Search, Eye,
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
 } from 'lucide-react';
-import ClientModal from '@/components/dashboard/ClientModal';
+import { exportToCsv } from '@/lib/export';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useClients } from '@/context/ClientContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -13,6 +13,7 @@ import { Client } from '@/types/client';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
@@ -24,9 +25,6 @@ export default function ClientsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
-  const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; client?: Client }>({
-    isOpen: false, mode: 'create',
-  });
   const [deleteState, setDeleteState] = useState<{ client: Client | null; isDeleting: boolean }>({
     client: null, isDeleting: false,
   });
@@ -51,9 +49,17 @@ export default function ClientsPage() {
   const totalActive = valid.filter((c) => c.status === 'Active').length;
   const totalInactive = valid.filter((c) => c.status === 'Inactive').length;
 
-  const handleDelete = (e: React.MouseEvent, client: Client) => {
-    e.stopPropagation();
-    setDeleteState({ client, isDeleting: false });
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+    const rows = filtered as unknown as Record<string, unknown>[];
+    exportToCsv('clients', rows, [
+      { key: 'name', label: 'Name' },
+      { key: 'contactPerson', label: 'Contact Person' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'status', label: 'Status' },
+      { key: 'employees', label: 'Employees', value: (c) => getEmpCount(c.id as string, c.name as string) },
+    ]);
   };
 
   const confirmDelete = async () => {
@@ -93,12 +99,21 @@ export default function ClientsPage() {
         description="Manage client organizations and the employees placed with each"
         tone="emerald"
         actions={
-          <button
-            onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" /> Add Client
-          </button>
+          <>
+            <button
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/clients/new')}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" /> Add Client
+            </button>
+          </>
         }
       />
 
@@ -148,7 +163,7 @@ export default function ClientsPage() {
               action={
                 !searchQuery ? (
                   <button
-                    onClick={() => setModalState({ isOpen: true, mode: 'create' })}
+                    onClick={() => router.push('/dashboard/clients/new')}
                     className="btn-primary"
                   >
                     <Plus className="h-4 w-4" /> Add Client
@@ -222,21 +237,14 @@ export default function ClientsPage() {
                         )}
                       </td>
                       <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                          <button
-                            onClick={() => setModalState({ isOpen: true, mode: 'edit', client })}
-                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            title="Edit"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(e, client)}
-                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <ActionMenu
+                            items={[
+                              { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/clients/${client.id}`) },
+                              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/clients/${client.id}/edit`) },
+                              { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ client, isDeleting: false }) },
+                            ]}
+                          />
                           <ChevronRight className="h-4 w-4 text-slate-300" />
                         </div>
                       </td>
@@ -252,13 +260,6 @@ export default function ClientsPage() {
           <p className="text-xs text-slate-400">{filtered.length} of {valid.length} client{valid.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
-
-      <ClientModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, mode: 'create' })}
-        mode={modalState.mode}
-        client={modalState.client}
-      />
 
       <ConfirmDialog
         isOpen={deleteState.client !== null}

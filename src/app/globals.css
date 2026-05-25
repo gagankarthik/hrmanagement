@@ -145,6 +145,18 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
+  /* Respect users who prefer reduced motion — disable entrance/transition animation */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   /* Refined selection + focus accents */
   ::selection {
     background-color: color-mix(in oklch, var(--primary) 22%, transparent);

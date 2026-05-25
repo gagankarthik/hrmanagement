@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { Users, Plus, UserCheck, UserX, AlertTriangle } from 'lucide-react';
 import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
-import EmployeeModal from '@/components/dashboard/EmployeeModal';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -24,7 +23,7 @@ const tabs: { id: TabType; label: string; dotColor: string }[] = [
 ];
 
 export default function EmployeesPage() {
-  const { employees, isLoading, stats, deleteEmployee } = useEmployees();
+  const { employees, isLoading, stats } = useEmployees();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
@@ -42,9 +41,6 @@ export default function EmployeesPage() {
     return 0;
   };
 
-  const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; employee?: Employee }>({
-    isOpen: false, mode: 'create',
-  });
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; employee: Employee | null }>({
     isOpen: false, employee: null,
   });
@@ -107,19 +103,12 @@ export default function EmployeesPage() {
             employees={filteredByTab}
             isLoading={isLoading}
             onView={(emp) => router.push(`/dashboard/employees/${emp.id}`)}
-            onEdit={(emp) => setModalState({ isOpen: true, mode: 'edit', employee: emp })}
+            onEdit={(emp) => router.push(`/dashboard/employees/${emp.id}/edit`)}
             onDelete={(emp) => setDeleteModal({ isOpen: true, employee: emp })}
           />
         </div>
       </div>
 
-      <EmployeeModal
-        isOpen={modalState.isOpen}
-        onClose={() => setModalState({ isOpen: false, mode: 'create' })}
-        mode={modalState.mode}
-        employee={modalState.employee}
-        defaultType={activeTab !== 'all' ? activeTab : 'W2'}
-      />
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, employee: null })}

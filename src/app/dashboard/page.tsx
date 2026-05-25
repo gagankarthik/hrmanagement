@@ -92,6 +92,7 @@ export default function DashboardPage() {
   const [selectedVendor, setSelectedVendor] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [trendWindow, setTrendWindow] = useState(12); // months shown in the hiring-trend chart
 
   // id -> name lookups so we resolve real names instead of showing raw IDs
   const clientMap = useMemo(() => {
@@ -260,7 +261,7 @@ export default function DashboardPage() {
     const now = new Date();
     const mn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const rows: { month: string; W2: number; Contract: number; '1099': number; Offshore: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = trendWindow - 1; i >= 0; i--) {
       const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const monthEmps = filteredEmployees.filter((e) => {
@@ -268,8 +269,10 @@ export default function DashboardPage() {
         const h = new Date(e.hireDate);
         return h >= start && h < end;
       });
+      // Add a 2-digit year suffix when the window spans more than a year (avoids repeated month labels)
+      const label = trendWindow > 12 ? `${mn[start.getMonth()]} '${String(start.getFullYear()).slice(2)}` : mn[start.getMonth()];
       rows.push({
-        month: mn[start.getMonth()],
+        month: label,
         W2: monthEmps.filter((e) => e.type === 'W2').length,
         Contract: monthEmps.filter((e) => e.type === 'Contract').length,
         '1099': monthEmps.filter((e) => e.type === '1099').length,
@@ -277,7 +280,7 @@ export default function DashboardPage() {
       });
     }
     return rows;
-  }, [filteredEmployees]);
+  }, [filteredEmployees, trendWindow]);
 
   if (isLoading) {
     return (
@@ -387,11 +390,28 @@ export default function DashboardPage() {
 
         <ChartCard
           title="Hiring trend"
-          subtitle="New hires by category · last 12 months"
+          subtitle={`New hires by category · last ${trendWindow} months`}
           icon={TrendingUp}
           delay={100}
           className="lg:col-span-2"
         >
+          <div className="mb-3 flex justify-end">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
+              {[6, 12, 24].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTrendWindow(n)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 font-medium transition-colors',
+                    trendWindow === n ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'
+                  )}
+                >
+                  {n}M
+                </button>
+              ))}
+            </div>
+          </div>
           <TrendAreaChart
             data={hiringTrend}
             xKey="month"

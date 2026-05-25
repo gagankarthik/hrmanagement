@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
@@ -9,6 +9,7 @@ import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useLeaves } from '@/context/LeaveContext';
 import { useHandbook } from '@/context/HandbookContext';
+import { useBenefits } from '@/context/BenefitsContext';
 import { LeaveType } from '@/types/leave';
 import { format } from 'date-fns';
 import {
@@ -37,18 +38,17 @@ import {
   AlertTriangle,
   CalendarCheck,
   Hourglass,
+  Pencil,
+  HeartPulse,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
-
-interface EmployeeDetailPageProps {
-  params: Promise<{ id: string }>;
-}
 
 function InfoRow({ icon: Icon, label, value, className }: { icon: React.ElementType; label: string; value: React.ReactNode; className?: string }) {
   if (!value) return null;
@@ -72,22 +72,20 @@ const typeColors: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
+function EmployeeDetailPageContent() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const employeeId = params?.id ?? '';
   const { employees, deleteEmployee, isLoading } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
   const { subcontractors } = useSubcontractors();
   const { leaves } = useLeaves();
   const { getPolicy } = useHandbook();
+  const { plans } = useBenefits();
   const toast = useToast();
-  const [employeeId, setEmployeeId] = React.useState<string>('');
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
-
-  React.useEffect(() => {
-    params.then((p) => setEmployeeId(p.id));
-  }, [params]);
 
   const employee = useMemo(() => {
     if (!employeeId) return undefined;
@@ -186,6 +184,11 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 
     return { allowance, used, remaining, pendingCount, breakdown, pct, over, nearLimit };
   }, [employee, leaves, getPolicy]);
+
+  const enrolledBenefits = useMemo(() => {
+    if (!employee) return [];
+    return plans.filter((p) => p.enrolledEmployeeIds?.includes(employee.id));
+  }, [employee, plans]);
 
   const handleDelete = () => setDeleteOpen(true);
 
@@ -364,18 +367,21 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
           <ArrowLeft className="h-4 w-4" />
           Back to Employees
         </button>
-        <div className="flex gap-2.5">
+        <div className="flex items-center gap-2.5">
           <button onClick={handlePrint} className="btn-ghost">
             <Printer className="h-4 w-4" />
             Print / PDF
           </button>
-          <button
-            onClick={handleDelete}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </button>
+          <Link href={`/dashboard/employees/${employeeId}/edit`} className="btn-primary">
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Link>
+          <ActionMenu
+            items={[
+              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/employees/${employeeId}/edit`) },
+              { label: 'Delete', icon: Trash2, onClick: handleDelete, danger: true, separatorBefore: true },
+            ]}
+          />
         </div>
       </div>
 
@@ -590,6 +596,37 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
           </div>
         )}
 
+        {/* Benefits */}
+        <div className="surface p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-100">
+              <HeartPulse className="h-4 w-4 text-pink-600" />
+            </div>
+            <h2 className="font-display text-base font-bold text-slate-900">Benefits</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{enrolledBenefits.length}</span>
+          </div>
+          {enrolledBenefits.length === 0 ? (
+            <p className="text-sm text-slate-400">Not enrolled in any benefit plans</p>
+          ) : (
+            <div className="space-y-2">
+              {enrolledBenefits.map((plan) => (
+                <div key={plan.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{plan.name}</p>
+                    <p className="text-xs text-slate-500">{plan.type}</p>
+                  </div>
+                  {typeof plan.employerContribution === 'number' && (
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Employer pays</p>
+                      <p className="text-sm font-semibold text-emerald-600">${plan.employerContribution.toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Client Assignments */}
         <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
@@ -801,10 +838,10 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
   );
 }
 
-export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
+export default function EmployeeDetailPage() {
   return (
     <ErrorBoundary>
-      <EmployeeDetailPageContent {...props} />
+      <EmployeeDetailPageContent />
     </ErrorBoundary>
   );
 }
