@@ -4,7 +4,8 @@ import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Layers, Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
+import { Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
+import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, signIn } = useAuth();
@@ -22,8 +23,8 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f8fb]">
-        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-indigo-600" />
+      <div className="flex min-h-screen items-center justify-center bg-[#fbf6ef]">
+        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-brand-600" />
       </div>
     );
   }
@@ -46,14 +47,14 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[46%]">
-        {/* Brand atmosphere — deep indigo→violet wash with radial bloom + faint grid */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-700" aria-hidden />
+        {/* Brand atmosphere — deep brand→brand wash with radial bloom + faint grid */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-600 to-brand-700" aria-hidden />
         <div
           className="absolute inset-0"
           aria-hidden
           style={{
             backgroundImage:
-              "radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.16) 0%, transparent 45%), radial-gradient(90% 90% at 0% 100%, rgba(56,189,248,0.22) 0%, transparent 50%)",
+              "radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.16) 0%, transparent 45%), radial-gradient(90% 90% at 0% 100%, rgba(255,255,255,0.22) 0%, transparent 50%)",
           }}
         />
         <div
@@ -69,19 +70,17 @@ export default function LoginPage() {
         />
 
         <div className="relative flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm">
-            <Layers className="h-5 w-5 text-white" />
-          </div>
+          <BrandMark size={38} variant="light" className="shadow-sm" />
           <span className="font-display text-xl font-bold tracking-tight text-white">ZenHR</span>
         </div>
 
         <div className="relative space-y-10">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-200">Workforce Platform</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-200">Workforce Platform</p>
             <h1 className="font-display mt-3 text-[2.75rem] font-bold leading-[1.04] text-white">
               HR management<br />for modern teams
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-indigo-100/90">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-brand-100/90">
               One platform to manage employees, vendors, clients, and compliance — all in one place.
             </p>
           </div>
@@ -101,25 +100,25 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-sm text-indigo-100/80">{body}</p>
+                  <p className="text-sm text-brand-100/80">{body}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative text-xs text-indigo-200/80">© 2024 ZenHR · Secure HR Platform</p>
+        <p className="relative text-xs text-brand-200/80">© 2024 ZenHR · Secure HR Platform</p>
       </div>
 
       {/* Right sign-in panel */}
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f7f8fb] px-6 py-12 sm:px-8">
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#fbf6ef] px-6 py-12 sm:px-8">
         {/* Subtle light-theme atmosphere behind the card */}
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
           style={{
             backgroundImage:
-              "radial-gradient(110% 80% at 50% -10%, rgba(99,102,241,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(139,92,246,0.08) 0%, transparent 50%)",
+              "radial-gradient(110% 80% at 50% -10%, rgba(3,54,61,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(29,100,87,0.08) 0%, transparent 50%)",
           }}
         />
         <div
@@ -136,9 +135,7 @@ export default function LoginPage() {
 
         {/* Mobile logo */}
         <div className="relative mb-8 flex items-center gap-2.5 lg:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm shadow-indigo-300/50">
-            <Layers className="h-5 w-5 text-white" />
-          </div>
+          <BrandMark size={38} className="shadow-sm" />
           <span className="font-display text-xl font-bold text-slate-900">ZenHR</span>
         </div>
 
@@ -162,7 +159,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             </div>
 
@@ -171,7 +168,7 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                   Password
                 </label>
-                <Link href="/forgot-password" className="text-xs font-medium text-indigo-600 hover:text-indigo-700">
+                <Link href="/forgot-password" className="text-xs font-medium text-brand-600 hover:text-brand-700">
                   Forgot password?
                 </Link>
               </div>
@@ -184,7 +181,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                 />
                 <button
                   type="button"
@@ -217,7 +214,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-slate-500">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+            <Link href="/signup" className="font-semibold text-brand-600 hover:text-brand-700">
               Request access
             </Link>
           </p>

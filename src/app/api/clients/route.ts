@@ -1,29 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
-  DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-
-// Initialize DynamoDB Client
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-2',
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_NAME || 'HRManagement-Employees';
+import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 
 // GET - Fetch all clients
 export async function GET(request: NextRequest) {
   try {
-    console.log('Fetching clients from table:', TABLE_NAME);
-
     const command = new QueryCommand({
       TableName: TABLE_NAME,
       IndexName: 'GSI1-EmployeeType',

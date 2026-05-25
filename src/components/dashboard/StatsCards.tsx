@@ -25,7 +25,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'indigo' | 'teal' | 'pink' | 'emerald' | 'amber';
+  color: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'brand' | 'teal' | 'pink' | 'emerald' | 'amber';
   onClick?: () => void;
   subtitle?: string;
 }
@@ -66,10 +66,10 @@ const colorClasses = {
     icon: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400',
     text: 'text-red-600 dark:text-red-400',
   },
-  indigo: {
-    bg: 'bg-indigo-50 dark:bg-indigo-950/50',
-    icon: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-400',
-    text: 'text-indigo-600 dark:text-indigo-400',
+  brand: {
+    bg: 'bg-brand-50 dark:bg-brand-950/50',
+    icon: 'bg-brand-100 text-brand-600 dark:bg-brand-900 dark:text-brand-400',
+    text: 'text-brand-600 dark:text-brand-400',
   },
   teal: {
     bg: 'bg-teal-50 dark:bg-teal-950/50',
@@ -142,7 +142,7 @@ export default function StatsCards() {
           title="Total Employees"
           value={stats.totalEmployees}
           icon={Users}
-          color="indigo"
+          color="brand"
           onClick={() => handleFilterByType('All')}
         />
         <StatCard

@@ -6,7 +6,7 @@ import { X, ChevronRight, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Employee } from '@/types/employee';
 
-type Tone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'indigo' | 'slate';
+type Tone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'brand' | 'slate';
 
 interface PeopleListModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ const TONE: Record<Tone, { iconBg: string; iconColor: string; pill: string; chip
   sky:     { iconBg: 'bg-sky-100',     iconColor: 'text-sky-600',     pill: 'bg-sky-50 ring-sky-200',         chipText: 'text-sky-700' },
   pink:    { iconBg: 'bg-pink-100',    iconColor: 'text-pink-600',    pill: 'bg-pink-50 ring-pink-200',       chipText: 'text-pink-700' },
   purple:  { iconBg: 'bg-purple-100',  iconColor: 'text-purple-600',  pill: 'bg-purple-50 ring-purple-200',   chipText: 'text-purple-700' },
-  indigo:  { iconBg: 'bg-indigo-100',  iconColor: 'text-indigo-600',  pill: 'bg-indigo-50 ring-indigo-200',   chipText: 'text-indigo-700' },
+  brand:  { iconBg: 'bg-brand-100',  iconColor: 'text-brand-600',  pill: 'bg-brand-50 ring-brand-200',   chipText: 'text-brand-700' },
   slate:   { iconBg: 'bg-slate-100',   iconColor: 'text-slate-600',   pill: 'bg-slate-50 ring-slate-200',     chipText: 'text-slate-700' },
 };
 
@@ -49,7 +49,7 @@ export function PeopleListModal({
   people,
   contextGetter,
   icon: Icon = Users,
-  tone = 'indigo',
+  tone = 'brand',
   footerLink,
 }: PeopleListModalProps) {
   const t = TONE[tone];
@@ -126,7 +126,7 @@ export function PeopleListModal({
                       onClick={onClose}
                       className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 sm:px-6"
                     >
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
                         {emp.name?.charAt(0) ?? '?'}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -172,7 +172,7 @@ export function PeopleListModal({
             <Link
               href={footerLink.href}
               onClick={onClose}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700"
             >
               {footerLink.label}
               <ChevronRight className="h-4 w-4" />

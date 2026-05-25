@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Eye, Edit2, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Employee, EmployeeType } from '@/types/employee';
@@ -36,6 +36,12 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
   const [pageSize, setPageSize] = useState(10);
   const [typeFilter, setTypeFilter] = useState<EmployeeType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<'Active' | 'Terminated' | 'all'>('all');
+
+  // Pick up a global search from the top-bar (e.g. /dashboard/employees?q=jane)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearch(q);
+  }, []);
 
   const filtered = useMemo(() => {
     let r = [...employees];
@@ -89,14 +95,14 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
             placeholder="Search employees…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-50 transition-all"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={typeFilter}
             onChange={(e) => { setTypeFilter(e.target.value as EmployeeType | 'all'); setPage(1); }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-50 sm:flex-none"
           >
             <option value="all">All Types</option>
             <option value="W2">W2</option>
@@ -107,7 +113,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value as 'Active' | 'Terminated' | 'all'); setPage(1); }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50"
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-50 sm:flex-none"
           >
             <option value="all">All Status</option>
             <option value="Active">Active</option>
@@ -158,7 +164,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
                 className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
                       {emp.name?.charAt(0) ?? '?'}
                     </div>
                     <div>
@@ -187,10 +193,10 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
                   )}
                 </td>
                 <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                     {onView && (
                       <button onClick={() => onView(emp)} title="View"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600 transition-colors">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -220,7 +226,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
           <div className="flex items-center gap-2 text-sm text-slate-500">
             Rows:
             <select value={pageSize} onChange={(e) => { setPageSize(+e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm outline-none focus:border-indigo-300">
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm outline-none focus:border-brand-300">
               {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>

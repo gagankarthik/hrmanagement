@@ -7,8 +7,21 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-hanken);
   --font-mono: var(--font-jb-mono);
+
+  /* Brand — Zendesk-inspired deep teal-green scale */
+  --color-brand-50: #eef6f4;
+  --color-brand-100: #d4ebe4;
+  --color-brand-200: #abd6c9;
+  --color-brand-300: #79bba9;
+  --color-brand-400: #489a89;
+  --color-brand-500: #2c7d6d;
+  --color-brand-600: #1d6457;
+  --color-brand-700: #134d45;
+  --color-brand-800: #0d3c39;
+  --color-brand-900: #03363d;
+  --color-brand-950: #02272b;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -54,8 +67,8 @@
   --card-foreground: oklch(0.147 0.004 49.3);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.147 0.004 49.3);
-  --primary: oklch(0.488 0.243 264.376);
-  --primary-foreground: oklch(0.97 0.014 254.604);
+  --primary: #1d6457;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.96 0.002 17.2);
@@ -123,6 +136,8 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    /* Gentle global scale-down — compacts rem-based spacing + type so more fits on screen */
+    font-size: 15px;
   }
   body {
     @apply bg-background text-foreground;
@@ -162,41 +177,41 @@
   /* The atmospheric canvas behind every dashboard page.
      Soft layered radial tints + a whisper-faint grid for depth. */
   .app-canvas {
-    background-color: #f7f8fb;
+    background-color: #fbf6ef; /* warm cream */
     background-image:
-      radial-gradient(120% 120% at 0% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 42%),
-      radial-gradient(120% 120% at 100% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
-      linear-gradient(to right, rgba(15, 23, 42, 0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-    background-attachment: fixed, fixed, fixed, fixed;
+      radial-gradient(115% 115% at 0% 0%, rgba(3, 54, 61, 0.04) 0%, transparent 42%),
+      radial-gradient(115% 115% at 100% 0%, rgba(29, 100, 87, 0.04) 0%, transparent 40%);
+    background-attachment: fixed, fixed;
   }
 
-  /* Elevated card surface — soft, layered shadow instead of a flat one. */
+  /* Elevated card surface — warm sand border + soft, layered shadow. */
   .surface {
-    @apply rounded-2xl border border-slate-200/70 bg-white;
+    @apply rounded-2xl border bg-white;
+    border-color: #ece5d9;
     box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 8px 24px -16px rgba(15, 23, 42, 0.12);
+      0 1px 2px rgba(3, 54, 61, 0.04),
+      0 8px 24px -16px rgba(3, 54, 61, 0.10);
   }
   .surface-hover {
     @apply transition-all duration-200;
   }
   .surface-hover:hover {
     box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.05),
-      0 14px 32px -18px rgba(79, 70, 229, 0.28);
-    @apply -translate-y-0.5 border-indigo-200/80;
+      0 1px 2px rgba(3, 54, 61, 0.05),
+      0 16px 34px -18px rgba(3, 54, 61, 0.24);
+    border-color: #c9e0d7;
+    transform: translateY(-2px);
   }
 
-  /* Primary action — confident gradient + glow on hover. */
+  /* Primary action — Zendesk-style dark-green pill with a soft glow. */
   .btn-primary {
-    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 20px -10px rgba(79, 70, 229, 0.6);
+    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200;
+    background-color: #03363d;
+    box-shadow: 0 1px 2px rgba(3, 54, 61, 0.14), 0 10px 22px -12px rgba(3, 54, 61, 0.55);
   }
   .btn-primary:hover {
-    @apply bg-indigo-700;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1), 0 12px 24px -8px rgba(79, 70, 229, 0.7);
+    background-color: #0b4a4a;
+    box-shadow: 0 1px 2px rgba(3, 54, 61, 0.18), 0 14px 26px -10px rgba(3, 54, 61, 0.65);
     transform: translateY(-1px);
   }
   .btn-primary:active {
@@ -207,18 +222,24 @@
     transform: none;
   }
 
-  /* Neutral / secondary action. */
+  /* Neutral / secondary action — outlined pill in brand ink. */
   .btn-ghost {
-    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-full border bg-white px-5 py-2.5 text-sm font-semibold transition-all duration-200;
+    color: #03363d;
+    border-color: rgba(3, 54, 61, 0.22);
+  }
+  .btn-ghost:hover {
+    background-color: #f3efe7;
+    border-color: rgba(3, 54, 61, 0.45);
   }
 
   /* Eyebrow label above page titles. */
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-500;
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-600;
   }
 }
 
 @utility font-display {
-  font-family: var(--font-funnel), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.02em;
 }

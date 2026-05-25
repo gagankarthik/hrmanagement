@@ -167,8 +167,8 @@ function HiringTrendCard({ data, total, delta }: { data: number[]; total: number
     <article className="surface p-4 sm:p-5">
       <header className="mb-3 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100">
-            <TrendingUp className="h-4 w-4 text-indigo-600" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100">
+            <TrendingUp className="h-4 w-4 text-brand-600" />
           </div>
           <div>
             <h3 className="font-display text-base font-bold text-slate-900">Hiring Trend</h3>

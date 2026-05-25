@@ -28,9 +28,9 @@ const toneStyles: Record<NonNullable<ConfirmDialogProps['tone']>, { iconBg: stri
     button: 'bg-amber-600 hover:bg-amber-700 shadow-amber-200',
   },
   default: {
-    iconBg: 'bg-indigo-100',
-    iconColor: 'text-indigo-600',
-    button: 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200',
+    iconBg: 'bg-brand-100',
+    iconColor: 'text-brand-600',
+    button: 'bg-brand-600 hover:bg-brand-700 shadow-brand-200',
   },
 };
 

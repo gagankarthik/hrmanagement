@@ -17,8 +17,8 @@ export function Sparkline({
   height = 28,
   strokeWidth = 1.5,
   className,
-  fillClassName = 'fill-indigo-100',
-  strokeClassName = 'stroke-indigo-500',
+  fillClassName = 'fill-brand-100',
+  strokeClassName = 'stroke-brand-500',
 }: SparklineProps) {
   if (!data.length) {
     return <div className={cn('h-7 w-24', className)} />;

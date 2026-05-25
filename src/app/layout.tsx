@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Funnel_Display, JetBrains_Mono } from "next/font/google";
+import { Hanken_Grotesk, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgressBar } from "@/components/ui/route-progress";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Body — warm, friendly humanist sans
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const funnelDisplay = Funnel_Display({
-  variable: "--font-funnel",
+// Display — bold, characterful grotesque for headings
+const bricolageDisplay = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
@@ -49,7 +47,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${funnelDisplay.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${hankenGrotesk.variable} ${bricolageDisplay.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <AuthProvider>
           <ToastProvider>

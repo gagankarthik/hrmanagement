@@ -45,7 +45,7 @@ export default function FilterBar({ onAddEmployee }: FilterBarProps) {
             placeholder="Search employees by name, email, client..."
             value={filters.searchQuery}
             onChange={(e) => setFilters({ searchQuery: e.target.value })}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
           />
           {filters.searchQuery && (
             <button
@@ -92,7 +92,7 @@ export default function FilterBar({ onAddEmployee }: FilterBarProps) {
 
           <button
             onClick={onAddEmployee}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Employee</span>
@@ -111,7 +111,7 @@ export default function FilterBar({ onAddEmployee }: FilterBarProps) {
         <select
           value={filters.type}
           onChange={(e) => setFilters({ type: e.target.value as EmployeeType | 'All' })}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
         >
           {employeeTypes.map((type) => (
             <option key={type.value} value={type.value}>
@@ -124,7 +124,7 @@ export default function FilterBar({ onAddEmployee }: FilterBarProps) {
         <select
           value={filters.status}
           onChange={(e) => setFilters({ status: e.target.value as 'Active' | 'Terminated' | 'All' })}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
         >
           {statusOptions.map((status) => (
             <option key={status.value} value={status.value}>
@@ -139,7 +139,7 @@ export default function FilterBar({ onAddEmployee }: FilterBarProps) {
           placeholder="Filter by state..."
           value={filters.state}
           onChange={(e) => setFilters({ state: e.target.value })}
-          className="w-40 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:placeholder-slate-500"
+          className="w-40 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:placeholder-slate-500"
         />
 
         {/* Clear Filters */}

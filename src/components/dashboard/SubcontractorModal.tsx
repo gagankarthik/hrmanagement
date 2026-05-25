@@ -7,7 +7,7 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { Subcontractor, SubcontractorFormData } from '@/types/subcontractor';
 import { useToast } from '@/components/ui/toast';
 
-const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50';
+const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
 const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
 
 export default function SubcontractorModal({ isOpen, onClose, mode, subcontractor }: {
@@ -85,7 +85,7 @@ export default function SubcontractorModal({ isOpen, onClose, mode, subcontracto
             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={label}>Contact Person</label>
               <input type="text" value={form.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} placeholder="Full name" className={field} />

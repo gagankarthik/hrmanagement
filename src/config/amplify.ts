@@ -1,13 +1,10 @@
 import { Amplify } from 'aws-amplify';
 
-// AWS Configuration
-export const AWS_CONFIG = {
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-2',
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
-  },
-};
+// NOTE: AWS access keys must NEVER live in this file. It is imported by client
+// components (Amplify Cognito setup), so anything referenced here is bundled
+// into the browser. Server-side DynamoDB credentials live in `src/lib/dynamodb.ts`
+// (server-only) and are read from non-public env vars. Only the public Cognito
+// config below is safe to expose.
 
 // AWS Amplify Configuration (Cognito only - no Identity Pool)
 const amplifyConfig = {

@@ -9,12 +9,12 @@ interface EmptyStateProps {
   action?: React.ReactNode;
   secondaryAction?: React.ReactNode;
   className?: string;
-  tone?: 'default' | 'indigo' | 'emerald' | 'purple' | 'amber' | 'sky';
+  tone?: 'default' | 'brand' | 'emerald' | 'purple' | 'amber' | 'sky';
 }
 
 const tones: Record<NonNullable<EmptyStateProps['tone']>, { iconBg: string; iconColor: string }> = {
   default: { iconBg: 'bg-slate-100', iconColor: 'text-slate-500' },
-  indigo: { iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600' },
+  brand: { iconBg: 'bg-brand-50', iconColor: 'text-brand-600' },
   emerald: { iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
   purple: { iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },
   amber: { iconBg: 'bg-amber-50', iconColor: 'text-amber-600' },

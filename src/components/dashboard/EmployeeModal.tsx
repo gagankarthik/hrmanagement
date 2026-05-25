@@ -110,22 +110,12 @@ export default function EmployeeModal({
 
   // Get fields for selected type and populate client/vendor options
   const fields = useMemo(() => {
-    console.log('[EmployeeModal] Computing fields:', {
-      selectedType,
-      clientsCount: clients.length,
-      vendorsCount: vendors.length,
-      clientsData: clients,
-      vendorsData: vendors,
-      mode
-    });
-
     return getFieldsByType(selectedType).map(field => {
       if (field.name === 'clientId') {
         // Filter out any clients without required fields
         const options = clients
           .filter(c => c && c.id && c.name)
           .map(c => ({ value: c.id, label: c.name }));
-        console.log('[EmployeeModal] Client options:', options);
         return {
           ...field,
           options
@@ -136,7 +126,6 @@ export default function EmployeeModal({
         const options = vendors
           .filter(v => v && v.id && v.name)
           .map(v => ({ value: v.id, label: v.name }));
-        console.log('[EmployeeModal] Vendor options:', options);
         return {
           ...field,
           options
@@ -284,7 +273,7 @@ export default function EmployeeModal({
 
     const baseInputClasses = cn(
       'w-full rounded-lg border px-3 py-2 text-sm transition-colors',
-      'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
+      'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500',
       errors[field.name]
         ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20'
         : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800',
@@ -298,17 +287,6 @@ export default function EmployeeModal({
         const isLoadingData = (field.name === 'clientId' && clientsLoading) ||
                              (field.name === 'vendorId' && vendorsLoading);
         const hasNoData = field.options && field.options.length === 0;
-
-        // Debug logging in render
-        if (field.name === 'clientId' || field.name === 'vendorId') {
-          console.log(`[renderField] Rendering ${field.name}:`, {
-            fieldName: field.name,
-            optionsCount: field.options?.length || 0,
-            isLoadingData,
-            hasNoData,
-            firstThreeOptions: field.options?.slice(0, 3)
-          });
-        }
 
         // Generate unique key to force re-render when options change
         const selectKey = field.name === 'clientId'
@@ -348,7 +326,7 @@ export default function EmployeeModal({
               checked={Boolean(value)}
               onChange={(e) => handleInputChange(field, e.target.checked)}
               disabled={isDisabled}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800"
+              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800"
             />
             <span className="text-sm text-slate-700 dark:text-slate-300">Yes</span>
           </label>
@@ -385,7 +363,7 @@ export default function EmployeeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -393,7 +371,7 @@ export default function EmployeeModal({
       />
 
       {/* Modal */}
-      <div className="relative z-10 max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+      <div className="relative z-10 max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-t-2xl bg-white shadow-2xl dark:bg-slate-900 sm:max-h-[90vh] sm:rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
@@ -418,7 +396,7 @@ export default function EmployeeModal({
                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Employee Type
                 </label>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
                   {employeeTypes.map((type) => (
                     <button
                       key={type.value}
@@ -431,7 +409,7 @@ export default function EmployeeModal({
                       className={cn(
                         'rounded-lg border-2 px-4 py-3 text-sm font-medium transition-all',
                         selectedType === type.value
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300'
+                          ? 'border-brand-600 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950 dark:text-brand-300'
                           : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800'
                       )}
                     >
@@ -492,7 +470,7 @@ export default function EmployeeModal({
                       list.push({ clientId: '', startDate: '', endDate: '' });
                       setFormData((prev) => ({ ...prev, clientAssignments: list }));
                     }}
-                    className="flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-950/50 dark:text-indigo-400"
+                    className="flex items-center gap-1 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-950/50 dark:text-brand-400"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add Client
@@ -510,7 +488,7 @@ export default function EmployeeModal({
                       key={idx}
                       className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
                     >
-                      <div className="grid flex-1 grid-cols-3 gap-2">
+                      <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Client</label>
                           <select
@@ -521,7 +499,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, clientAssignments: list }));
                             }}
                             disabled={mode === 'view' || clientsLoading}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           >
                             <option value="">{clientsLoading ? 'Loading...' : 'Select Client'}</option>
                             {clients.filter((c) => c?.id && c?.name).map((c) => (
@@ -540,7 +518,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, clientAssignments: list }));
                             }}
                             disabled={mode === 'view'}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           />
                         </div>
                         <div>
@@ -554,7 +532,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, clientAssignments: list }));
                             }}
                             disabled={mode === 'view'}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           />
                         </div>
                       </div>
@@ -608,7 +586,7 @@ export default function EmployeeModal({
                       key={idx}
                       className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
                     >
-                      <div className="grid flex-1 grid-cols-3 gap-2">
+                      <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Vendor</label>
                           <select
@@ -619,7 +597,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, vendorAssignments: list }));
                             }}
                             disabled={mode === 'view' || vendorsLoading}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           >
                             <option value="">{vendorsLoading ? 'Loading...' : 'Select Vendor'}</option>
                             {vendors.filter((v) => v?.id && v?.name).map((v) => (
@@ -638,7 +616,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, vendorAssignments: list }));
                             }}
                             disabled={mode === 'view'}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           />
                         </div>
                         <div>
@@ -652,7 +630,7 @@ export default function EmployeeModal({
                               setFormData((prev) => ({ ...prev, vendorAssignments: list }));
                             }}
                             disabled={mode === 'view'}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                           />
                         </div>
                       </div>
@@ -706,7 +684,7 @@ export default function EmployeeModal({
                       key={idx}
                       className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
                     >
-                      <div className="grid flex-1 grid-cols-3 gap-2">
+                      <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Client</label>
                           <select
@@ -804,7 +782,7 @@ export default function EmployeeModal({
                       key={idx}
                       className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
                     >
-                      <div className="grid flex-1 grid-cols-3 gap-2">
+                      <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">End Vendor</label>
                           <select
@@ -902,7 +880,7 @@ export default function EmployeeModal({
                       key={idx}
                       className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50"
                     >
-                      <div className="grid flex-1 grid-cols-3 gap-2">
+                      <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">Subcontractor</label>
                           <select
@@ -982,7 +960,7 @@ export default function EmployeeModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">

@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface VendorDetailPageProps {
   params: Promise<{ id: string }>;
@@ -185,13 +184,6 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: 'Vendors', href: '/dashboard/vendors' },
-          { label: vendor.name },
-        ]}
-      />
-
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -208,7 +200,7 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
       </div>
 
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-violet-600 p-6 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-brand-600 p-6 text-white shadow-lg">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-3xl font-bold">
@@ -392,7 +384,7 @@ function VendorDetailPageContent({ params }: VendorDetailPageProps) {
                   onClick={() => router.push(`/dashboard/employees/${emp.id}`)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 text-sm font-bold text-white">
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-brand-600 text-sm font-bold text-white">
                       {emp.name.charAt(0)}
                     </div>
                     <div className="min-w-0">

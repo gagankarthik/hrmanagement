@@ -172,7 +172,7 @@ export default function EmployeeTable({ onEdit, onView, onDelete }: EmployeeTabl
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600"></div>
       </div>
     );
   }
@@ -327,7 +327,7 @@ export default function EmployeeTable({ onEdit, onView, onDelete }: EmployeeTabl
                     className={cn(
                       'h-8 w-8 rounded-lg text-sm font-medium transition-colors',
                       currentPage === page
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                     )}
                   >

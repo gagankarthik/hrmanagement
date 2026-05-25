@@ -1,32 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { ClientProvider } from '@/context/ClientContext';
 import { VendorProvider } from '@/context/VendorContext';
 import { SubcontractorProvider } from '@/context/SubcontractorContext';
+import { LeaveProvider } from '@/context/LeaveContext';
+import { AttendanceProvider } from '@/context/AttendanceContext';
+import { HandbookProvider } from '@/context/HandbookContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/dashboard/Sidebar';
+import Topbar from '@/components/dashboard/Topbar';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
     <ProtectedRoute>
       <ClientProvider>
         <VendorProvider>
           <SubcontractorProvider>
             <EmployeeProvider>
-              <div className="flex min-h-screen bg-slate-50">
-                <Sidebar />
-                <main className="app-canvas flex-1 min-w-0 overflow-y-auto">
-                  <div className="mx-auto min-h-screen w-full max-w-[1400px] px-4 py-6 pt-16 sm:px-6 lg:px-10 lg:py-8 lg:pt-8">
-                    {children}
+              <HandbookProvider>
+                <LeaveProvider>
+                <AttendanceProvider>
+                  <div className="flex min-h-screen bg-slate-50">
+                    <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+                    <main className="app-canvas relative flex-1 min-w-0">
+                      <Topbar onMenuClick={() => setMobileNavOpen(true)} />
+                      <div className="mx-auto w-full max-w-[1360px] px-3.5 py-5 sm:px-5 lg:px-7 lg:py-6">
+                        {children}
+                      </div>
+                    </main>
                   </div>
-                </main>
-              </div>
+                </AttendanceProvider>
+                </LeaveProvider>
+              </HandbookProvider>
             </EmployeeProvider>
           </SubcontractorProvider>
         </VendorProvider>

@@ -6,6 +6,24 @@ frontend:
         - npm ci --legacy-peer-deps
     build:
       commands:
+        # --- Server-only DynamoDB credentials (NEVER exposed to the browser) ---
+        # Set DYNAMODB_* in the Amplify console. During migration we fall back to
+        # the legacy NEXT_PUBLIC_AWS_* console vars, but write them under the
+        # non-public names so Next.js does not inline secrets into client JS.
+        - echo "DYNAMODB_REGION=${DYNAMODB_REGION:-$NEXT_PUBLIC_AWS_REGION}" >> .env.production
+        - echo "DYNAMODB_ACCESS_KEY_ID=${DYNAMODB_ACCESS_KEY_ID:-$NEXT_PUBLIC_AWS_ACCESS_KEY_ID}" >> .env.production
+        - echo "DYNAMODB_SECRET_ACCESS_KEY=${DYNAMODB_SECRET_ACCESS_KEY:-$NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY}" >> .env.production
+        - echo "DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME:-${NEXT_PUBLIC_DYNAMODB_TABLE_NAME:-HRManagement-Employees}}" >> .env.production
+        # Server-only S3 config for document uploads (region inherited from NEXT_PUBLIC_AWS_REGION)
+        - echo "DOCUMENTS_S3_BUCKET=${DOCUMENTS_S3_BUCKET:-zenhr-documents-system}" >> .env.production
+        # --- Public client config (safe to expose to the browser) ---
+        - echo "NEXT_PUBLIC_AWS_REGION=$NEXT_PUBLIC_AWS_REGION" >> .env.production
+        - echo "NEXT_PUBLIC_AWS_USER_POOL_ID=$NEXT_PUBLIC_AWS_USER_POOL_ID" >> .env.production
+        - echo "NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=$NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_USER_POOL_ID=$NEXT_PUBLIC_COGNITO_USER_POOL_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_CLIENT_ID=$NEXT_PUBLIC_COGNITO_CLIENT_ID" >> .env.production
+        - echo "NEXT_PUBLIC_COGNITO_DOMAIN=$NEXT_PUBLIC_COGNITO_DOMAIN" >> .env.production
+        - echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
@@ -13,5 +31,5 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - .next/cache/**/*
       - node_modules/**/*
+      - .next/cache/**/*

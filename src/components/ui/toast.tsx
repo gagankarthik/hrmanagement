@@ -127,9 +127,9 @@ const variantStyles: Record<ToastVariant, { ring: string; iconBg: string; iconCo
     icon: AlertTriangle,
   },
   info: {
-    ring: 'ring-indigo-200',
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
+    ring: 'ring-brand-200',
+    iconBg: 'bg-brand-50',
+    iconColor: 'text-brand-600',
     icon: Info,
   },
 };

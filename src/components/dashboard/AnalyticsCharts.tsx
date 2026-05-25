@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
+import { resolveName } from '@/lib/names';
 
 export default function AnalyticsCharts() {
   const { employees, stats } = useEmployees();
@@ -48,7 +49,7 @@ export default function AnalyticsCharts() {
         || (emp.clientId ? [emp.clientId] : []);
       if (clientIds.length > 0) {
         clientIds.forEach((id) => {
-          const name = clients.find((c) => c.id === id)?.name || emp.client || id;
+          const name = resolveName(id, clients, { legacy: emp.client, unknown: 'Unknown client' });
           distribution[name] = (distribution[name] || 0) + 1;
         });
       } else if (emp.client) {
@@ -69,7 +70,7 @@ export default function AnalyticsCharts() {
         || (emp.vendorId ? [emp.vendorId] : []);
       if (vendorIds.length > 0) {
         vendorIds.forEach((id) => {
-          const name = vendors.find((v) => v.id === id)?.name || emp.vendorName || id;
+          const name = resolveName(id, vendors, { legacy: emp.vendorName, unknown: 'Unknown vendor' });
           distribution[name] = (distribution[name] || 0) + 1;
         });
       } else if (emp.vendorName) {
@@ -301,7 +302,7 @@ export default function AnalyticsCharts() {
 
         <div className="mb-4 flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-indigo-500" />
+            <div className="h-3 w-3 rounded-full bg-brand-500" />
             <span className="text-sm text-slate-600 dark:text-slate-400">Total</span>
           </div>
           <div className="flex items-center gap-2">
@@ -342,7 +343,7 @@ export default function AnalyticsCharts() {
                 />
                 {/* Others bar */}
                 <div
-                  className="flex-1 rounded-t-lg bg-indigo-400 transition-all duration-300"
+                  className="flex-1 rounded-t-lg bg-brand-400 transition-all duration-300"
                   style={{
                     height: `${((item.count - item.w2 - item.offshore) / maxHiring) * 100}%`,
                     minHeight: (item.count - item.w2 - item.offshore) > 0 ? '8px' : '0px',
@@ -432,7 +433,7 @@ export default function AnalyticsCharts() {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500"
                   style={{ width: `${(count / maxState) * 100}%` }}
                 />
               </div>

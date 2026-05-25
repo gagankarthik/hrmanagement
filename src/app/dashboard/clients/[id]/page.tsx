@@ -26,7 +26,6 @@ import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface ClientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -186,13 +185,6 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: 'Clients', href: '/dashboard/clients' },
-          { label: client.name },
-        ]}
-      />
-
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -243,7 +235,7 @@ function ClientDetailPageContent({ params }: ClientDetailPageProps) {
         {[
           { label: 'Total', value: clientEmployees.length, bg: 'bg-blue-100', color: 'text-blue-600', icon: Users },
           { label: 'Active', value: activeCount, bg: 'bg-emerald-100', color: 'text-emerald-600', icon: CheckCircle2 },
-          { label: 'W2', value: typeDistribution.W2 || 0, bg: 'bg-indigo-100', color: 'text-indigo-600', icon: Briefcase },
+          { label: 'W2', value: typeDistribution.W2 || 0, bg: 'bg-brand-100', color: 'text-brand-600', icon: Briefcase },
           { label: 'Offshore', value: typeDistribution.Offshore || 0, bg: 'bg-pink-100', color: 'text-pink-600', icon: Globe },
         ].map((s) => (
           <div key={s.label} className="surface flex items-center gap-3 p-4">

@@ -67,7 +67,7 @@ export default function EmployeesPage() {
 
       {/* Summary Stats */}
       <StatGrid cols={4}>
-        <StatCard label="Total" value={stats.totalEmployees} icon={Users} tone="indigo" />
+        <StatCard label="Total" value={stats.totalEmployees} icon={Users} tone="brand" />
         <StatCard label="Active" value={stats.activeCount} icon={UserCheck} tone="emerald" />
         <StatCard label="Terminated" value={stats.terminatedCount} icon={UserX} tone="red" />
         <StatCard label="Expiring Auth" value={stats.expiringAuthorizations} icon={AlertTriangle} tone="amber" />
@@ -85,18 +85,18 @@ export default function EmployeesPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   'relative flex items-center gap-2 px-3 py-3.5 text-sm font-medium transition-colors whitespace-nowrap',
-                  isActive ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                  isActive ? 'text-brand-600' : 'text-slate-500 hover:text-slate-700'
                 )}
               >
                 <span className={cn('h-2 w-2 rounded-full', tab.dotColor)} />
                 {tab.label}
                 <span className={cn(
                   'rounded-full px-1.5 py-0.5 text-xs',
-                  isActive ? 'bg-indigo-100 text-indigo-700 font-semibold' : 'bg-slate-100 text-slate-500'
+                  isActive ? 'bg-brand-100 text-brand-700 font-semibold' : 'bg-slate-100 text-slate-500'
                 )}>
                   {count}
                 </span>
-                {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-indigo-600" />}
+                {isActive && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-brand-600" />}
               </button>
             );
           })}

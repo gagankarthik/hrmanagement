@@ -24,7 +24,6 @@ import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface SubcontractorDetailPageProps {
   params: Promise<{ id: string }>;
@@ -184,13 +183,6 @@ function SubcontractorDetailPageContent({ params }: SubcontractorDetailPageProps
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: 'Subcontractors', href: '/dashboard/subcontractors' },
-          { label: subcontractor.name },
-        ]}
-      />
-
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button

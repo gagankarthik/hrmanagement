@@ -23,8 +23,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-indigo-100 dark:border-indigo-900"></div>
-            <div className="absolute left-0 top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-indigo-600"></div>
+            <div className="h-16 w-16 rounded-full border-4 border-brand-100 dark:border-brand-900"></div>
+            <div className="absolute left-0 top-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-brand-600"></div>
           </div>
           <div className="text-center">
             <p className="text-lg font-medium text-slate-900 dark:text-white">Loading...</p>

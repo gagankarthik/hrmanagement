@@ -11,18 +11,41 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { Employee, EmployeeType } from '@/types/employee';
 
-// Initialize DynamoDB Client with IAM credentials
+// SERVER-ONLY MODULE. Never import this from a Client Component — it reads AWS
+// credentials. Credentials come from NON-public env vars so they are never
+// bundled into the browser; the legacy NEXT_PUBLIC_* names are accepted only as
+// a migration fallback. With no static keys, the AWS SDK default credential
+// provider chain (e.g. the Amplify/Lambda execution role) is used.
+const region =
+  process.env.DYNAMODB_REGION ||
+  process.env.APP_AWS_REGION ||
+  process.env.NEXT_PUBLIC_AWS_REGION ||
+  'us-east-2';
+
+const accessKeyId =
+  process.env.DYNAMODB_ACCESS_KEY_ID ||
+  process.env.APP_AWS_ACCESS_KEY_ID ||
+  process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID;
+
+const secretAccessKey =
+  process.env.DYNAMODB_SECRET_ACCESS_KEY ||
+  process.env.APP_AWS_SECRET_ACCESS_KEY ||
+  process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY;
+
 const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-2',
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
-  },
+  region,
+  ...(accessKeyId && secretAccessKey
+    ? { credentials: { accessKeyId, secretAccessKey } }
+    : {}),
 });
 
-const docClient = DynamoDBDocumentClient.from(client);
+export const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.NEXT_PUBLIC_EMPLOYEES_TABLE || 'HRManagement-Employees';
+export const TABLE_NAME =
+  process.env.DYNAMODB_TABLE_NAME ||
+  process.env.NEXT_PUBLIC_DYNAMODB_TABLE_NAME ||
+  process.env.NEXT_PUBLIC_EMPLOYEES_TABLE ||
+  'HRManagement-Employees';
 
 // Fetch all employees
 export async function fetchAllEmployees(): Promise<Employee[]> {
@@ -169,9 +192,5 @@ export async function deleteEmployee(id: string): Promise<void> {
 
 // Check if DynamoDB is configured
 export function isDynamoDBConfigured(): boolean {
-  return !!(
-    process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID &&
-    process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY &&
-    process.env.NEXT_PUBLIC_AWS_REGION
-  );
+  return !!(accessKeyId && secretAccessKey && region);
 }

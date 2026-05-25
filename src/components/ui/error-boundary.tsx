@@ -52,7 +52,7 @@ export function DefaultErrorFallback({ error, reset }: { error: Error; reset: ()
         <button
           type="button"
           onClick={reset}
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-200 transition-all hover:bg-indigo-700 hover:shadow-md"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-200 transition-all hover:bg-brand-700 hover:shadow-md"
         >
           <RotateCcw className="h-4 w-4" />
           Try again

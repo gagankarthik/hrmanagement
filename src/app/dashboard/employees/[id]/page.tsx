@@ -2,10 +2,14 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
+import { useLeaves } from '@/context/LeaveContext';
+import { useHandbook } from '@/context/HandbookContext';
+import { LeaveType } from '@/types/leave';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -31,14 +35,16 @@ import {
   Printer,
   CheckCircle2,
   AlertTriangle,
+  CalendarCheck,
+  Hourglass,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { resolveName } from '@/lib/names';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 
 interface EmployeeDetailPageProps {
   params: Promise<{ id: string }>;
@@ -72,6 +78,8 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
   const { clients } = useClients();
   const { vendors } = useVendors();
   const { subcontractors } = useSubcontractors();
+  const { leaves } = useLeaves();
+  const { getPolicy } = useHandbook();
   const toast = useToast();
   const [employeeId, setEmployeeId] = React.useState<string>('');
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -91,11 +99,11 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
     if (employee.clientAssignments?.length) {
       return employee.clientAssignments.map((a) => ({
         ...a,
-        name: clients.find((c) => c.id === a.clientId)?.name || a.clientId,
+        name: resolveName(a.clientId, clients, { unknown: 'Unknown client' }),
       }));
     }
     if (employee.clientId) {
-      const name = clients.find((c) => c.id === employee.clientId)?.name || employee.client || employee.clientId;
+      const name = resolveName(employee.clientId, clients, { legacy: employee.client, unknown: 'Unknown client' });
       return [{ clientId: employee.clientId, name, startDate: undefined, endDate: undefined }];
     }
     if (employee.client) {
@@ -109,11 +117,11 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
     if (employee.vendorAssignments?.length) {
       return employee.vendorAssignments.map((a) => ({
         ...a,
-        name: vendors.find((v) => v.id === a.vendorId)?.name || a.vendorId,
+        name: resolveName(a.vendorId, vendors, { unknown: 'Unknown vendor' }),
       }));
     }
     if (employee.vendorId) {
-      const name = vendors.find((v) => v.id === employee.vendorId)?.name || employee.vendorName || employee.vendorId;
+      const name = resolveName(employee.vendorId, vendors, { legacy: employee.vendorName, unknown: 'Unknown vendor' });
       return [{ vendorId: employee.vendorId, name, startDate: undefined, endDate: undefined }];
     }
     if (employee.vendorName) {
@@ -127,11 +135,11 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
     if (employee.subcontractorAssignments?.length) {
       return employee.subcontractorAssignments.map((a) => ({
         ...a,
-        name: subcontractors.find((s) => s.id === a.subcontractorId)?.name || a.subcontractorId,
+        name: resolveName(a.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' }),
       }));
     }
     if (employee.subcontractorId) {
-      const name = subcontractors.find((s) => s.id === employee.subcontractorId)?.name || employee.subcontractorId;
+      const name = resolveName(employee.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' });
       return [{ subcontractorId: employee.subcontractorId, name, startDate: undefined, endDate: undefined }];
     }
     return [];
@@ -154,6 +162,30 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
     if (today.getMonth() < hire.getMonth() || (today.getMonth() === hire.getMonth() && today.getDate() < hire.getDate())) y--;
     return y;
   }, [employee]);
+
+  const leaveBalance = useMemo(() => {
+    if (!employee) return null;
+    const allowance = getPolicy(employee.type).annualLeaveAllowance || 0;
+    const mine = leaves.filter((l) => l.employeeId === employee.id);
+    const approved = mine.filter((l) => l.status === 'Approved');
+    const used = approved.reduce((sum, l) => sum + (l.days || 0), 0);
+    const remaining = Math.max(0, allowance - used);
+    const pendingCount = mine.filter((l) => l.status === 'Pending').length;
+
+    const byType = new Map<LeaveType, number>();
+    approved.forEach((l) => {
+      byType.set(l.type, (byType.get(l.type) || 0) + (l.days || 0));
+    });
+    const breakdown = Array.from(byType.entries())
+      .filter(([, days]) => days > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    const pct = allowance > 0 ? Math.min(100, (used / allowance) * 100) : 0;
+    const over = allowance > 0 && used > allowance;
+    const nearLimit = allowance > 0 && !over && used / allowance >= 0.85;
+
+    return { allowance, used, remaining, pendingCount, breakdown, pct, over, nearLimit };
+  }, [employee, leaves, getPolicy]);
 
   const handleDelete = () => setDeleteOpen(true);
 
@@ -323,13 +355,6 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: 'Employees', href: '/dashboard/employees' },
-          { label: employee.name },
-        ]}
-      />
-
       {/* Nav */}
       <div className="flex items-center justify-between">
         <button
@@ -355,7 +380,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
       </div>
 
       {/* Profile hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-brand-600 p-6 text-white shadow-lg">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 font-display text-3xl font-bold backdrop-blur-sm">
@@ -441,8 +466,8 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         {/* Personal Info */}
         <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-              <User className="h-4 w-4 text-indigo-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+              <User className="h-4 w-4 text-brand-600" />
             </div>
             <h2 className="font-display text-base font-bold text-slate-900">Personal Information</h2>
           </div>
@@ -457,8 +482,8 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         {/* Employment Info */}
         <div className="surface p-6">
           <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-              <Briefcase className="h-4 w-4 text-indigo-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+              <Briefcase className="h-4 w-4 text-brand-600" />
             </div>
             <h2 className="font-display text-base font-bold text-slate-900">Employment Information</h2>
           </div>
@@ -487,6 +512,83 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
             )}
           </div>
         </div>
+
+        {/* Leave Balance */}
+        {leaveBalance && (
+          <div className="surface p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+                <CalendarCheck className="h-4 w-4 text-brand-600" />
+              </div>
+              <h2 className="font-display text-base font-bold text-slate-900">Leave balance</h2>
+              {leaveBalance.pendingCount > 0 && (
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                  <Hourglass className="h-3 w-3" />{leaveBalance.pendingCount} pending
+                </span>
+              )}
+            </div>
+
+            {leaveBalance.allowance === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-center">
+                <p className="text-sm text-slate-500">No leave policy set for this category.</p>
+                <Link href="/dashboard/handbook" className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                  Configure in Handbook →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Used</p>
+                    <p className="font-display text-2xl font-bold text-slate-900">
+                      {leaveBalance.used} <span className="text-base font-semibold text-slate-400">of {leaveBalance.allowance} days</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-slate-500">Remaining</p>
+                    <p className={cn(
+                      'font-display text-2xl font-bold',
+                      leaveBalance.over ? 'text-red-600' : 'text-brand-600'
+                    )}>
+                      {leaveBalance.remaining}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all',
+                      leaveBalance.over ? 'bg-red-500' : leaveBalance.nearLimit ? 'bg-amber-500' : 'bg-brand-500'
+                    )}
+                    style={{ width: `${Math.max(leaveBalance.pct, leaveBalance.used > 0 ? 4 : 0)}%` }}
+                  />
+                </div>
+                {leaveBalance.over && (
+                  <p className="text-xs font-semibold text-red-600">
+                    Over allowance by {leaveBalance.used - leaveBalance.allowance} day{leaveBalance.used - leaveBalance.allowance !== 1 ? 's' : ''}.
+                  </p>
+                )}
+
+                {/* By-type breakdown */}
+                {leaveBalance.breakdown.length > 0 && (
+                  <div className="border-t border-slate-100 pt-3">
+                    <p className="mb-2 text-xs font-medium text-slate-500">By type</p>
+                    <div className="flex flex-wrap gap-2">
+                      {leaveBalance.breakdown.map(([type, days]) => (
+                        <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          {type}
+                          <span className="rounded-full bg-white px-1.5 text-[11px] font-bold text-slate-700">{days}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Client Assignments */}
         <div className="surface p-6">
@@ -549,7 +651,7 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
                 return (
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 text-xs font-bold text-white">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-brand-600 text-xs font-bold text-white">
                         {a.name.charAt(0)}
                       </div>
                       <div>
@@ -621,8 +723,8 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         {workAuth && employee.type !== 'Offshore' && (
           <div className="surface p-6">
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-                <Shield className="h-4 w-4 text-indigo-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+                <Shield className="h-4 w-4 text-brand-600" />
               </div>
               <h2 className="font-display text-base font-bold text-slate-900">Work Authorization</h2>
             </div>
@@ -657,8 +759,8 @@ function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
         {offshore && (
           <div className="surface p-6">
             <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-                <CreditCard className="h-4 w-4 text-indigo-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+                <CreditCard className="h-4 w-4 text-brand-600" />
               </div>
               <h2 className="font-display text-base font-bold text-slate-900">India Tax &amp; Provident Fund</h2>
             </div>

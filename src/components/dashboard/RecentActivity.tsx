@@ -66,8 +66,8 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
     <section className="surface">
       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
-            <Activity className="h-4 w-4 text-indigo-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+            <Activity className="h-4 w-4 text-brand-600" />
           </div>
           <h2 className="font-display text-lg font-bold text-slate-900">Recent activity</h2>
         </div>
@@ -83,7 +83,7 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
         <div className="p-5">
           <EmptyState
             icon={Activity}
-            tone="indigo"
+            tone="brand"
             title="No recent activity"
             description="As you onboard or update employees they'll show up here."
           />

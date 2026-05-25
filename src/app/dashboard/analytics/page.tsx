@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   PieChart, AlertOctagon, AlertTriangle, UserMinus, Sparkles,
-  Users, DollarSign, Gauge, Calendar, TrendingUp, TrendingDown,
+  Users, DollarSign, Gauge, Calendar, TrendingUp,
   Shield, MapPin, Building2, Package, Cake, Award,
   Heart, Wallet, ShieldCheck, Briefcase, Globe, FileCheck,
   CheckCircle2, XCircle, FileText, ChevronRight,
@@ -14,10 +14,15 @@ import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { Employee, EmployeeType } from '@/types/employee';
 import { cn } from '@/lib/utils';
+import { resolveName } from '@/lib/names';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import {
+  DonutChart, CompareBarChart, TrendAreaChart,
+  VIZ, TYPE_COLOR as VIZ_TYPE_COLOR,
+} from '@/components/dashboard/Charts';
 
 const HOURS_PER_MONTH = 173;
 
@@ -58,7 +63,7 @@ function monthlyPay(e: Employee): number {
   return 0;
 }
 
-type DrillTone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'indigo' | 'slate';
+type DrillTone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'brand' | 'slate';
 
 interface DrillConfig {
   title: string;
@@ -272,21 +277,30 @@ export default function AnalyticsPage() {
     });
   }, [filtered]);
 
-  // Hiring trend (24 weeks)
-  const hiringTrend = useMemo(() => {
-    const weeks = 24;
-    const now = new Date();
-    const start = new Date(now.getTime() - weeks * 7 * 86400000);
-    const arr = Array(weeks).fill(0);
-    filtered.forEach((e) => {
-      if (!e.hireDate) return;
-      const h = new Date(e.hireDate);
-      if (Number.isNaN(h.getTime()) || h < start || h > now) return;
-      const idx = Math.min(weeks - 1, Math.floor((h.getTime() - start.getTime()) / (7 * 86400000)));
-      arr[idx] += 1;
-    });
-    return arr;
-  }, [filtered]);
+  // ── recharts-shaped views of the computed distributions (render-only mapping) ──
+  const typePie = useMemo(
+    () => typeDist
+      .filter((d) => d.value > 0)
+      .map((d) => ({ name: TYPE_LABEL[d.label], value: d.value, color: VIZ_TYPE_COLOR[d.label] ?? VIZ.slate })),
+    [typeDist],
+  );
+  const statusPie = useMemo(
+    () => statusDist
+      .filter((d) => d.value > 0)
+      .map((d) => ({ name: d.label, value: d.value, color: d.label === 'Active' ? VIZ.emerald : VIZ.rose })),
+    [statusDist],
+  );
+  const revenuePie = useMemo(
+    () => revenueDist
+      .filter((d) => d.value > 0)
+      .map((d) => ({ name: d.label, value: d.value, color: d.label === 'Billable' ? VIZ.emerald : VIZ.amber })),
+    [revenueDist],
+  );
+  // Comparison "vs" bars: active vs terminated headcount per employee class
+  const typeByStatusBars = useMemo(
+    () => typeByStatus.map((d) => ({ type: TYPE_LABEL[d.label], Active: d.active, Terminated: d.terminated })),
+    [typeByStatus],
+  );
 
   // Monthly hires (12 months)
   const monthlyHires = useMemo(() => {
@@ -310,36 +324,67 @@ export default function AnalyticsPage() {
     return arr;
   }, [filtered]);
 
+  // Monthly hires split by class (12 months) — powers the W-2 vs Offshore vs Total trend area
+  const monthlyHiresByType = useMemo(() => {
+    const months = 12;
+    const now = new Date();
+    const rows: { month: string; total: number; W2: number; Offshore: number }[] = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      rows.push({ month: format(d, 'MMM'), total: 0, W2: 0, Offshore: 0 });
+    }
+    filtered.forEach((e) => {
+      if (!e.hireDate) return;
+      const h = new Date(e.hireDate);
+      if (Number.isNaN(h.getTime())) return;
+      for (let i = 0; i < months; i++) {
+        const start = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i) + 1, 1);
+        if (h >= start && h < end) {
+          rows[i].total += 1;
+          if (e.type === 'W2') rows[i].W2 += 1;
+          else if (e.type === 'Offshore') rows[i].Offshore += 1;
+          break;
+        }
+      }
+    });
+    return rows;
+  }, [filtered]);
+
   // Top clients/vendors and end variants
   const computeTop = (
     pickIds: (e: Employee) => string[],
     lookup: { id: string; name: string }[],
+    unknownLabel = 'Unknown',
   ) => {
     const dist: Record<string, { id: string; name: string; count: number }> = {};
     filtered.forEach((e) => {
-      pickIds(e).forEach((id) => {
-        const name = lookup.find((x) => x.id === id)?.name || id;
-        if (!dist[id]) dist[id] = { id, name, count: 0 };
-        dist[id].count += 1;
+      // Dedupe per employee so one person isn't counted twice for the same record
+      Array.from(new Set(pickIds(e))).forEach((id) => {
+        const known = lookup.some((x) => x.id === id);
+        const name = resolveName(id, lookup, { unknown: unknownLabel });
+        const key = known ? id : `name:${name.toLowerCase()}`;
+        if (!dist[key]) dist[key] = { id: known ? id : '', name, count: 0 };
+        dist[key].count += 1;
       });
     });
     return Object.values(dist).sort((a, b) => b.count - a.count).slice(0, 10);
   };
   const topClients = useMemo(() => computeTop(
     (e) => e.clientAssignments?.map((a) => a.clientId).filter(Boolean) || (e.clientId ? [e.clientId] : []),
-    clients
+    clients, 'Unknown client'
   ), [filtered, clients]);
   const topVendors = useMemo(() => computeTop(
     (e) => e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (e.vendorId ? [e.vendorId] : []),
-    vendors
+    vendors, 'Unknown vendor'
   ), [filtered, vendors]);
   const topEndClients = useMemo(() => computeTop(
     (e) => e.endClientAssignments?.map((a) => a.clientId).filter(Boolean) || (e.endClientId ? [e.endClientId] : []),
-    clients
+    clients, 'Unknown end client'
   ), [filtered, clients]);
   const topEndVendors = useMemo(() => computeTop(
     (e) => e.endVendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (e.endVendorId ? [e.endVendorId] : []),
-    vendors
+    vendors, 'Unknown end vendor'
   ), [filtered, vendors]);
 
   const topStates = useMemo(() => Object.entries(metrics.stateDist)
@@ -523,10 +568,10 @@ export default function AnalyticsPage() {
     setDrill({ title: `Employees in ${state}`, description: `All employees based in ${state}.`, icon: MapPin, tone: 'sky', people: filtered.filter((e) => e.state === state), contextGetter: ctxLocation });
   };
   const openCity = (city: string) => {
-    setDrill({ title: `Employees in ${city}`, description: `All employees based in ${city}.`, icon: MapPin, tone: 'indigo', people: filtered.filter((e) => e.city === city), contextGetter: ctxLocation });
+    setDrill({ title: `Employees in ${city}`, description: `All employees based in ${city}.`, icon: MapPin, tone: 'brand', people: filtered.filter((e) => e.city === city), contextGetter: ctxLocation });
   };
   const openClient = (id: string) => {
-    const name = clients.find((c) => c.id === id)?.name || id;
+    const name = resolveName(id, clients, { unknown: 'Unknown client' });
     const people = filtered.filter((e) => {
       const ids = e.clientAssignments?.map((a) => a.clientId).filter(Boolean) || (e.clientId ? [e.clientId] : []);
       return ids.includes(id);
@@ -534,7 +579,7 @@ export default function AnalyticsPage() {
     setDrill({ title: `${name} placements`, description: `Employees currently assigned to ${name}.`, icon: Building2, tone: 'emerald', people, contextGetter: ctxHire });
   };
   const openVendor = (id: string) => {
-    const name = vendors.find((v) => v.id === id)?.name || id;
+    const name = resolveName(id, vendors, { unknown: 'Unknown vendor' });
     const people = filtered.filter((e) => {
       const ids = e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (e.vendorId ? [e.vendorId] : []);
       return ids.includes(id);
@@ -543,7 +588,7 @@ export default function AnalyticsPage() {
   };
   const openAuthType = (auth: string) => {
     const people = filtered.filter((e) => 'workAuthorization' in e && (e as { workAuthorization?: string }).workAuthorization === auth);
-    setDrill({ title: `${auth} holders`, description: `Employees with ${auth} work authorization.`, icon: Shield, tone: 'indigo', people, contextGetter: ctxExpiry });
+    setDrill({ title: `${auth} holders`, description: `Employees with ${auth} work authorization.`, icon: Shield, tone: 'brand', people, contextGetter: ctxExpiry });
   };
 
   if (isLoading) {
@@ -575,7 +620,7 @@ export default function AnalyticsPage() {
         icon={PieChart}
         eyebrow="Insights"
         title="HR Analytics"
-        tone="indigo"
+        tone="brand"
         description={`Every workforce metric, derived live from ${employees.length.toLocaleString()} employee record${employees.length === 1 ? '' : 's'}. Click any chart segment to see the people behind the number.`}
       />
 
@@ -622,9 +667,9 @@ export default function AnalyticsPage() {
       <section>
         <SectionHeader title="Executive Summary" subtitle="At-a-glance KPIs across your workforce." />
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          <KpiTile icon={Users}      label="Headcount"    value={metrics.total.toLocaleString()}       sub={`${metrics.active} active`} tone="indigo" />
+          <KpiTile icon={Users}      label="Headcount"    value={metrics.total.toLocaleString()}       sub={`${metrics.active} active`} tone="brand" />
           <KpiTile icon={DollarSign} label="Run-Rate"     value={compactCurrency(metrics.revenue)}     sub="Monthly billable" tone="emerald" />
-          <KpiTile icon={Gauge}      label="Utilization"  value={`${metrics.utilization}%`}            sub={`${metrics.billable} billable`} tone="indigo" />
+          <KpiTile icon={Gauge}      label="Utilization"  value={`${metrics.utilization}%`}            sub={`${metrics.billable} billable`} tone="brand" />
           <KpiTile icon={Award}      label="Avg Tenure"   value={metrics.avgTenureYears !== null ? `${metrics.avgTenureYears}y` : '—'} sub="years of service" tone="purple" />
           <KpiTile icon={Cake}       label="Avg Age"      value={metrics.avgAge !== null ? `${metrics.avgAge}` : '—'} sub="years" tone="pink" />
           <KpiTile icon={Calendar}   label="Time-to-Onboard" value={metrics.avgOnboardDays !== null ? `${metrics.avgOnboardDays}d` : '—'} sub="avg days" tone="sky" />
@@ -636,53 +681,71 @@ export default function AnalyticsPage() {
         <SectionHeader title="Workforce Composition" subtitle="Who makes up your workforce — class, status, revenue." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
           {/* Type donut */}
-          <ChartCard title="By Class" hint="Click a slice to see who" className="lg:col-span-3">
-            {typeDist.every((d) => d.value === 0) ? (
+          <ChartCard title="By Class" hint="Click a class chip to see who" className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-3" style={{ animationDelay: '40ms' }}>
+            {typePie.length === 0 ? (
               <EmptyChart label="No data" />
             ) : (
-              <Donut
-                data={typeDist.map((d) => ({ label: d.label, value: d.value, color: TYPE_COLOR[d.label].hex }))}
-                size={180}
-                onSelect={(label) => openType(label as EmployeeType)}
-                centerLabel={`${metrics.total}`}
-                centerSub="employees"
-              />
+              <>
+                <DonutChart data={typePie} height={200} />
+                <DrillChips
+                  items={typeDist
+                    .filter((d) => d.value > 0)
+                    .map((d) => ({ key: d.label, label: TYPE_LABEL[d.label], value: d.value, color: VIZ_TYPE_COLOR[d.label] ?? VIZ.slate }))}
+                  onSelect={(key) => openType(key as EmployeeType)}
+                />
+              </>
             )}
           </ChartCard>
 
           {/* Status donut */}
-          <ChartCard title="By Status" hint="Click a slice to see who" className="lg:col-span-3">
-            {statusDist.every((d) => d.value === 0) ? (
+          <ChartCard title="By Status" hint="Click a status chip to see who" className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-3" style={{ animationDelay: '120ms' }}>
+            {statusPie.length === 0 ? (
               <EmptyChart label="No status data" />
             ) : (
-              <Donut
-                data={statusDist}
-                size={180}
-                onSelect={(label) => openStatus(label as 'Active' | 'Terminated')}
-                centerLabel={metrics.active && metrics.total ? `${Math.round((metrics.active / metrics.total) * 100)}%` : '—'}
-                centerSub="active"
-              />
+              <>
+                <DonutChart data={statusPie} height={200} />
+                <DrillChips
+                  items={statusDist
+                    .filter((d) => d.value > 0)
+                    .map((d) => ({ key: d.label, label: d.label, value: d.value, color: d.label === 'Active' ? VIZ.emerald : VIZ.rose }))}
+                  onSelect={(key) => openStatus(key as 'Active' | 'Terminated')}
+                />
+              </>
             )}
           </ChartCard>
 
           {/* Revenue donut */}
-          <ChartCard title="Billable vs Non-Billable" hint="Click a slice to see who" className="lg:col-span-3">
-            {revenueDist.every((d) => d.value === 0) ? (
+          <ChartCard title="Billable vs Non-Billable" hint="Click a chip to see who" className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-3" style={{ animationDelay: '200ms' }}>
+            {revenuePie.length === 0 ? (
               <EmptyChart label="No revenue data" />
             ) : (
-              <Donut
-                data={revenueDist}
-                size={180}
-                onSelect={(label) => openRevenue(label as 'Billable' | 'Non-Billable')}
-                centerLabel={`${metrics.utilization}%`}
-                centerSub="utilization"
-              />
+              <>
+                <DonutChart data={revenuePie} height={200} />
+                <DrillChips
+                  items={revenueDist
+                    .filter((d) => d.value > 0)
+                    .map((d) => ({ key: d.label, label: d.label, value: d.value, color: d.label === 'Billable' ? VIZ.emerald : VIZ.amber }))}
+                  onSelect={(key) => openRevenue(key as 'Billable' | 'Non-Billable')}
+                />
+              </>
             )}
           </ChartCard>
 
-          {/* Type × Status stacked bar */}
-          <ChartCard title="Class × Status" hint="Active vs terminated by employee class" className="lg:col-span-3">
-            <StackedTypeStatus data={typeByStatus} />
+          {/* Type × Status comparison bars (active vs terminated) */}
+          <ChartCard title="Class × Status" hint="Active vs terminated by employee class" className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-3" style={{ animationDelay: '280ms' }}>
+            {typeByStatus.every((d) => d.total === 0) ? (
+              <EmptyChart label="No data" />
+            ) : (
+              <CompareBarChart
+                data={typeByStatusBars}
+                xKey="type"
+                height={236}
+                bars={[
+                  { key: 'Active', name: 'Active', color: VIZ.emerald },
+                  { key: 'Terminated', name: 'Terminated', color: VIZ.rose },
+                ]}
+              />
+            )}
           </ChartCard>
         </div>
       </section>
@@ -711,7 +774,7 @@ export default function AnalyticsPage() {
             {topAuths.length === 0 ? (
               <EmptyChart label="No authorization data" />
             ) : (
-              <HBarList items={topAuths} accent="bg-indigo-500" onSelect={(label) => openAuthType(label)} />
+              <HBarList items={topAuths} accent="bg-brand-500" onSelect={(label) => openAuthType(label)} />
             )}
           </ChartCard>
 
@@ -725,7 +788,7 @@ export default function AnalyticsPage() {
                 sub={`${metrics.subInactive} inactive`}
                 tone="emerald"
               />
-              <RingScore label="Email completeness"   pct={dataCompletenessEmail}   tone="indigo" />
+              <RingScore label="Email completeness"   pct={dataCompletenessEmail}   tone="brand" />
               <RingScore label="Phone completeness"   pct={dataCompletenessPhone}   tone="purple" />
               <RingScore label="Address completeness" pct={dataCompletenessAddress} tone="sky" />
             </div>
@@ -777,13 +840,35 @@ export default function AnalyticsPage() {
 
       {/* TRENDS */}
       <section>
-        <SectionHeader title="Hiring Trends" subtitle="Last 24 weeks and monthly view." />
+        <SectionHeader title="Hiring Trends" subtitle="Monthly inflow over the last year — total, and W-2 vs Offshore." />
         <div className="grid gap-4 lg:grid-cols-12">
-          <ChartCard title="Weekly Hires (24 weeks)" hint="Hover bars for week count" className="lg:col-span-7">
-            <AreaTrend data={hiringTrend} />
+          <ChartCard title="Hiring Trend — W-2 vs Offshore" hint="New hires per month · last 12 months" icon={TrendingUp} className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-7" style={{ animationDelay: '40ms' }}>
+            {monthlyHiresByType.every((m) => m.total === 0) ? (
+              <EmptyChart label="No hiring activity in the last 12 months" />
+            ) : (
+              <TrendAreaChart
+                data={monthlyHiresByType}
+                xKey="month"
+                height={250}
+                areas={[
+                  { key: 'total', name: 'Total', color: VIZ.brand },
+                  { key: 'W2', name: 'W-2', color: VIZ.blue },
+                  { key: 'Offshore', name: 'Offshore', color: VIZ.pink },
+                ]}
+              />
+            )}
           </ChartCard>
-          <ChartCard title="Monthly Hires (12 months)" hint="Hover bars for month count" className="lg:col-span-5">
-            <VerticalBars data={monthlyHires} accent="#6366f1" />
+          <ChartCard title="Monthly Hires (12 months)" hint="Total new hires per month" icon={Calendar} className="animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] lg:col-span-5" style={{ animationDelay: '120ms' }}>
+            {monthlyHires.every((m) => m.value === 0) ? (
+              <EmptyChart label="No hiring activity" />
+            ) : (
+              <CompareBarChart
+                data={monthlyHires.map((m) => ({ month: m.label, Hires: m.value }))}
+                xKey="month"
+                height={250}
+                bars={[{ key: 'Hires', name: 'Hires', color: VIZ.violet }]}
+              />
+            )}
           </ChartCard>
         </div>
       </section>
@@ -860,7 +945,7 @@ export default function AnalyticsPage() {
             {topCities.length === 0 ? (
               <EmptyChart label="No city data" />
             ) : (
-              <HBarList items={topCities} accent="bg-indigo-500" onSelect={(label) => openCity(label)} />
+              <HBarList items={topCities} accent="bg-brand-500" onSelect={(label) => openCity(label)} />
             )}
           </ChartCard>
         </div>
@@ -900,29 +985,27 @@ export default function AnalyticsPage() {
           <div className="grid gap-4 lg:grid-cols-12">
             <ChartCard title="Payroll Entity" hint="Offshore staff by entity" className="lg:col-span-3" icon={Briefcase}>
               {Object.keys(metrics.offshorePayrollDist).length === 0 ? <EmptyChart label="No entity data" /> : (
-                <Donut
-                  data={Object.entries(metrics.offshorePayrollDist).map(([label, value], i) => ({
-                    label, value, color: i === 0 ? '#ec4899' : '#a855f7',
+                <DonutChart
+                  data={Object.entries(metrics.offshorePayrollDist).map(([name, value], i) => ({
+                    name, value, color: [VIZ.pink, VIZ.violet, VIZ.sky, VIZ.amber][i % 4],
                   }))}
-                  size={140}
-                  centerLabel={`${metrics.offshoreTotal}`}
-                  centerSub="offshore"
+                  height={200}
                 />
               )}
             </ChartCard>
             <ChartCard title="Employment Type" hint="Contract vs Full Time" className="lg:col-span-3" icon={Briefcase}>
               {Object.keys(metrics.offshoreEmpDist).length === 0 ? <EmptyChart label="No employment-type data" /> : (
-                <Donut
-                  data={Object.entries(metrics.offshoreEmpDist).map(([label, value], i) => ({
-                    label, value, color: i === 0 ? '#06b6d4' : '#14b8a6',
+                <DonutChart
+                  data={Object.entries(metrics.offshoreEmpDist).map(([name, value], i) => ({
+                    name, value, color: [VIZ.sky, VIZ.teal, VIZ.violet, VIZ.amber][i % 4],
                   }))}
-                  size={140}
+                  height={200}
                 />
               )}
             </ChartCard>
             <ChartCard title="India ID Coverage" hint="% of offshore staff with each ID on file" className="lg:col-span-6" icon={FileCheck}>
               <div className="space-y-3">
-                <RingScore label="Aadhar on file" tone="indigo"  rawCount={metrics.offshoreWithAadhar} rawTotal={metrics.offshoreTotal} pct={metrics.offshoreTotal ? Math.round((metrics.offshoreWithAadhar / metrics.offshoreTotal) * 100) : 0} />
+                <RingScore label="Aadhar on file" tone="brand"  rawCount={metrics.offshoreWithAadhar} rawTotal={metrics.offshoreTotal} pct={metrics.offshoreTotal ? Math.round((metrics.offshoreWithAadhar / metrics.offshoreTotal) * 100) : 0} />
                 <RingScore label="PAN on file"    tone="emerald" rawCount={metrics.offshoreWithPan}    rawTotal={metrics.offshoreTotal} pct={metrics.offshoreTotal ? Math.round((metrics.offshoreWithPan / metrics.offshoreTotal) * 100) : 0} />
                 <RingScore label="PF enrolled"    tone="amber"   rawCount={metrics.offshoreWithPf}     rawTotal={metrics.offshoreTotal} pct={metrics.offshoreTotal ? Math.round((metrics.offshoreWithPf / metrics.offshoreTotal) * 100) : 0} />
               </div>
@@ -979,7 +1062,7 @@ function CelebrationCard({
       type="button"
       onClick={onOpen}
       disabled={people.length === 0}
-      className="surface surface-hover group flex h-full w-full flex-col text-left disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200"
+      className="surface surface-hover group flex h-full w-full flex-col text-left disabled:cursor-default disabled:opacity-90 disabled:hover:translate-y-0 disabled:hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200"
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex items-center gap-3">
@@ -1048,7 +1131,7 @@ function CelebrationCard({
           <span className="text-slate-500">
             {overflow > 0 ? `+${overflow} more` : 'Click to see everyone'}
           </span>
-          <span className="inline-flex items-center gap-1 font-semibold text-indigo-600 group-hover:text-indigo-700">
+          <span className="inline-flex items-center gap-1 font-semibold text-brand-600 group-hover:text-brand-700">
             <Users className="h-3.5 w-3.5" />
             View all
             <ChevronRight className="h-3.5 w-3.5" />
@@ -1065,8 +1148,8 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   return (
     <div className="mb-5 flex items-end justify-between gap-4 border-b border-slate-100 pb-3 sm:mb-6">
       <div>
-        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-600">
-          <span className="h-px w-6 bg-indigo-300" />
+        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-brand-600">
+          <span className="h-px w-6 bg-brand-300" />
           Section
         </span>
         <h2 className="mt-1.5 font-display text-xl font-bold text-slate-900 sm:text-2xl">{title}</h2>
@@ -1077,12 +1160,12 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 }
 
 function ChartCard({
-  title, hint, icon: Icon, className, children,
+  title, hint, icon: Icon, className, style, children,
 }: {
-  title: string; hint?: string; icon?: React.ElementType; className?: string; children: React.ReactNode;
+  title: string; hint?: string; icon?: React.ElementType; className?: string; style?: React.CSSProperties; children: React.ReactNode;
 }) {
   return (
-    <div className={cn('surface surface-hover p-5 sm:p-6', className)}>
+    <div className={cn('surface surface-hover p-5 sm:p-6', className)} style={style}>
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
           {Icon && (
@@ -1114,7 +1197,7 @@ const TONE: Record<string, { bg: string; iconBg: string; iconColor: string; ring
   amber:   { bg: 'bg-amber-50',   iconBg: 'bg-amber-100',   iconColor: 'text-amber-600',   ring: 'ring-amber-200',   textValue: 'text-amber-700' },
   yellow:  { bg: 'bg-yellow-50',  iconBg: 'bg-yellow-100',  iconColor: 'text-yellow-700', ring: 'ring-yellow-200',  textValue: 'text-yellow-800' },
   emerald: { bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', ring: 'ring-emerald-200', textValue: 'text-emerald-700' },
-  indigo:  { bg: 'bg-indigo-50',  iconBg: 'bg-indigo-100',  iconColor: 'text-indigo-600',  ring: 'ring-indigo-200',  textValue: 'text-indigo-700' },
+  brand:  { bg: 'bg-brand-50',  iconBg: 'bg-brand-100',  iconColor: 'text-brand-600',  ring: 'ring-brand-200',  textValue: 'text-brand-700' },
   purple:  { bg: 'bg-purple-50',  iconBg: 'bg-purple-100',  iconColor: 'text-purple-600',  ring: 'ring-purple-200',  textValue: 'text-purple-700' },
   pink:    { bg: 'bg-pink-50',    iconBg: 'bg-pink-100',    iconColor: 'text-pink-600',    ring: 'ring-pink-200',    textValue: 'text-pink-700' },
   sky:     { bg: 'bg-sky-50',     iconBg: 'bg-sky-100',     iconColor: 'text-sky-600',     ring: 'ring-sky-200',     textValue: 'text-sky-700' },
@@ -1164,7 +1247,7 @@ function KpiTile({
   label: string;
   value: React.ReactNode;
   sub?: string;
-  tone: 'indigo' | 'emerald' | 'purple' | 'pink' | 'sky' | 'amber';
+  tone: 'brand' | 'emerald' | 'purple' | 'pink' | 'sky' | 'amber';
 }) {
   const t = TONE[tone];
   return (
@@ -1181,82 +1264,34 @@ function KpiTile({
   );
 }
 
-// ───────────────────── DONUT ─────────────────────
-function Donut({
-  data, size = 160, onSelect, centerLabel, centerSub,
+// ───────────────────── DRILL CHIPS (clickable legend under shared DonutChart) ─────────────────────
+// Keeps the drill-down behaviour the shared DonutChart can't express on its own.
+function DrillChips({
+  items, onSelect,
 }: {
-  data: { label: string; value: number; color: string }[];
-  size?: number;
-  onSelect?: (label: string) => void;
-  centerLabel?: string;
-  centerSub?: string;
+  items: { key: string; label: string; value: number; color: string }[];
+  onSelect: (key: string) => void;
 }) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-  const stroke = Math.round(size * 0.13);
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-
-  if (total === 0) return <EmptyChart label="No data" />;
-
-  let acc = 0;
+  const total = items.reduce((s, d) => s + d.value, 0);
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 overflow-visible">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" className="stroke-slate-100" strokeWidth={stroke} />
-          {data.map((d, i) => {
-            if (d.value === 0) return null;
-            const len = (d.value / total) * c;
-            const offset = -acc;
-            const pct = ((d.value / total) * 100).toFixed(0);
-            const seg = (
-              <circle
-                key={i}
-                cx={size / 2}
-                cy={size / 2}
-                r={r}
-                fill="none"
-                stroke={d.color}
-                strokeWidth={stroke}
-                strokeDasharray={`${len} ${c}`}
-                strokeDashoffset={offset}
-                strokeLinecap="butt"
-                style={{ cursor: onSelect ? 'pointer' : 'default', transition: 'stroke-width 160ms ease' }}
-                onMouseOver={(e) => { (e.currentTarget as SVGCircleElement).style.strokeWidth = String(stroke + 4); }}
-                onMouseOut={(e) => { (e.currentTarget as SVGCircleElement).style.strokeWidth = String(stroke); }}
-                onClick={() => onSelect?.(d.label)}
-              >
-                <title>{`${d.label}: ${d.value} (${pct}%)`}</title>
-              </circle>
-            );
-            acc += len;
-            return seg;
-          })}
-        </svg>
-        {centerLabel && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-bold tabular-nums text-slate-900">{centerLabel}</span>
-            {centerSub && <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{centerSub}</span>}
-          </div>
-        )}
-      </div>
-      <ul className="grid w-full grid-cols-2 gap-1.5 text-xs">
-        {data.map((d) => {
-          const pct = total ? ((d.value / total) * 100).toFixed(0) : '0';
-          return (
-            <li
-              key={d.label}
-              className={cn('flex items-center gap-1.5', onSelect && 'cursor-pointer hover:text-slate-900')}
-              onClick={() => onSelect?.(d.label)}
-              title={`${d.label}: ${d.value} (${pct}%)`}
-            >
-              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: d.color }} />
-              <span className="truncate text-slate-600">{d.label}</span>
-              <span className="ml-auto font-semibold tabular-nums text-slate-900">{d.value}</span>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      {items.map((d) => {
+        const pct = total ? Math.round((d.value / total) * 100) : 0;
+        return (
+          <button
+            key={d.key}
+            type="button"
+            onClick={() => onSelect(d.key)}
+            title={`${d.label}: ${d.value} (${pct}%) — click to see who`}
+            className="group inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition-all hover:-translate-y-0.5 hover:bg-white hover:text-slate-900 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+          >
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: d.color }} />
+            <span className="truncate">{d.label}</span>
+            <span className="font-bold tabular-nums text-slate-900">{d.value}</span>
+            <ChevronRight className="h-3 w-3 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1293,39 +1328,6 @@ function HBarList({
           </li>
         );
       })}
-    </ul>
-  );
-}
-
-// ───────────────────── STACKED TYPE × STATUS ─────────────────────
-function StackedTypeStatus({ data }: { data: { label: EmployeeType; active: number; terminated: number; total: number }[] }) {
-  const max = Math.max(...data.map((d) => d.total), 1);
-  return (
-    <ul className="space-y-3">
-      {data.map((d) => {
-        const ap = d.total ? (d.active / d.total) * 100 : 0;
-        const tp = d.total ? (d.terminated / d.total) * 100 : 0;
-        const w = (d.total / max) * 100;
-        return (
-          <li key={d.label}>
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className={cn('h-2 w-2 rounded-sm', TYPE_COLOR[d.label].bg)} />
-                <span className="font-medium text-slate-700">{d.label}</span>
-              </div>
-              <span className="font-semibold tabular-nums text-slate-900">{d.total}</span>
-            </div>
-            <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100" style={{ width: `${w}%` }} title={`${d.label}: ${d.active} active, ${d.terminated} terminated`}>
-              <div className="h-full bg-emerald-500" style={{ width: `${ap}%` }} title={`Active: ${d.active}`} />
-              <div className="h-full bg-red-400" style={{ width: `${tp}%` }} title={`Terminated: ${d.terminated}`} />
-            </div>
-          </li>
-        );
-      })}
-      <li className="mt-3 flex items-center gap-3 border-t border-slate-100 pt-2.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500" /> Active</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-red-400" /> Terminated</span>
-      </li>
     </ul>
   );
 }
@@ -1532,82 +1534,6 @@ function PayHistogram({ employees }: { employees: Employee[] }) {
       <div className="flex items-center justify-between gap-1 text-[10px] text-slate-500">
         {buckets.map((b) => (
           <span key={b.label} className="flex-1 truncate text-center">{b.label}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ───────────────────── AREA TREND ─────────────────────
-function AreaTrend({ data }: { data: number[] }) {
-  const w = 480, h = 140, pad = 10;
-  if (!data.length || data.every((v) => v === 0)) return <EmptyChart label="No hiring activity in last 24 weeks" />;
-  const max = Math.max(...data, 1);
-  const step = (w - pad * 2) / (data.length - 1 || 1);
-  const points = data.map((v, i) => {
-    const x = pad + i * step;
-    const y = h - pad - (v / max) * (h - pad * 2);
-    return [x, y, v, i] as const;
-  });
-  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-  const area = `${line} L ${points[points.length - 1][0]} ${h - pad} L ${pad} ${h - pad} Z`;
-  const total = data.reduce((s, n) => s + n, 0);
-  const firstHalf = data.slice(0, Math.floor(data.length / 2)).reduce((s, n) => s + n, 0);
-  const secondHalf = data.slice(Math.floor(data.length / 2)).reduce((s, n) => s + n, 0);
-  const delta = firstHalf ? Math.round(((secondHalf - firstHalf) / firstHalf) * 100) : 0;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-bold tabular-nums text-slate-900">{total}</span>
-        <span className={cn(
-          'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold',
-          delta > 0 ? 'bg-emerald-50 text-emerald-700' : delta < 0 ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600'
-        )}>
-          {delta > 0 ? <TrendingUp className="h-3 w-3" /> : delta < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-          {delta === 0 ? 'flat' : `${Math.abs(delta)}% vs first half`}
-        </span>
-      </div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" preserveAspectRatio="none" height={140}>
-        <defs>
-          <linearGradient id="hireGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%"   stopColor="#6366f1" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#hireGrad)" />
-        <path d={line} fill="none" stroke="#6366f1" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        {points.map(([x, y, v, i]) => (
-          <circle key={i} cx={x} cy={y} r={3} fill="#6366f1" className="opacity-0 hover:opacity-100">
-            <title>{`Week ${i + 1}: ${v} hire${v === 1 ? '' : 's'}`}</title>
-          </circle>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-// ───────────────────── VERTICAL BARS ─────────────────────
-function VerticalBars({ data, accent }: { data: { label: string; value: number }[]; accent: string }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  const total = data.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return <EmptyChart label="No data" />;
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex h-32 items-end gap-1.5">
-        {data.map((d) => {
-          const h = (d.value / max) * 100;
-          return (
-            <div key={d.label} className="group flex flex-1 flex-col items-center justify-end gap-1.5">
-              <span className="text-[10px] font-bold tabular-nums text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">{d.value}</span>
-              <div className="w-full rounded-t-md transition-all" style={{ height: `${h}%`, backgroundColor: accent, minHeight: d.value > 0 ? 6 : 0 }} title={`${d.label}: ${d.value}`} />
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex items-center justify-between gap-0.5 text-[10px] text-slate-500">
-        {data.map((d) => (
-          <span key={d.label} className="flex-1 truncate text-center">{d.label}</span>
         ))}
       </div>
     </div>

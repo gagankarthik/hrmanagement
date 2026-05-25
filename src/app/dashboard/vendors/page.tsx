@@ -131,7 +131,7 @@ export default function VendorsPage() {
               placeholder="Search vendors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-50 transition-all"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
             />
           </div>
           <div className="flex gap-1.5">
@@ -141,7 +141,7 @@ export default function VendorsPage() {
                 onClick={() => setStatusFilter(s)}
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  statusFilter === s ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 )}
               >
                 {s === 'all' ? 'All' : s}
@@ -251,7 +251,7 @@ export default function VendorsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                         <button
                           onClick={() => setModalState({ isOpen: true, mode: 'edit', vendor })}
                           className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"

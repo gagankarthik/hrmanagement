@@ -256,7 +256,7 @@ export default function OnboardPage() {
       'placeholder:text-slate-400',
       error
         ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100'
-        : 'border-slate-200 bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100'
+        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-2 focus:ring-brand-100'
     );
 
     if (field.type === 'select') {
@@ -275,7 +275,7 @@ export default function OnboardPage() {
             type="checkbox"
             checked={Boolean(value)}
             onChange={(e) => handleInputChange(field, e.target.checked)}
-            className="h-4.5 w-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            className="h-4.5 w-4.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
           />
           <span className="text-sm text-slate-700">{field.label}</span>
         </label>
@@ -348,22 +348,22 @@ export default function OnboardPage() {
         ].map((s, i) => (
           <React.Fragment key={s.n}>
             {i > 0 && (
-              <div className={cn('mx-3 h-0.5 flex-1 rounded-full transition-colors', step > i ? 'bg-indigo-600' : 'bg-slate-200')} />
+              <div className={cn('mx-3 h-0.5 flex-1 rounded-full transition-colors', step > i ? 'bg-brand-600' : 'bg-slate-200')} />
             )}
             <div className="flex items-center gap-2.5">
               <div className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all',
                 step > s.n
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-brand-600 text-white'
                   : step === s.n
-                  ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
+                  ? 'bg-brand-600 text-white ring-4 ring-brand-100'
                   : 'bg-slate-100 text-slate-400'
               )}>
                 {step > s.n ? <Check className="h-4 w-4" /> : s.n}
               </div>
               <span className={cn(
                 'font-display text-sm font-semibold',
-                step >= s.n ? 'text-indigo-600' : 'text-slate-400'
+                step >= s.n ? 'text-brand-600' : 'text-slate-400'
               )}>
                 {s.label}
               </span>
@@ -439,7 +439,7 @@ export default function OnboardPage() {
                   setSubcontractorAssignments([]);
                   clearDraft();
                 }}
-                className="text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
+                className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
               >
                 Change Type
               </button>

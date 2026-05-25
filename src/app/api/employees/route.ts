@@ -1,33 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
-  DynamoDBDocumentClient,
   PutCommand,
   ScanCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-
-// Initialize DynamoDB Client with server-side credentials
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-2',
-  credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.NEXT_PUBLIC_DYNAMODB_TABLE_NAME || 'HRManagement-Employees';
+import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 
 // GET - Fetch all employees or by type
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
-
-    console.log('Fetching employees from table:', TABLE_NAME);
-    console.log('AWS Region:', process.env.NEXT_PUBLIC_AWS_REGION);
 
     let command;
 
@@ -51,9 +35,6 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await docClient.send(command);
-
-    console.log('DynamoDB response - Items count:', response.Items?.length || 0);
-    console.log('DynamoDB response - Items:', JSON.stringify(response.Items, null, 2));
 
     return NextResponse.json({
       success: true,

@@ -151,7 +151,7 @@ export default function StaffingKPIs({ employees }: StaffingKPIsProps) {
   }, [employees]);
 
   const insights = useMemo(() => {
-    const out: { tone: 'amber' | 'red' | 'indigo' | 'emerald'; icon: React.ElementType; text: string }[] = [];
+    const out: { tone: 'amber' | 'red' | 'brand' | 'emerald'; icon: React.ElementType; text: string }[] = [];
     if (kpis.expiringByBucket.expired > 0) {
       out.push({
         tone: 'red',
@@ -175,14 +175,14 @@ export default function StaffingKPIs({ employees }: StaffingKPIsProps) {
     }
     if (kpis.bench >= 5) {
       out.push({
-        tone: 'indigo',
+        tone: 'brand',
         icon: Info,
         text: `${kpis.bench} active employees on bench — review assignments`,
       });
     }
     if (out.length === 0) {
       out.push({
-        tone: 'indigo',
+        tone: 'brand',
         icon: Sparkles,
         text: 'No alerts — staffing operations are running smoothly',
       });
@@ -214,7 +214,7 @@ export default function StaffingKPIs({ employees }: StaffingKPIsProps) {
           label="Utilization"
           value={`${kpis.utilization.toFixed(0)}%`}
           icon={Gauge}
-          tone="indigo"
+          tone="brand"
           subtitle={`${kpis.billableActive} of ${kpis.activeTotal} active`}
           progress={kpis.utilization}
         />
@@ -295,7 +295,7 @@ interface KPICardProps {
   label: string;
   value: React.ReactNode;
   icon: React.ElementType;
-  tone: 'emerald' | 'indigo' | 'amber' | 'red' | 'purple' | 'slate';
+  tone: 'emerald' | 'brand' | 'amber' | 'red' | 'purple' | 'slate';
   subtitle?: React.ReactNode;
   trail?: React.ReactNode;
   progress?: number;
@@ -303,7 +303,7 @@ interface KPICardProps {
 
 const kpiToneStyles: Record<KPICardProps['tone'], { iconBg: string; iconColor: string; progressBg: string }> = {
   emerald: { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', progressBg: 'bg-emerald-500' },
-  indigo: { iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', progressBg: 'bg-indigo-500' },
+  brand: { iconBg: 'bg-brand-100', iconColor: 'text-brand-600', progressBg: 'bg-brand-500' },
   amber: { iconBg: 'bg-amber-100', iconColor: 'text-amber-600', progressBg: 'bg-amber-500' },
   red: { iconBg: 'bg-red-100', iconColor: 'text-red-600', progressBg: 'bg-red-500' },
   purple: { iconBg: 'bg-purple-100', iconColor: 'text-purple-600', progressBg: 'bg-purple-500' },
@@ -340,7 +340,7 @@ function KPICard({ label, value, icon: Icon, tone, subtitle, trail, progress }: 
 const insightToneStyles = {
   amber: { bg: 'bg-amber-50', text: 'text-amber-800', icon: 'text-amber-600', ring: 'ring-amber-200' },
   red: { bg: 'bg-red-50', text: 'text-red-800', icon: 'text-red-600', ring: 'ring-red-200' },
-  indigo: { bg: 'bg-indigo-50', text: 'text-indigo-800', icon: 'text-indigo-600', ring: 'ring-indigo-200' },
+  brand: { bg: 'bg-brand-50', text: 'text-brand-800', icon: 'text-brand-600', ring: 'ring-brand-200' },
   emerald: { bg: 'bg-emerald-50', text: 'text-emerald-800', icon: 'text-emerald-600', ring: 'ring-emerald-200' },
 };
 
