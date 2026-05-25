@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CalendarDays, Plus, Pencil, Trash2, Search, Check, X,
   Clock, CheckCircle2, XCircle, Layers,
@@ -19,7 +20,7 @@ import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 
 const STATUS_FILTERS: ('all' | LeaveStatus)[] = ['all', 'Pending', 'Approved', 'Rejected'];
-const TYPE_FILTERS: ('all' | LeaveType)[] = ['all', 'Sick', 'Casual', 'PTO', 'Unpaid'];
+const TYPE_FILTERS: ('all' | LeaveType)[] = ['all', 'Sick', 'Casual', 'PTO', 'Long Leave', 'Unpaid'];
 
 const statusBadge: Record<LeaveStatus, { cls: string; icon: React.ElementType }> = {
   Pending: { cls: 'bg-amber-50 text-amber-700 ring-amber-200', icon: Clock },
@@ -45,6 +46,7 @@ function formatDate(value?: string) {
 export default function LeavesPage() {
   const { leaves, isLoading, updateLeave, deleteLeave } = useLeaves();
   const { employees } = useEmployees();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | LeaveStatus>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | LeaveType>('all');
@@ -238,7 +240,8 @@ export default function LeavesPage() {
                   return (
                     <tr
                       key={leave.id ?? idx}
-                      className="group border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
+                      onClick={() => router.push(`/dashboard/leaves/${leave.id}`)}
+                      className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
@@ -267,7 +270,7 @@ export default function LeavesPage() {
                           {leave.status}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                           {leave.status === 'Pending' && (
                             <>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { FileText, X, Loader2, ExternalLink, UploadCloud } from 'lucide-react';
+import { FileText, X, Loader2, ExternalLink, UploadCloud, Download } from 'lucide-react';
 import { UploadedDoc } from '@/types/uploads';
 
 function fmtSize(n?: number) {
@@ -71,9 +71,16 @@ export function DocumentUploader({ value = [], onChange, folder, label = 'Docume
                 target="_blank"
                 rel="noreferrer"
                 className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:text-brand-600"
-                title="View"
+                title="View in new tab"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href={`/api/uploads/view?key=${encodeURIComponent(doc.key)}&download=1&name=${encodeURIComponent(doc.name)}`}
+                className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:text-brand-600"
+                title="Download"
+              >
+                <Download className="h-3.5 w-3.5" />
               </a>
               {!disabled && (
                 <button
