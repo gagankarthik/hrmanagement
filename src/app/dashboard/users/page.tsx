@@ -145,7 +145,7 @@ export default function UsersPage() {
         icon={UserCog}
         eyebrow="Administration"
         title="Users"
-        description="Invite team members to ZenHR. They receive an email with a temporary password, then set their own on first sign-in."
+        description="Invite team members to Cadre. They receive an email with a temporary password, then set their own on first sign-in."
         tone="brand"
         actions={
           <button onClick={() => setInviteOpen(true)} className="btn-primary">
@@ -212,10 +212,10 @@ export default function UsersPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                            {(u.name || u.email).charAt(0).toUpperCase()}
+                            {(u.name || u.email || '?').charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{u.name || u.email.split('@')[0]}</p>
+                            <p className="truncate text-sm font-semibold text-slate-900">{u.name || u.email?.split('@')[0] || 'User'}</p>
                             <p className="flex items-center gap-1.5 truncate text-xs text-slate-400">
                               <Mail className="h-3 w-3" />{u.email}
                             </p>
@@ -275,7 +275,7 @@ export default function UsersPage() {
                 </span>
                 <div>
                   <h2 className="font-display text-base font-bold text-slate-900">Invite user</h2>
-                  <p className="text-xs text-slate-400">Cognito emails them a temporary password.</p>
+                  <p className="text-xs text-slate-400">They&apos;re emailed a temporary password automatically.</p>
                 </div>
               </div>
               <button onClick={closeInvite} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Close">
@@ -329,7 +329,7 @@ export default function UsersPage() {
         title="Remove user access"
         description={deleteTarget ? (
           <>
-            Remove <span className="font-semibold text-slate-900">{deleteTarget.email}</span> from ZenHR? They will no longer be able to sign in. This does not delete any employee records.
+            Remove <span className="font-semibold text-slate-900">{deleteTarget.email}</span> from Cadre? They will no longer be able to sign in. This does not delete any employee records.
           </>
         ) : null}
         confirmLabel="Remove access"

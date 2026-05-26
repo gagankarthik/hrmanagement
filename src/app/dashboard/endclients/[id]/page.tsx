@@ -154,7 +154,7 @@ function EndClientDetailPageContent() {
       <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No employees</td></tr>'}</tbody>
     </table>
     <div class="footer">
-      <span>ZenHR Workforce Management</span>
+      <span>Cadre Workforce Management</span>
       <span>Confidential — Internal Use Only</span>
     </div>
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script>
@@ -232,7 +232,7 @@ function EndClientDetailPageContent() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-3xl font-bold">
-            {endClient.name.charAt(0)}
+            {endClient.name?.charAt(0) ?? '?'}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl font-bold truncate">{endClient.name}</h1>
@@ -427,7 +427,7 @@ function EndClientDetailPageContent() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white">
-                      {emp.name.charAt(0)}
+                      {emp.name?.charAt(0) ?? '?'}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-900">{emp.name}</p>

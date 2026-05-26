@@ -1,9 +1,12 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { BRAND } from '@/config/brand';
 
 /**
- * ZenHR brand mark — a self-contained SVG logo (rounded tile + "Z" monogram).
- * Replaces the previous generic lucide icon. Scales crisply from favicon to hero size.
+ * Brand mark — a self-contained SVG logo: a rounded forest tile holding three
+ * ascending rounded pillars ("a workforce, in formation"), the tallest in the
+ * amber accent. Deliberately abstract (no letterform) so the product can be
+ * renamed without redrawing the mark. Scales crisply from favicon to hero.
  */
 export function BrandMark({
   size = 36,
@@ -11,13 +14,15 @@ export function BrandMark({
   className,
 }: {
   size?: number;
-  /** 'dark' = dark-green tile for light backgrounds; 'light' = white tile for dark backgrounds */
+  /** 'dark' = forest tile for light backgrounds; 'light' = white tile for dark backgrounds */
   variant?: 'dark' | 'light';
   className?: string;
 }) {
-  const tile = variant === 'light' ? '#ffffff' : '#03363D';
-  const glyph = variant === 'light' ? '#03363D' : '#ffffff';
-  const sheen = variant === 'light' ? '#03363D' : '#ffffff';
+  const tile = variant === 'light' ? '#ffffff' : '#103d33';
+  const bar = variant === 'light' ? '#103d33' : '#f4f1ea';
+  const accent = '#e0a458'; // amber — constant in both variants so it always pops
+  const sheen = variant === 'light' ? '#103d33' : '#ffffff';
+
   return (
     <svg
       width={size}
@@ -26,23 +31,18 @@ export function BrandMark({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      aria-label="ZenHR"
+      aria-label={BRAND.name}
       className={cn('shrink-0', className)}
     >
-      {/* Tile */}
       <rect width="40" height="40" rx="11" fill={tile} />
       {/* Subtle top sheen for depth */}
       <path d="M11 0h18a11 11 0 0 1 11 11v2H0v-2A11 11 0 0 1 11 0Z" fill={sheen} fillOpacity="0.07" />
-      {/* "Z" monogram */}
-      <path
-        d="M13 13.75h14L13 26.25h14"
-        stroke={glyph}
-        strokeWidth="3.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* accent node — a nod to people/connection */}
-      <circle cx="27" cy="13.75" r="2.4" fill="#79BBA9" />
+      {/* Three ascending pillars on a shared baseline */}
+      <g strokeLinecap="round" strokeWidth="4">
+        <line x1="14" y1="28" x2="14" y2="23" stroke={bar} />
+        <line x1="20" y1="28" x2="20" y2="18.5" stroke={bar} />
+        <line x1="26" y1="28" x2="26" y2="12" stroke={accent} />
+      </g>
     </svg>
   );
 }

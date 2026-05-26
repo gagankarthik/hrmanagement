@@ -44,7 +44,7 @@ export function PageHeader({
       {/* faint decorative glow */}
       <div
         className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full opacity-50 blur-3xl"
-        style={{ background: 'radial-gradient(circle, rgba(29,100,87,0.10), transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(16,61,51,0.10), transparent 70%)' }}
       />
       <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">

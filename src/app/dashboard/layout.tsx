@@ -10,6 +10,8 @@ import { LeaveProvider } from '@/context/LeaveContext';
 import { AttendanceProvider } from '@/context/AttendanceContext';
 import { HandbookProvider } from '@/context/HandbookContext';
 import { BenefitsProvider } from '@/context/BenefitsContext';
+import { TimesheetProvider } from '@/context/TimesheetContext';
+import { InvoiceProvider } from '@/context/InvoiceContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
@@ -32,6 +34,8 @@ export default function DashboardLayout({
               <HandbookProvider>
                 <LeaveProvider>
                 <AttendanceProvider>
+                <TimesheetProvider>
+                <InvoiceProvider>
                   <div className="flex min-h-screen bg-slate-50">
                     <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
                     <main className="app-canvas relative flex-1 min-w-0">
@@ -41,6 +45,8 @@ export default function DashboardLayout({
                       </div>
                     </main>
                   </div>
+                </InvoiceProvider>
+                </TimesheetProvider>
                 </AttendanceProvider>
                 </LeaveProvider>
               </HandbookProvider>

@@ -15,7 +15,12 @@
       "Bash(powershell -Command \"if \\(Test-Path README.md\\) { Write-Output 'exists' } else { Write-Output 'missing' }\")",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gagan\\\\Desktop\\\\Projects\\\\hrmanagement\\\\src\" -Recurse -Filter \"page.tsx\")",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "PowerShell(head *)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "WebFetch(domain:www.zoho.com)",
+      "WebFetch(domain:www.rippling.com)",
+      "WebFetch(domain:www.bamboohr.com)"
     ]
   }
 }

@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import AttentionPanel from '@/components/dashboard/AttentionPanel';
 import MetricsStrip from '@/components/dashboard/MetricsStrip';
+import FinancialsStrip from '@/components/dashboard/FinancialsStrip';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import MilestonesPanel from '@/components/dashboard/MilestonesPanel';
 import WorkforceInsights from '@/components/dashboard/WorkforceInsights';
@@ -593,6 +594,9 @@ export default function DashboardPage() {
       {/* Metrics strip */}
       <MetricsStrip employees={filteredEmployees} />
 
+      {/* Financials — derived from bill/pay rates (Margins) */}
+      <FinancialsStrip employees={filteredEmployees} />
+
       {/* Distribution & trends — interactive charts */}
       <section className="grid gap-5 lg:grid-cols-3">
         <ChartCard title="Workforce by type" subtitle={`${totalHeadcount} active employees`} icon={Users} delay={40}>
@@ -810,7 +814,7 @@ function TopList({
                       {idx + 1}
                     </span>
                     <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold', accent.avatar)}>
-                      {item.name.charAt(0).toUpperCase()}
+                      {item.name?.charAt(0)?.toUpperCase() ?? '?'}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center justify-between gap-2">

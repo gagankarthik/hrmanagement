@@ -200,7 +200,7 @@ export function AssignEmployeesModal({
                     {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
                   </span>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600">
-                    {emp.name.charAt(0).toUpperCase()}
+                    {emp.name?.charAt(0)?.toUpperCase() ?? '?'}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-slate-800">{emp.name}</span>

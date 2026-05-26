@@ -3,9 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import {
   Package, Plus, Pencil, Trash2, Users, Search, Eye,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
+import { VENDOR_IMPORT } from '@/lib/bulk-import/configs';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useVendors } from '@/context/VendorContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -21,7 +23,7 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
 export default function VendorsPage() {
-  const { vendors, isLoading, deleteVendor } = useVendors();
+  const { vendors, isLoading, deleteVendor, fetchVendors } = useVendors();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +33,7 @@ export default function VendorsPage() {
   });
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
 
   const getVendorEmps = (vendorId: string, vendorName: string) =>
     employees.filter((emp) =>
@@ -123,6 +126,9 @@ export default function VendorsPage() {
               className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload className="h-4 w-4" /> Import
             </button>
             <button
               onClick={() => router.push('/dashboard/vendors/new')}
@@ -308,6 +314,17 @@ export default function VendorsPage() {
           </p>
         </div>
       </div>
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        configs={[VENDOR_IMPORT]}
+        title="Import Vendors"
+        onImported={(n) => {
+          fetchVendors();
+          toast.success('Vendors imported', `${n} vendor${n !== 1 ? 's' : ''} added.`);
+        }}
+      />
 
       <ConfirmDialog
         isOpen={deleteState.vendor !== null}

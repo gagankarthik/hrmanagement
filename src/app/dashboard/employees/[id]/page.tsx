@@ -330,7 +330,7 @@ function EmployeeDetailPageContent() {
     ${workAuthSection}
     ${indiaTaxSection}
     <div class="footer">
-      <span>ZenHR Workforce Management</span>
+      <span>Cadre Workforce Management</span>
       <span>Confidential — Internal Use Only</span>
     </div>
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script>
@@ -436,7 +436,7 @@ function EmployeeDetailPageContent() {
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
           <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 font-display text-3xl font-bold backdrop-blur-sm">
-            {employee.name.charAt(0)}
+            {employee.name?.charAt(0) ?? '?'}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl font-bold truncate">{employee.name}</h1>
@@ -704,7 +704,7 @@ function EmployeeDetailPageContent() {
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white">
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{a.name}</p>
@@ -747,7 +747,7 @@ function EmployeeDetailPageContent() {
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-brand-600 text-xs font-bold text-white">
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{a.name}</p>
@@ -790,7 +790,7 @@ function EmployeeDetailPageContent() {
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{a.name}</p>
@@ -833,7 +833,7 @@ function EmployeeDetailPageContent() {
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-xs font-bold text-white">
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{a.name}</p>
@@ -876,7 +876,7 @@ function EmployeeDetailPageContent() {
                   <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-xs font-bold text-white">
-                        {a.name.charAt(0)}
+                        {a.name?.charAt(0) ?? '?'}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{a.name}</p>

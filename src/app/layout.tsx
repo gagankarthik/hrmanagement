@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgressBar } from "@/components/ui/route-progress";
+import { BRAND } from "@/config/brand";
 
 // Body — warm, friendly humanist sans
 const hankenGrotesk = Hanken_Grotesk({
@@ -26,8 +27,25 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZenHR - HR Management System",
-  description: "A type-safe, modern HR management dashboard for managing W2, Contract, 1099, and Offshore employees.",
+  metadataBase: new URL(`https://${BRAND.domain}`),
+  title: {
+    default: `${BRAND.name} — ${BRAND.tagline}`,
+    template: `%s · ${BRAND.name}`,
+  },
+  description: BRAND.description,
+  applicationName: BRAND.name,
+  openGraph: {
+    type: "website",
+    siteName: BRAND.name,
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.shortDescription,
+    url: `https://${BRAND.domain}`,
+  },
+  twitter: {
+    card: "summary",
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.shortDescription,
+  },
 };
 
 export default function RootLayout({
@@ -49,6 +67,12 @@ export default function RootLayout({
       <body
         className={`${hankenGrotesk.variable} ${bricolageDisplay.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-900 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <AuthProvider>
           <ToastProvider>
             <RouteProgressBar />

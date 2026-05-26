@@ -57,6 +57,13 @@ export interface BaseEmployee {
   // Legacy fields for backward compatibility
   client?: string;
   vendorName?: string;
+  // Staffing economics (hourly) — drives Margins, Timesheets & Invoicing
+  billRate?: number; // what the client is billed per hour
+  payRate?: number; // what the worker is paid per hour
+  // Compliance pack — work eligibility & agreements (US + international)
+  workCountry?: string;
+  i9Status?: string;
+  agreementStatus?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -224,6 +231,18 @@ export const W2_FIELDS: FormField[] = [
   { name: 'pay', label: 'Pay', type: 'number', required: false, placeholder: '0.00' },
   { name: 'medicalBenefit', label: 'Medical Benefit', type: 'checkbox', required: false },
   { name: 'benefit401k', label: '401k Benefit', type: 'checkbox', required: false },
+  { name: 'workCountry', label: 'Work Country', type: 'text', required: false, placeholder: 'e.g. United States, India' },
+  { name: 'i9Status', label: 'I-9 / Work Eligibility', type: 'select', required: false, options: [
+    { value: 'Verified', label: 'Verified' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Re-verify', label: 'Re-verify' },
+    { value: 'Exempt', label: 'Exempt' },
+  ]},
+  { name: 'agreementStatus', label: 'Contractor Agreement', type: 'select', required: false, options: [
+    { value: 'Signed', label: 'Signed' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'N/A', label: 'N/A' },
+  ]},
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
     { value: 'B', label: 'Billable (B)' },
     { value: 'NB', label: 'Non-Billable (NB)' },
@@ -252,6 +271,18 @@ export const CONTRACT_FIELDS: FormField[] = [
   { name: 'clientId', label: 'Client', type: 'select', required: false, options: [] },
   { name: 'vendorId', label: 'Vendor', type: 'select', required: false, options: [] },
   { name: 'contractorName', label: 'Contractor Name', type: 'text', required: false, placeholder: 'Contractor' },
+  { name: 'workCountry', label: 'Work Country', type: 'text', required: false, placeholder: 'e.g. United States, India' },
+  { name: 'i9Status', label: 'I-9 / Work Eligibility', type: 'select', required: false, options: [
+    { value: 'Verified', label: 'Verified' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Re-verify', label: 'Re-verify' },
+    { value: 'Exempt', label: 'Exempt' },
+  ]},
+  { name: 'agreementStatus', label: 'Contractor Agreement', type: 'select', required: false, options: [
+    { value: 'Signed', label: 'Signed' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'N/A', label: 'N/A' },
+  ]},
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
     { value: 'B', label: 'Billable (B)' },
     { value: 'NB', label: 'Non-Billable (NB)' },
@@ -289,6 +320,18 @@ export const EMPLOYEE_1099_FIELDS: FormField[] = [
     { value: 'Annual', label: 'Annual' },
   ]},
   { name: 'pay', label: 'Pay', type: 'number', required: false, placeholder: '0.00' },
+  { name: 'workCountry', label: 'Work Country', type: 'text', required: false, placeholder: 'e.g. United States, India' },
+  { name: 'i9Status', label: 'I-9 / Work Eligibility', type: 'select', required: false, options: [
+    { value: 'Verified', label: 'Verified' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Re-verify', label: 'Re-verify' },
+    { value: 'Exempt', label: 'Exempt' },
+  ]},
+  { name: 'agreementStatus', label: 'Contractor Agreement', type: 'select', required: false, options: [
+    { value: 'Signed', label: 'Signed' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'N/A', label: 'N/A' },
+  ]},
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
     { value: 'B', label: 'Billable (B)' },
     { value: 'NB', label: 'Non-Billable (NB)' },
@@ -332,6 +375,18 @@ export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'employmentType', label: 'Employment Type', type: 'select', required: false, options: [
     { value: 'Contract', label: 'Contract' },
     { value: 'Full Time', label: 'Full Time' },
+  ]},
+  { name: 'workCountry', label: 'Work Country', type: 'text', required: false, placeholder: 'e.g. United States, India' },
+  { name: 'i9Status', label: 'I-9 / Work Eligibility', type: 'select', required: false, options: [
+    { value: 'Verified', label: 'Verified' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Re-verify', label: 'Re-verify' },
+    { value: 'Exempt', label: 'Exempt' },
+  ]},
+  { name: 'agreementStatus', label: 'Contractor Agreement', type: 'select', required: false, options: [
+    { value: 'Signed', label: 'Signed' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'N/A', label: 'N/A' },
   ]},
   { name: 'revenueStatus', label: 'Revenue Status', type: 'select', required: false, options: [
     { value: 'B', label: 'Billable (B)' },

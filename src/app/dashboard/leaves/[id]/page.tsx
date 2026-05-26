@@ -182,7 +182,7 @@ function LeaveDetailContent({ params }: PageProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-xl font-bold text-white shadow-sm">
-              {name.charAt(0).toUpperCase() || '?'}
+              {name?.charAt(0)?.toUpperCase() || '?'}
             </div>
             <div>
               <h1 className="font-display text-xl font-bold text-slate-900 sm:text-2xl">{name}</h1>

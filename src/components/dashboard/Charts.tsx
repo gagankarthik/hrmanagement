@@ -87,7 +87,7 @@ export function CompareBarChart({
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eceae4" />
           <XAxis dataKey={xKey} tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
           <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
-          <Tooltip content={<TooltipBox />} cursor={{ fill: 'rgba(3,54,61,0.04)' }} />
+          <Tooltip content={<TooltipBox />} cursor={{ fill: 'rgba(16,61,51,0.04)' }} />
           {bars.length > 1 && <Legend iconType="circle" iconSize={9} formatter={legendStyle} />}
           {bars.map((b) => (
             <Bar

@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import {
   Building2, Plus, Pencil, Trash2, Users, Search, Eye,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
+import { CLIENT_IMPORT } from '@/lib/bulk-import/configs';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useClients } from '@/context/ClientContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -21,7 +23,7 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
 export default function ClientsPage() {
-  const { clients, isLoading, deleteClient } = useClients();
+  const { clients, isLoading, deleteClient, fetchClients } = useClients();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +33,7 @@ export default function ClientsPage() {
   });
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
 
   const getEmpCount = (clientId: string, clientName: string) =>
     employees.filter((emp) =>
@@ -122,6 +125,9 @@ export default function ClientsPage() {
               className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload className="h-4 w-4" /> Import
             </button>
             <button
               onClick={() => router.push('/dashboard/clients/new')}
@@ -288,6 +294,17 @@ export default function ClientsPage() {
           <p className="text-xs text-slate-400">{filtered.length} of {valid.length} client{valid.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        configs={[CLIENT_IMPORT]}
+        title="Import Clients"
+        onImported={(n) => {
+          fetchClients();
+          toast.success('Clients imported', `${n} client${n !== 1 ? 's' : ''} added.`);
+        }}
+      />
 
       <ConfirmDialog
         isOpen={deleteState.client !== null}

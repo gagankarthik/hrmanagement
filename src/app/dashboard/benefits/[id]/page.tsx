@@ -317,7 +317,7 @@ function BenefitDetailPageContent() {
                 onClick={() => router.push(`/dashboard/employees/${emp.id}`)}
               >
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white">
-                  {emp.name.charAt(0)}
+                  {emp.name?.charAt(0) ?? '?'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900">{emp.name}</p>

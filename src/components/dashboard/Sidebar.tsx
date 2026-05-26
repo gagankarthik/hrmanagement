@@ -8,6 +8,7 @@ import {
   UserRoundPlus, BarChart3, X,
   PanelLeftClose, PanelLeftOpen, CalendarOff, CalendarCheck, BookOpen, ScrollText,
   HeartPulse, ShieldCheck, Target, ClipboardList, UserCog,
+  TrendingUp, Clock, Receipt, Banknote,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/ui/brand-mark';
@@ -35,6 +36,15 @@ const sections: NavSection[] = [
     items: [
       { label: 'Leaves', href: '/dashboard/leaves', icon: CalendarOff },
       { label: 'Attendance', href: '/dashboard/attendance', icon: CalendarCheck },
+    ],
+  },
+  {
+    heading: 'Billing',
+    items: [
+      { label: 'Margins', href: '/dashboard/margins', icon: TrendingUp },
+      { label: 'Timesheets', href: '/dashboard/timesheets', icon: Clock },
+      { label: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
+      { label: 'Payroll', href: '/dashboard/payroll', icon: Banknote },
     ],
   },
   {
@@ -85,7 +95,7 @@ function SidebarContent({
         <BrandMark size={32} className="shadow-sm shadow-brand-900/15" />
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="font-display text-[15px] font-bold leading-none text-slate-900">ZenHR</p>
+            <p className="font-display text-[15px] font-bold leading-none text-slate-900">Cadre</p>
             <p className="mt-0.5 text-[10px] tracking-wide text-slate-400">Workforce Platform</p>
           </div>
         )}

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import {
   Search, Menu, Bell, ChevronDown, LogOut,
-  UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft,
+  UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft, UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -222,6 +222,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   </div>
                 </div>
                 <div className="p-1.5">
+                  <button
+                    onClick={() => { setMenuOpen(false); router.push('/dashboard/profile'); }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                  >
+                    <UserRound className="h-4 w-4" strokeWidth={1.75} />
+                    Profile
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
                   <button
                     onClick={() => { setMenuOpen(false); signOut(); }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600"

@@ -1426,7 +1426,7 @@ function buildPdfHtml({ filtered, clients, vendors, metrics, filters }: BuildPdf
       <p class="lede">${lede}</p>
       ${body}
       <div class="footer">
-        <span>ZenHR · Workforce Brief</span>
+        <span>Cadre · Workforce Brief</span>
         <span>Filed ${dateStr} · ${timeStr}</span>
       </div>
     </div>
@@ -1598,16 +1598,16 @@ function buildPdfHtml({ filtered, clients, vendors, metrics, filters }: BuildPdf
     <html lang="en">
     <head>
       <meta charset="utf-8" />
-      <title>ZenHR · Workforce Report · ${dateStr}</title>
+      <title>Cadre · Workforce Report · ${dateStr}</title>
       <style>${css}</style>
     </head>
     <body>
       <!-- COVER -->
       <div class="cover">
         <div class="brand">
-          <span class="brand-mark">Z</span>
+          <span class="brand-mark">C</span>
           <div class="brand-info">
-            <p>ZenHR</p>
+            <p>Cadre</p>
             <p>Workforce Operations Platform</p>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   UserCheck, Plus, Eye, Pencil, Trash2, Users, Search,
-  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download
+  CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useSubcontractors } from '@/context/SubcontractorContext';
@@ -19,9 +19,11 @@ import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { exportToCsv } from '@/lib/export';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
+import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
+import { SUBCONTRACTOR_IMPORT } from '@/lib/bulk-import/configs';
 
 export default function SubcontractorsPage() {
-  const { subcontractors, isLoading, deleteSubcontractor } = useSubcontractors();
+  const { subcontractors, isLoading, deleteSubcontractor, fetchSubcontractors } = useSubcontractors();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,6 +33,7 @@ export default function SubcontractorsPage() {
   });
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
 
   const getSubconEmps = (subcontractorId: string) =>
     employees.filter((emp) =>
@@ -125,6 +128,9 @@ export default function SubcontractorsPage() {
               className="btn-ghost"
             >
               <Download className="h-4 w-4" /> Export CSV
+            </button>
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload className="h-4 w-4" /> Import
             </button>
             <button
               onClick={() => router.push('/dashboard/subcontractors/new')}
@@ -324,6 +330,17 @@ export default function SubcontractorsPage() {
           </p>
         </div>
       </div>
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        configs={[SUBCONTRACTOR_IMPORT]}
+        title="Import Subcontractors"
+        onImported={(n) => {
+          fetchSubcontractors();
+          toast.success('Subcontractors imported', `${n} subcontractor${n !== 1 ? 's' : ''} added.`);
+        }}
+      />
 
       <ConfirmDialog
         isOpen={deleteState.subcontractor !== null}

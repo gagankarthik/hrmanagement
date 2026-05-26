@@ -186,7 +186,7 @@ export function PartnerBulkBar({
         >
           {isCopy ? <Copy className="h-3.5 w-3.5" /> : <ArrowRightLeft className="h-3.5 w-3.5" />}
           {isCopy ? 'Copy to' : 'Move to'}
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} strokeWidth={2} />
+          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} strokeWidth={1.75} />
         </button>
 
         {open && (
@@ -231,7 +231,7 @@ export function PartnerBulkBar({
       <div className="surface flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 ring-1 ring-brand-100 animate-in fade-in slide-in-from-top-1 duration-150">
         <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600/10 text-brand-700">
-            <CheckSquare className="h-4 w-4" strokeWidth={2} />
+            <CheckSquare className="h-4 w-4" strokeWidth={1.75} />
           </span>
           <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">{selected.length}</span>
           selected

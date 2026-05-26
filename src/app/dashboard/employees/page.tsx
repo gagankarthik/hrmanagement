@@ -1,12 +1,17 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Users, Plus, UserCheck, UserX, AlertTriangle } from 'lucide-react';
+import { Users, Plus, UserCheck, UserX, AlertTriangle, Upload } from 'lucide-react';
 import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useClients } from '@/context/ClientContext';
+import { useVendors } from '@/context/VendorContext';
+import { useToast } from '@/components/ui/toast';
+import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
+import { EMPLOYEE_IMPORTS } from '@/lib/bulk-import/configs';
 import { Employee, EmployeeType } from '@/types/employee';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -23,9 +28,13 @@ const tabs: { id: TabType; label: string; dotColor: string }[] = [
 ];
 
 export default function EmployeesPage() {
-  const { employees, isLoading, stats } = useEmployees();
+  const { employees, isLoading, stats, fetchEmployees } = useEmployees();
+  const { clients } = useClients();
+  const { vendors } = useVendors();
+  const toast = useToast();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const [importOpen, setImportOpen] = useState(false);
 
   const filteredByTab = useMemo(() => {
     if (activeTab === 'all') return employees;
@@ -54,10 +63,15 @@ export default function EmployeesPage() {
         title="Employees"
         description="Manage your entire workforce in one place"
         actions={
-          <Link href="/dashboard/onboard" className="btn-primary">
-            <Plus className="h-4 w-4" />
-            Add Employee
-          </Link>
+          <>
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload className="h-4 w-4" /> Import
+            </button>
+            <Link href="/dashboard/onboard" className="btn-primary">
+              <Plus className="h-4 w-4" />
+              Add Employee
+            </Link>
+          </>
         }
       />
 
@@ -113,6 +127,18 @@ export default function EmployeesPage() {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, employee: null })}
         employee={deleteModal.employee}
+      />
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        configs={EMPLOYEE_IMPORTS}
+        title="Import Employees"
+        lookups={{ clients, vendors }}
+        onImported={(n) => {
+          fetchEmployees();
+          toast.success('Employees imported', `${n} employee${n !== 1 ? 's' : ''} added.`);
+        }}
       />
     </div>
   );

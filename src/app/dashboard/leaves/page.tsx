@@ -151,7 +151,7 @@ export default function LeavesPage() {
   const balanceRows = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return employees
-      .filter((emp) => !q || emp.name.toLowerCase().includes(q))
+      .filter((emp) => !q || emp.name?.toLowerCase().includes(q))
       .map((emp) => {
         const empApproved = approvedLeaves.filter((l) => l.employeeId === emp.id);
         const used = empApproved.reduce((sum, l) => sum + (Number(l.days) || 0), 0);
@@ -384,9 +384,9 @@ export default function LeavesPage() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                              {name.charAt(0).toUpperCase() || '?'}
+                              {name?.charAt(0)?.toUpperCase() || '?'}
                             </div>
-                            <p className="text-sm font-semibold text-slate-900">{name}</p>
+                            <p className="text-sm font-semibold text-slate-900">{name || 'Unknown'}</p>
                           </div>
                         </td>
                         <td className="px-5 py-3.5">
@@ -641,9 +641,9 @@ function BalancesPanel({
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                          {emp.name.charAt(0).toUpperCase() || '?'}
+                          {emp.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                        <p className="text-sm font-semibold text-slate-900">{emp.name}</p>
+                        <p className="text-sm font-semibold text-slate-900">{emp.name || 'Unknown'}</p>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
