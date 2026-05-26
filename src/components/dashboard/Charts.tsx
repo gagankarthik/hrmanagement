@@ -3,7 +3,7 @@
 import React from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, AreaChart, Area,
+  Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LabelList,
 } from 'recharts';
 
 // Vivid, high-contrast but cohesive palette
@@ -101,6 +101,45 @@ export function CompareBarChart({
               animationDuration={700}
             />
           ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Horizontal bar chart — ideal for ranked lists (top clients, utilization by class). */
+export function HBarChart({
+  data, categoryKey, valueKey, height = 260, color = VIZ.brand, money = false, suffix = '', onBarClick,
+}: {
+  data: Record<string, unknown>[];
+  categoryKey: string;
+  valueKey: string;
+  height?: number;
+  color?: string;
+  money?: boolean;
+  suffix?: string;
+  onBarClick?: (row: Record<string, unknown>) => void;
+}) {
+  const fmt = (v: number) => (money ? `$${Math.round(v).toLocaleString()}` : `${v}${suffix}`);
+  return (
+    <div style={{ width: '100%', height }}>
+      <ResponsiveContainer>
+        <BarChart layout="vertical" data={data} margin={{ top: 4, right: 52, left: 8, bottom: 4 }} barCategoryGap={12}>
+          <CartesianGrid horizontal={false} stroke="#eceae4" strokeDasharray="3 3" />
+          <XAxis type="number" hide />
+          <YAxis type="category" dataKey={categoryKey} width={120} tick={{ fontSize: 12, fill: '#475569' }} tickLine={false} axisLine={false} />
+          <Tooltip content={<TooltipBox />} cursor={{ fill: 'rgba(16,61,51,0.04)' }} />
+          <Bar
+            dataKey={valueKey}
+            radius={[0, 6, 6, 0]}
+            maxBarSize={26}
+            animationDuration={700}
+            cursor={onBarClick ? 'pointer' : 'default'}
+            onClick={onBarClick ? (d: any) => onBarClick(d?.payload ?? d) : undefined}
+          >
+            {data.map((d, i) => <Cell key={i} fill={(d.color as string) || color} />)}
+            <LabelList dataKey={valueKey} position="right" formatter={fmt as any} style={{ fontSize: 11, fontWeight: 700, fill: '#0f172a' }} />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

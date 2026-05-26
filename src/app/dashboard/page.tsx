@@ -1,1018 +1,438 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Calendar,
-  Filter,
-  X,
-  Building2,
-  Package,
-  ChevronRight,
-  RefreshCw,
-  Users,
-  Briefcase,
-  CheckCircle2,
-  XCircle,
-  LayoutDashboard,
-  CalendarDays,
-  CalendarCheck,
-  TrendingUp,
-  DollarSign,
+  Users, Gauge, ShieldAlert, Percent, Filter, RefreshCw, X, Building2,
+  CalendarClock, ChevronRight, Sparkles, TrendingUp, PieChart as PieIcon, BarChart3,
 } from 'lucide-react';
-import { PageHeader } from '@/components/dashboard/PageHeader';
-import { DonutChart, CompareBarChart, TrendAreaChart, TYPE_COLOR, VIZ } from '@/components/dashboard/Charts';
+import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
-import { useVendors } from '@/context/VendorContext';
-import { useLeaves } from '@/context/LeaveContext';
-import { useAttendance } from '@/context/AttendanceContext';
-import { useAuth } from '@/context/AuthContext';
-import { resolveName } from '@/lib/names';
-import { format } from 'date-fns';
-import { EmployeeType } from '@/types/employee';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import AttentionPanel from '@/components/dashboard/AttentionPanel';
-import MetricsStrip from '@/components/dashboard/MetricsStrip';
-import FinancialsStrip from '@/components/dashboard/FinancialsStrip';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import MilestonesPanel from '@/components/dashboard/MilestonesPanel';
-import WorkforceInsights from '@/components/dashboard/WorkforceInsights';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { useTimesheets } from '@/context/TimesheetContext';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import {
+  DonutChart, CompareBarChart, TrendAreaChart, HBarChart,
+  TYPE_COLOR, VIZ, type DonutDatum,
+} from '@/components/dashboard/Charts';
+import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
+import { KpiCard, ProgressRing, Sparkline, CountUp, SectionCard } from '@/components/dashboard/dashboard-ui';
+import type { Employee, EmployeeType } from '@/types/employee';
 
-const employeeTypes = [
-  { value: 'all', label: 'All Types' },
-  { value: 'W2', label: 'W2' },
-  { value: 'Contract', label: 'Contract' },
-  { value: '1099', label: '1099' },
-  { value: 'Offshore', label: 'Offshore' },
-];
+const CLASSES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
+const CLASS_LABEL: Record<EmployeeType, string> = { W2: 'W-2', Contract: 'Contract', '1099': '1099', Offshore: 'Offshore' };
+const CLASS_TONE: Record<EmployeeType, 'sky' | 'purple' | 'emerald' | 'pink'> = { W2: 'sky', Contract: 'purple', '1099': 'emerald', Offshore: 'pink' };
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const statusOptions = [
-  { value: 'all', label: 'All Statuses' },
-  { value: 'Active', label: 'Active' },
-  { value: 'Terminated', label: 'Terminated' },
-];
-
-const revenueOptions = [
-  { value: 'all', label: 'All Revenue' },
-  { value: 'B', label: 'Billable' },
-  { value: 'NB', label: 'Non-Billable' },
-];
-
-// Time-range presets — scope the whole dashboard by employee hire date.
-const periodPresets = [
-  { value: 'all', label: 'All time' },
-  { value: '6m', label: 'Last 6 months' },
-  { value: 'custom', label: 'Custom range' },
-  { value: 'ytd', label: 'Year to date' },
-  { value: 'year', label: 'By year' },
-] as const;
-
-type PeriodMode = (typeof periodPresets)[number]['value'];
-
-const toMonthStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-const parseMonthStr = (s: string) => {
-  const [y, m] = s.split('-').map(Number);
-  return new Date(y || new Date().getFullYear(), (m || 1) - 1, 1);
+const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const statusOf = (e: Employee) => ('status' in e ? (e as { status?: string }).status ?? 'Active' : 'Active');
+const isActive = (e: Employee) => statusOf(e) === 'Active';
+const isBillable = (e: Employee) => 'revenueStatus' in e && (e as { revenueStatus?: string }).revenueStatus === 'B';
+const hasClient = (e: Employee) => {
+  const now = new Date();
+  return e.clientAssignments?.some((a) => a.clientId && (!a.endDate || new Date(a.endDate) >= now)) || Boolean(e.clientId || e.client);
 };
 
-const typeAccent: Record<string, string> = {
-  W2: 'bg-blue-500',
-  Contract: 'bg-purple-500',
-  '1099': 'bg-teal-500',
-  Offshore: 'bg-pink-500',
-};
+type StatusFilter = 'all' | 'Active' | 'Terminated';
+type RevenueFilter = 'all' | 'B' | 'NB';
+type RangePreset = 'all' | 'ytd' | '12m' | '90d';
+const RANGES: { value: RangePreset; label: string }[] = [
+  { value: 'all', label: 'All time' }, { value: 'ytd', label: 'Year to date' },
+  { value: '12m', label: 'Last 12 months' }, { value: '90d', label: 'Last 90 days' },
+];
 
-function greetingForHour(hour: number): string {
-  if (hour < 5) return 'Good evening';
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function Segmented<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => (
+        <button key={o.value} onClick={() => onChange(o.value)} className={cn('rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors', value === o.value ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>{o.label}</button>
+      ))}
+    </div>
+  );
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { employees, isLoading, fetchEmployees } = useEmployees();
-  const { clients, fetchClients } = useClients();
-  const { vendors, fetchVendors } = useVendors();
-  const { user } = useAuth();
+  const { clients } = useClients();
+  const { timesheets } = useTimesheets();
 
-  // Ensure client/vendor names are available so the dashboard never shows raw IDs
-  useEffect(() => {
-    fetchClients();
-    fetchVendors();
-  }, [fetchClients, fetchVendors]);
-  const [selectedType, setSelectedType] = useState<EmployeeType | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'Active' | 'Terminated' | 'all'>('all');
-  const [selectedRevenue, setSelectedRevenue] = useState<'B' | 'NB' | 'all'>('all');
-  const [selectedClient, setSelectedClient] = useState<string>('all');
-  const [selectedVendor, setSelectedVendor] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [trendWindow, setTrendWindow] = useState(12); // months shown in the hiring-trend chart
-
-  // Time-range filter (by hire date) — scopes the entire dashboard
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('all');
-  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
-  const [customStart, setCustomStart] = useState<string>(() => toMonthStr(new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1)));
-  const [customEnd, setCustomEnd] = useState<string>(() => toMonthStr(new Date()));
-
-  // id -> name lookups so we resolve real names instead of showing raw IDs
-  const clientMap = useMemo(() => {
-    const m = new Map<string, string>();
-    clients.forEach((c) => { if (c?.id) m.set(c.id, c.name || 'Unnamed client'); });
-    return m;
-  }, [clients]);
-
-  const vendorMap = useMemo(() => {
-    const m = new Map<string, string>();
-    vendors.forEach((v) => { if (v?.id) m.set(v.id, v.name || 'Unnamed vendor'); });
-    return m;
-  }, [vendors]);
-
-  // Only real, resolvable clients/vendors populate the filter dropdowns
-  const uniqueClients = useMemo(() => {
-    const ids = new Set<string>();
-    employees.forEach((e) => {
-      e.clientAssignments?.forEach((a) => { if (a.clientId) ids.add(a.clientId); });
-      if (e.clientId) ids.add(e.clientId);
-    });
-    return Array.from(ids)
-      .filter((id) => clientMap.has(id))
-      .map((id) => ({ id, name: clientMap.get(id) as string }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [employees, clientMap]);
-
-  const uniqueVendors = useMemo(() => {
-    const ids = new Set<string>();
-    employees.forEach((e) => {
-      e.vendorAssignments?.forEach((a) => { if (a.vendorId) ids.add(a.vendorId); });
-      if (e.vendorId) ids.add(e.vendorId);
-    });
-    return Array.from(ids)
-      .filter((id) => vendorMap.has(id))
-      .map((id) => ({ id, name: vendorMap.get(id) as string }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [employees, vendorMap]);
-
-  // Years present in the data (newest first) for the "By year" dropdown
-  const availableYears = useMemo(() => {
-    const cur = new Date().getFullYear();
-    let min = cur;
-    employees.forEach((e) => {
-      if (!e.hireDate) return;
-      const y = new Date(e.hireDate).getFullYear();
-      if (!Number.isNaN(y) && y < min) min = y;
-    });
-    const years: number[] = [];
-    for (let y = cur; y >= min; y--) years.push(y);
-    return years;
-  }, [employees]);
-
-  // Resolve the selected period to a concrete [start, end] window
-  const dateRange = useMemo<{ start: Date | null; end: Date | null }>(() => {
-    const now = new Date();
-    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-    switch (periodMode) {
-      case '6m':
-        return { start: new Date(now.getFullYear(), now.getMonth() - 5, 1), end: endOfDay(now) };
-      case 'ytd':
-        return { start: new Date(now.getFullYear(), 0, 1), end: endOfDay(now) };
-      case 'year':
-        return { start: new Date(selectedYear, 0, 1), end: new Date(selectedYear, 11, 31, 23, 59, 59, 999) };
-      case 'custom': {
-        const a = parseMonthStr(customStart);
-        const b = parseMonthStr(customEnd);
-        const [lo, hi] = a <= b ? [a, b] : [b, a];
-        return {
-          start: new Date(lo.getFullYear(), lo.getMonth(), 1),
-          end: new Date(hi.getFullYear(), hi.getMonth() + 1, 0, 23, 59, 59, 999), // last day of end month
-        };
-      }
-      default:
-        return { start: null, end: null };
-    }
-  }, [periodMode, selectedYear, customStart, customEnd]);
-
-  const periodLabel = useMemo(() => {
-    switch (periodMode) {
-      case '6m': return 'Last 6 months';
-      case 'ytd': return `Year to date ${new Date().getFullYear()}`;
-      case 'year': return `Year ${selectedYear}`;
-      case 'custom': return `${format(parseMonthStr(customStart), 'MMM yyyy')} → ${format(parseMonthStr(customEnd), 'MMM yyyy')}`;
-      default: return 'All time';
-    }
-  }, [periodMode, selectedYear, customStart, customEnd]);
-
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
-      if (selectedType !== 'all' && emp.type !== selectedType) return false;
-      if (selectedStatus !== 'all' && 'status' in emp && emp.status !== selectedStatus) return false;
-      if (selectedRevenue !== 'all' && 'revenueStatus' in emp && emp.revenueStatus !== selectedRevenue) return false;
-      if (selectedClient !== 'all') {
-        const ids = emp.clientAssignments?.map((a) => a.clientId).filter(Boolean) || (emp.clientId ? [emp.clientId] : []);
-        if (!ids.includes(selectedClient)) return false;
-      }
-      if (selectedVendor !== 'all') {
-        const ids = emp.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (emp.vendorId ? [emp.vendorId] : []);
-        if (!ids.includes(selectedVendor)) return false;
-      }
-      if (dateRange.start || dateRange.end) {
-        if (!emp.hireDate) return false;
-        const h = new Date(emp.hireDate);
-        if (Number.isNaN(h.getTime())) return false;
-        if (dateRange.start && h < dateRange.start) return false;
-        if (dateRange.end && h > dateRange.end) return false;
-      }
-      return true;
-    });
-  }, [employees, selectedType, selectedStatus, selectedRevenue, selectedClient, selectedVendor, dateRange]);
-
-  const hasActiveFilters =
-    selectedType !== 'all' ||
-    selectedStatus !== 'all' ||
-    selectedRevenue !== 'all' ||
-    selectedClient !== 'all' ||
-    selectedVendor !== 'all' ||
-    periodMode !== 'all';
-
-  const activeFilterCount = [
-    selectedType !== 'all',
-    selectedStatus !== 'all',
-    selectedRevenue !== 'all',
-    selectedClient !== 'all',
-    selectedVendor !== 'all',
-    periodMode !== 'all',
-  ].filter(Boolean).length;
-
-  const clearFilters = () => {
-    setSelectedType('all');
-    setSelectedStatus('all');
-    setSelectedRevenue('all');
-    setSelectedClient('all');
-    setSelectedVendor('all');
-    setPeriodMode('all');
-  };
-
-  const handleRefresh = async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    try { await fetchEmployees(); } finally { setIsRefreshing(false); }
-  };
-
-  // Active (non-terminated) employees. Financial / workforce-composition stats
-  // exclude terminated staff; only the status breakdown shows the active-vs-terminated split.
-  const activeEmployees = useMemo(
-    () => filteredEmployees.filter((e) => !('status' in e) || (e as { status?: string }).status !== 'Terminated'),
-    [filteredEmployees]
-  );
-
-  // Headcount by type (active workforce only)
-  const typeDistribution = useMemo(() => {
-    const map: Record<EmployeeType, number> = { W2: 0, Contract: 0, '1099': 0, Offshore: 0 };
-    activeEmployees.forEach((e) => { map[e.type] += 1; });
-    return Object.entries(map).map(([label, value]) => ({ label, value })) as { label: EmployeeType; value: number }[];
-  }, [activeEmployees]);
-
-  const totalHeadcount = activeEmployees.length;
-  const maxTypeValue = Math.max(...typeDistribution.map((t) => t.value), 1);
-
-  // Status donut
-  const statusBreakdown = useMemo(() => {
-    let active = 0, terminated = 0;
-    filteredEmployees.forEach((e) => {
-      if ('status' in e) {
-        if ((e as { status: string }).status === 'Active') active += 1;
-        else if ((e as { status: string }).status === 'Terminated') terminated += 1;
-      }
-    });
-    return { active, terminated, total: active + terminated };
-  }, [filteredEmployees]);
-
-  // Top clients/vendors (active workforce). Only resolvable client/vendor records
-  // or legacy text names are ranked — unresolved IDs are dropped so no "Unknown" rows appear.
-  const topClients = useMemo(() => {
-    const dist: Record<string, { id: string; name: string; count: number }> = {};
-    activeEmployees.forEach((e) => {
-      const ids = Array.from(new Set(
-        (e.clientAssignments?.map((a) => a.clientId).filter(Boolean) as string[] | undefined) ?? (e.clientId ? [e.clientId] : [])
-      ));
-      const resolved = ids.filter((id) => clientMap.has(id));
-      if (resolved.length) {
-        resolved.forEach((id) => {
-          const name = clientMap.get(id) as string;
-          if (!dist[id]) dist[id] = { id, name, count: 0 };
-          dist[id].count += 1;
-        });
-      } else if (e.client) {
-        // Legacy free-text client name (no linked record)
-        const key = `name:${e.client.toLowerCase()}`;
-        if (!dist[key]) dist[key] = { id: '', name: e.client, count: 0 };
-        dist[key].count += 1;
-      }
-      // else: only an unresolved/deleted client id → skip (no "Unknown client" row)
-    });
-    return Object.values(dist).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [activeEmployees, clientMap]);
-
-  const topVendors = useMemo(() => {
-    const dist: Record<string, { id: string; name: string; count: number }> = {};
-    activeEmployees.forEach((e) => {
-      const ids = Array.from(new Set(
-        (e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) as string[] | undefined) ?? (e.vendorId ? [e.vendorId] : [])
-      ));
-      const resolved = ids.filter((id) => vendorMap.has(id));
-      if (resolved.length) {
-        resolved.forEach((id) => {
-          const name = vendorMap.get(id) as string;
-          if (!dist[id]) dist[id] = { id, name, count: 0 };
-          dist[id].count += 1;
-        });
-      } else if (e.vendorName) {
-        const key = `name:${e.vendorName.toLowerCase()}`;
-        if (!dist[key]) dist[key] = { id: '', name: e.vendorName, count: 0 };
-        dist[key].count += 1;
-      }
-      // else: only an unresolved/deleted vendor id → skip (no "Unknown vendor" row)
-    });
-    return Object.values(dist).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [activeEmployees, vendorMap]);
-
-  // ── Interactive chart data ──
-  const typePie = useMemo(
-    () => typeDistribution.filter((t) => t.value > 0).map((t) => ({ name: t.label, value: t.value, color: TYPE_COLOR[t.label] || VIZ.slate })),
-    [typeDistribution]
-  );
-
-  const statusPie = useMemo(
-    () => [
-      { name: 'Active', value: statusBreakdown.active, color: VIZ.emerald },
-      { name: 'Terminated', value: statusBreakdown.terminated, color: VIZ.rose },
-    ].filter((d) => d.value > 0),
-    [statusBreakdown]
-  );
-
-  const billableByType = useMemo(
-    () => (['W2', 'Contract', '1099', 'Offshore'] as const).map((type) => {
-      const list = activeEmployees.filter((e) => e.type === type);
-      const billable = list.filter((e) => 'revenueStatus' in e && (e as { revenueStatus?: string }).revenueStatus === 'B').length;
-      return { type, Billable: billable, 'Non-billable': list.length - billable };
-    }),
-    [activeEmployees]
-  );
-
-  // Month buckets for the hiring-trend chart: spans the active period when one
-  // is set, otherwise the last N months chosen by the toggle.
-  const trendMonths = useMemo(() => {
-    const now = new Date();
-    const buckets: { start: Date; end: Date }[] = [];
-    if (dateRange.start && dateRange.end) {
-      const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), 1);
-      const endRef = dateRange.end < now ? dateRange.end : now; // don't chart empty future months
-      const e = new Date(endRef.getFullYear(), endRef.getMonth(), 1);
-      const cursor = new Date(s);
-      while (cursor <= e) {
-        buckets.push({
-          start: new Date(cursor.getFullYear(), cursor.getMonth(), 1),
-          end: new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1),
-        });
-        cursor.setMonth(cursor.getMonth() + 1);
-      }
-      if (buckets.length === 0) buckets.push({ start: s, end: new Date(s.getFullYear(), s.getMonth() + 1, 1) });
-      return buckets.slice(-36); // cap to keep the chart readable
-    }
-    for (let i = trendWindow - 1; i >= 0; i--) {
-      buckets.push({
-        start: new Date(now.getFullYear(), now.getMonth() - i, 1),
-        end: new Date(now.getFullYear(), now.getMonth() - i + 1, 1),
-      });
-    }
-    return buckets;
-  }, [dateRange, trendWindow]);
-
-  const hiringTrend = useMemo(() => {
-    const mn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const multiYear = trendMonths.length > 12;
-    return trendMonths.map(({ start, end }) => {
-      const monthEmps = activeEmployees.filter((e) => {
-        if (!e.hireDate) return false;
-        const h = new Date(e.hireDate);
-        return h >= start && h < end;
-      });
-      // Add a 2-digit year suffix when the window spans more than a year (avoids repeated month labels)
-      const label = multiYear ? `${mn[start.getMonth()]} '${String(start.getFullYear()).slice(2)}` : mn[start.getMonth()];
-      return {
-        month: label,
-        W2: monthEmps.filter((e) => e.type === 'W2').length,
-        Contract: monthEmps.filter((e) => e.type === 'Contract').length,
-        '1099': monthEmps.filter((e) => e.type === '1099').length,
-        Offshore: monthEmps.filter((e) => e.type === 'Offshore').length,
-      };
-    });
-  }, [activeEmployees, trendMonths]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-20 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-72 rounded-2xl" />
-          <Skeleton className="h-72 rounded-2xl" />
-        </div>
-        <Skeleton className="h-96 w-full rounded-2xl" />
-      </div>
-    );
-  }
+  const [classFilter, setClassFilter] = useState<Set<EmployeeType>>(new Set(CLASSES));
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>('all');
+  const [range, setRange] = useState<RangePreset>('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [peopleModal, setPeopleModal] = useState<{ title: string; description?: string; people: Employee[]; tone: 'red' | 'sky' | 'purple' | 'emerald' | 'pink' | 'amber'; ctx?: (e: Employee) => { primary?: string; secondary?: string } } | null>(null);
+  const [clientModal, setClientModal] = useState<string | null>(null);
 
   const now = new Date();
-  const firstName = (user?.name || user?.username || user?.email || '').split(/[ @]/)[0] || 'there';
-  const greeting = `${greetingForHour(now.getHours())}, ${firstName.charAt(0).toUpperCase() + firstName.slice(1)}`;
+  const in30 = new Date(now.getTime() + 30 * 86400000);
+  const in90 = new Date(now.getTime() + 90 * 86400000);
+
+  const rangeCutoff = useMemo(() => {
+    if (range === 'ytd') return new Date(now.getFullYear(), 0, 1);
+    if (range === '12m') return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    if (range === '90d') return new Date(now.getTime() - 90 * 86400000);
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  // class-only set (for the status donut) and the fully-filtered set
+  const byClass = useMemo(() => employees.filter((e) => e && e.id && classFilter.has(e.type)), [employees, classFilter]);
+  const emps = useMemo(() => byClass.filter((e) => {
+    if (statusFilter !== 'all' && statusOf(e) !== statusFilter) return false;
+    if (revenueFilter === 'B' && !isBillable(e)) return false;
+    if (revenueFilter === 'NB' && isBillable(e)) return false;
+    return true;
+  }), [byClass, statusFilter, revenueFilter]);
+  const empsActive = useMemo(() => emps.filter(isActive), [emps]);
+
+  const totalActive = empsActive.length;
+  const billableCount = empsActive.filter(isBillable).length;
+  const utilization = totalActive ? Math.round((billableCount / totalActive) * 100) : 0;
+  const benchCount = empsActive.filter((e) => !isBillable(e) || !hasClient(e)).length;
+
+  const classCounts = useMemo(() => {
+    const m: Record<EmployeeType, number> = { W2: 0, Contract: 0, '1099': 0, Offshore: 0 };
+    emps.forEach((e) => { m[e.type] += 1; });
+    return m;
+  }, [emps]);
+
+  // Compliance
+  const complianceRisk = useMemo(() => empsActive.filter((e) => {
+    const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+    if (!ed) return false;
+    const d = new Date(ed);
+    return !Number.isNaN(d.getTime()) && d <= in30;
+  }), [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  const expiryTimeline = useMemo(() => (
+    empsActive.map((e) => {
+      const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+      if (!ed) return null;
+      const d = new Date(ed);
+      if (Number.isNaN(d.getTime()) || d > in90) return null;
+      return { e, days: Math.round((d.getTime() - now.getTime()) / 86400000), auth: 'workAuthorization' in e ? (e as { workAuthorization?: string }).workAuthorization : undefined };
+    }).filter(Boolean).sort((a, b) => a!.days - b!.days) as { e: Employee; days: number; auth?: string }[]
+  ), [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hiring trend BY TYPE — monthly new hires, one stacked series per class
+  const hiringByType = useMemo(() => {
+    const rows: Record<string, unknown>[] = [];
+    for (let i = 7; i >= 0; i--) {
+      const ms = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const me = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const row: Record<string, unknown> = { month: MONTHS[ms.getMonth()] };
+      CLASSES.forEach((c) => {
+        row[CLASS_LABEL[c]] = emps.filter((e) => e.type === c && e.hireDate && (() => { const d = new Date(e.hireDate); return d >= ms && d < me; })()).length;
+      });
+      rows.push(row);
+    }
+    return rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emps]);
+
+  const typeDonut: DonutDatum[] = useMemo(
+    () => CLASSES.filter((c) => classCounts[c] > 0).map((c) => ({ name: CLASS_LABEL[c], value: classCounts[c], color: TYPE_COLOR[c] })),
+    [classCounts],
+  );
+
+  const statusDonut: DonutDatum[] = useMemo(() => {
+    let a = 0, t = 0;
+    byClass.forEach((e) => { if (statusOf(e) === 'Active') a++; else if (statusOf(e) === 'Terminated') t++; });
+    const out: DonutDatum[] = [];
+    if (a) out.push({ name: 'Active', value: a, color: VIZ.emerald });
+    if (t) out.push({ name: 'Terminated', value: t, color: VIZ.rose });
+    return out;
+  }, [byClass]);
+
+  const billableData = useMemo(
+    () => CLASSES.filter((c) => empsActive.some((e) => e.type === c)).map((c) => {
+      const inC = empsActive.filter((e) => e.type === c);
+      return { type: CLASS_LABEL[c], Billable: inC.filter(isBillable).length, 'Non-billable': inC.filter((e) => !isBillable(e)).length };
+    }) as Record<string, unknown>[],
+    [empsActive],
+  );
+
+  const utilData = useMemo(
+    () => CLASSES.filter((c) => empsActive.some((e) => e.type === c)).map((c) => {
+      const inC = empsActive.filter((e) => e.type === c);
+      return { type: CLASS_LABEL[c], Utilization: inC.length ? Math.round((inC.filter(isBillable).length / inC.length) * 100) : 0 };
+    }) as Record<string, unknown>[],
+    [empsActive],
+  );
+
+  // Revenue by client (timesheets) → fallback to headcount-by-client
+  const tsInRange = useMemo(
+    () => timesheets.filter((t) => t && t.id && (!rangeCutoff || (t.periodStart && new Date(t.periodStart) >= rangeCutoff))),
+    [timesheets, rangeCutoff],
+  );
+  const revenueByClient = useMemo(() => {
+    const m: Record<string, { id: string; name: string; revenue: number; cost: number; hours: number }> = {};
+    tsInRange.forEach((t) => {
+      const id = t.clientId || 'unassigned';
+      if (!m[id]) m[id] = { id, name: t.clientName || 'Unassigned', revenue: 0, cost: 0, hours: 0 };
+      m[id].revenue += (t.billRate || 0) * (t.hours || 0);
+      m[id].cost += (t.payRate || 0) * (t.hours || 0);
+      m[id].hours += t.hours || 0;
+    });
+    return Object.values(m).sort((a, b) => b.revenue - a.revenue);
+  }, [tsInRange]);
+  const revenueMode = revenueByClient.length > 0;
+  const clientChart = useMemo(() => {
+    if (revenueMode) return revenueByClient.slice(0, 6).map((c) => ({ name: c.name, value: Math.round(c.revenue), id: c.id, color: VIZ.brand }));
+    const m: Record<string, { id: string; name: string; value: number }> = {};
+    empsActive.forEach((e) => {
+      const cid = e.clientId || e.clientAssignments?.[0]?.clientId;
+      if (!cid) return;
+      const name = clients.find((c) => c.id === cid)?.name || e.client;
+      if (!name) return;
+      if (!m[cid]) m[cid] = { id: cid, name, value: 0 };
+      m[cid].value += 1;
+    });
+    return Object.values(m).sort((a, b) => b.value - a.value).slice(0, 6).map((c) => ({ ...c, color: VIZ.teal }));
+  }, [revenueMode, revenueByClient, empsActive, clients]);
+
+  const { blendedMargin, weeklyGp } = useMemo(() => {
+    let gp = 0, bill = 0;
+    empsActive.forEach((e) => { if (isBillable(e) && (e.billRate ?? 0) > 0) { gp += ((e.billRate ?? 0) - (e.payRate ?? 0)) * 40; bill += (e.billRate ?? 0) * 40; } });
+    return { blendedMargin: bill > 0 ? Math.round((gp / bill) * 100) : 0, weeklyGp: gp };
+  }, [empsActive]);
+  const gpSpark = useMemo(() => {
+    const s: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const ms = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const me = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      let gp = 0;
+      timesheets.forEach((t) => { if (!t.periodStart) return; const d = new Date(t.periodStart); if (d >= ms && d < me) gp += ((t.billRate || 0) - (t.payRate || 0)) * (t.hours || 0); });
+      s.push(Math.round(gp));
+    }
+    return s.some((v) => v !== 0) ? s : [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timesheets]);
+
+  const insights = useMemo(() => {
+    const out: string[] = [];
+    if (complianceRisk.length) out.push(`${complianceRisk.length} work authorization${complianceRisk.length > 1 ? 's' : ''} expiring within 30 days.`);
+    out.push(utilization >= 75 ? `Billable utilization is healthy at ${utilization}%.` : `Billable utilization is ${utilization}% — below the 75% target.`);
+    if (revenueMode) {
+      const total = revenueByClient.reduce((s, c) => s + c.revenue, 0);
+      if (total > 0) out.push(`${revenueByClient[0].name} is your top client at ${Math.round((revenueByClient[0].revenue / total) * 100)}% of billed revenue.`);
+    } else if (weeklyGp === 0) out.push('Set bill & pay rates on the Margins page to unlock revenue and margin insights.');
+    if (benchCount) out.push(`${benchCount} active ${benchCount === 1 ? 'worker is' : 'workers are'} on the bench.`);
+    return out.slice(0, 3);
+  }, [complianceRisk.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
+
+  const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await fetchEmployees(); } finally { setRefreshing(false); } };
+  const toggleClass = (c: EmployeeType) => setClassFilter((prev) => { const n = new Set(prev); if (n.has(c)) { if (n.size > 1) n.delete(c); } else n.add(c); return n; });
+  const resetFilters = () => { setClassFilter(new Set(CLASSES)); setStatusFilter('all'); setRevenueFilter('all'); setRange('all'); };
+  const filtersOn = classFilter.size < 4 || statusFilter !== 'all' || revenueFilter !== 'all' || range !== 'all';
+
+  const ctxExpiry = (e: Employee) => {
+    const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
+    if (!ed) return {};
+    const d = new Date(ed);
+    const days = Math.round((d.getTime() - Date.now()) / 86400000);
+    return { primary: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), secondary: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left` };
+  };
+  const onClientBar = (row: Record<string, unknown>) => { const id = row.id as string; if (!id) return; if (revenueMode) setClientModal(id); else router.push(`/dashboard/clients/${id}`); };
+
+  const drillRows = useMemo(() => {
+    if (!clientModal) return [];
+    const m: Record<string, { name: string; hours: number; bill: number; pay: number }> = {};
+    tsInRange.filter((t) => (t.clientId || 'unassigned') === clientModal).forEach((t) => {
+      const key = t.employeeId || t.employeeName || 'unknown';
+      if (!m[key]) m[key] = { name: t.employeeName || 'Worker', hours: 0, bill: 0, pay: 0 };
+      m[key].hours += t.hours || 0; m[key].bill += (t.billRate || 0) * (t.hours || 0); m[key].pay += (t.payRate || 0) * (t.hours || 0);
+    });
+    return Object.values(m).sort((a, b) => b.bill - a.bill);
+  }, [clientModal, tsInRange]);
+  const drillClient = revenueByClient.find((c) => c.id === clientModal);
 
   return (
-    <div className="space-y-6">
-      {/* Clean header */}
+    <div className="space-y-5">
       <PageHeader
-        icon={LayoutDashboard}
+        icon={Gauge}
         eyebrow="Overview"
-        title={greeting}
-        description={
-          <span className="inline-flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5" />
-            Workforce overview — {format(now, 'EEEE, MMMM d, yyyy')}
-          </span>
-        }
+        title="Workforce command center"
+        description="Billing, compliance, and headcount at a glance."
+        tone="brand"
         actions={
           <>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50"
-              title="Refresh data"
-            >
-              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            <button onClick={handleRefresh} disabled={refreshing} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50" title="Refresh">
+              <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} strokeWidth={1.75} />
             </button>
-            <button
-              onClick={() => setShowFilters((v) => !v)}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
-                showFilters || hasActiveFilters
-                  ? 'btn-primary'
-                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              )}
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-              {hasActiveFilters && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                  {activeFilterCount}
-                </span>
-              )}
+            <button onClick={() => setFiltersOpen((v) => !v)} className={cn('inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all', filtersOpen || filtersOn ? 'btn-primary' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+              <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters
+              {filtersOn && <span className="h-1.5 w-1.5 rounded-full bg-white/70" />}
             </button>
           </>
         }
       />
 
-      {/* Quick employee-type filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        {employeeTypes.map((t) => {
-          const active = selectedType === t.value;
-          return (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setSelectedType(t.value as EmployeeType | 'all')}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                active
-                  ? 'border-brand-600 bg-brand-600 text-white shadow-sm'
-                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-              )}
-            >
-              {t.value !== 'all' && (
-                <span className={cn('h-2 w-2 rounded-full', active ? 'bg-white/80' : typeAccent[t.value] || 'bg-slate-300')} />
-              )}
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="surface p-5 animate-in fade-in slide-in-from-top-2 duration-200">
-          {/* Period — scopes the whole dashboard by employee hire date */}
-          <div className="mb-4 border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Period · by hire date</span>
+      {/* Inline filter panel (no side drawer) */}
+      {filtersOpen && (
+        <div className="surface animate-in fade-in slide-in-from-top-2 p-5 duration-200">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Status</p>
+              <Segmented value={statusFilter} onChange={setStatusFilter} options={[{ value: 'all', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'Terminated', label: 'Terminated' }]} />
             </div>
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              {periodPresets.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setPeriodMode(p.value)}
-                  className={cn(
-                    'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
-                    periodMode === p.value
-                      ? 'border-brand-600 bg-brand-600 text-white'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  )}
-                >
-                  {p.label}
-                </button>
-              ))}
-
-              {periodMode === 'year' && (
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  aria-label="Year"
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-                >
-                  {availableYears.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              )}
-
-              {periodMode === 'custom' && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="month"
-                    value={customStart}
-                    max={customEnd}
-                    onChange={(e) => setCustomStart(e.target.value)}
-                    aria-label="Start month"
-                    className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-                  />
-                  <span className="text-slate-400">→</span>
-                  <input
-                    type="month"
-                    value={customEnd}
-                    min={customStart}
-                    onChange={(e) => setCustomEnd(e.target.value)}
-                    aria-label="End month"
-                    className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-                  />
-                </div>
-              )}
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Revenue</p>
+              <Segmented value={revenueFilter} onChange={setRevenueFilter} options={[{ value: 'all', label: 'All' }, { value: 'B', label: 'Billable' }, { value: 'NB', label: 'Non-billable' }]} />
             </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <FilterSelect label="Type" value={selectedType} onChange={(v) => setSelectedType(v as EmployeeType | 'all')} options={employeeTypes} />
-            <FilterSelect label="Status" value={selectedStatus} onChange={(v) => setSelectedStatus(v as 'Active' | 'Terminated' | 'all')} options={statusOptions} />
-            <FilterSelect label="Revenue" value={selectedRevenue} onChange={(v) => setSelectedRevenue(v as 'B' | 'NB' | 'all')} options={revenueOptions} />
-            <FilterSelect label="Client" value={selectedClient} onChange={setSelectedClient}
-              options={[{ value: 'all', label: 'All Clients' }, ...uniqueClients.map((c) => ({ value: c.id, label: c.name }))]} />
-            <FilterSelect label="Vendor" value={selectedVendor} onChange={setSelectedVendor}
-              options={[{ value: 'all', label: 'All Vendors' }, ...uniqueVendors.map((v) => ({ value: v.id, label: v.name }))]} />
-          </div>
-          {hasActiveFilters && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-              <span className="text-xs text-slate-500">
-                {filteredEmployees.length} of {employees.length} employees shown
-                {periodMode !== 'all' && <> · <span className="font-medium text-slate-600">{periodLabel}</span></>}
-              </span>
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                <X className="h-3 w-3" /> Clear all
+            <div className="sm:col-span-2">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Employment class</p>
+              <div className="flex flex-wrap gap-1.5">
+                {CLASSES.map((c) => <button key={c} onClick={() => toggleClass(c)} className={cn('rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', classFilter.has(c) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>{CLASS_LABEL[c]}</button>)}
+              </div>
+            </div>
+            <div className="lg:col-span-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Date range · billed revenue</p>
+              <Segmented value={range} onChange={setRange} options={RANGES} />
+            </div>
+            <div className="flex items-end justify-end">
+              <button onClick={resetFilters} disabled={!filtersOn} className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50">
+                <X className="h-4 w-4" strokeWidth={1.75} /> Reset
               </button>
             </div>
-          )}
+          </div>
+          <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">{emps.length} of {employees.length} employees in view</p>
         </div>
       )}
 
-      {/* Attention */}
-      <AttentionPanel employees={filteredEmployees} />
-
-      {/* Metrics strip */}
-      <MetricsStrip employees={filteredEmployees} />
-
-      {/* Financials — derived from bill/pay rates (Margins) */}
-      <FinancialsStrip employees={filteredEmployees} />
-
-      {/* Distribution & trends — interactive charts */}
-      <section className="grid gap-5 lg:grid-cols-3">
-        <ChartCard title="Workforce by type" subtitle={`${totalHeadcount} active employees`} icon={Users} delay={40}>
-          {typePie.length ? (
-            <DonutChart data={typePie} />
-          ) : (
-            <EmptyState title="No employees match" description="Adjust filters to see the breakdown." />
-          )}
-        </ChartCard>
-
-        <ChartCard
-          title="Hiring trend"
-          subtitle={periodMode === 'all' ? `New hires by category · last ${trendWindow} months` : `New hires by category · ${periodLabel}`}
-          icon={TrendingUp}
-          delay={100}
-          className="lg:col-span-2"
-        >
-          {periodMode === 'all' && (
-            <div className="mb-3 flex justify-end">
-              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
-                {[6, 12, 24].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setTrendWindow(n)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 font-medium transition-colors',
-                      trendWindow === n ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'
-                    )}
-                  >
-                    {n}M
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <TrendAreaChart
-            data={hiringTrend}
-            xKey="month"
-            areas={[
-              { key: 'W2', name: 'W-2', color: TYPE_COLOR.W2 },
-              { key: 'Contract', name: 'Contract', color: TYPE_COLOR.Contract },
-              { key: '1099', name: '1099', color: TYPE_COLOR['1099'] },
-              { key: 'Offshore', name: 'Offshore', color: TYPE_COLOR.Offshore },
-            ]}
-          />
-        </ChartCard>
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-2">
-        <ChartCard title="Employment status" subtitle="active vs terminated" icon={Briefcase} delay={40}>
-          {statusPie.length ? (
-            <DonutChart data={statusPie} />
-          ) : (
-            <EmptyState title="No status data" description="No employees with status match the filters." />
-          )}
-        </ChartCard>
-
-        <ChartCard title="Billable vs non-billable" subtitle="by employment type" icon={DollarSign} delay={100}>
-          <CompareBarChart
-            data={billableByType}
-            xKey="type"
-            bars={[
-              { key: 'Billable', name: 'Billable', color: VIZ.emerald },
-              { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate },
-            ]}
-          />
-        </ChartCard>
-      </section>
-
-      {/* Top clients + vendors */}
-      <section className="grid gap-6 lg:grid-cols-2">
-        <TopList title="Top clients" icon={Building2} tone="emerald" items={topClients} basePath="/dashboard/clients" total={totalHeadcount} />
-        <TopList title="Top vendors" icon={Package}    tone="purple"  items={topVendors} basePath="/dashboard/vendors" total={totalHeadcount} />
-      </section>
-
-      {/* Leaves & attendance */}
-      <section className="grid gap-5 lg:grid-cols-2">
-        <LeavesCard />
-        <AttendanceCard />
-      </section>
-
-      {/* Workforce insights — compliance, hiring trend, tenure */}
-      <WorkforceInsights employees={filteredEmployees} />
-
-      {/* Upcoming milestones — birthdays + anniversaries */}
-      <MilestonesPanel employees={filteredEmployees} />
-
-      {/* Recent activity */}
-      <RecentActivity employees={filteredEmployees} />
-    </div>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function StatusDonut({ active, terminated }: { active: number; terminated: number }) {
-  const total = active + terminated || 1;
-  const size = 140;
-  const stroke = 18;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const activeLen = (active / total) * circumference;
-  const terminatedLen = (terminated / total) * circumference;
-  const pct = Math.round((active / total) * 100);
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" className="stroke-slate-100" strokeWidth={stroke} />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          className="stroke-emerald-500" strokeWidth={stroke}
-          strokeDasharray={`${activeLen} ${circumference}`} strokeLinecap="round"
-        />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          className="stroke-red-400" strokeWidth={stroke}
-          strokeDasharray={`${terminatedLen} ${circumference}`}
-          strokeDashoffset={-activeLen} strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-3xl font-bold tabular-nums text-slate-900">{pct}%</span>
-        <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">active</span>
+      {/* KPI strip */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard icon={Users} label="Active workforce" value={<CountUp value={totalActive} />} tone="brand" why="How big your active team is right now — the foundation for every other metric." />
+        <KpiCard icon={Gauge} label="Billable utilization" value={`${utilization}%`} tone={utilization >= 75 ? 'emerald' : 'red'} why="Share of active workers who are billable. Core profitability metric — red below the 75% target." accessory={<ProgressRing value={utilization} color={utilization >= 75 ? '#059669' : '#dc2626'} label={`${utilization}%`} />} />
+        <KpiCard icon={ShieldAlert} label="Compliance at risk" value={<CountUp value={complianceRisk.length} />} tone="red" alert={complianceRisk.length > 0} why="Work authorizations expiring within 30 days or already expired. Click to see who." onClick={complianceRisk.length ? () => setPeopleModal({ title: 'Compliance at risk', description: 'Expiring within 30 days or already expired', people: complianceRisk, tone: 'red', ctx: ctxExpiry }) : undefined} />
+        <KpiCard icon={Percent} label="Blended margin" value={`${blendedMargin}%`} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} why="Profit after paying contractors, from bill vs pay rates. Set rates on the Margins page." accessory={gpSpark.length ? <Sparkline data={gpSpark} /> : undefined} sub={<span className="text-right text-[11px] font-semibold text-slate-400">{usd0(weeklyGp)}/wk</span>} />
       </div>
-    </div>
-  );
-}
 
-interface TopListItem { id: string; name: string; count: number }
-
-function TopList({
-  title,
-  icon: Icon,
-  tone,
-  items,
-  basePath,
-  total,
-}: {
-  title: string;
-  icon: React.ElementType;
-  tone: 'emerald' | 'purple';
-  items: TopListItem[];
-  basePath: string;
-  total: number;
-}) {
-  const accent = tone === 'emerald'
-    ? { iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', bar: 'from-emerald-400 to-emerald-600', avatar: 'bg-emerald-100 text-emerald-700', rank: 'bg-emerald-600' }
-    : { iconBg: 'bg-purple-100', iconColor: 'text-purple-600', bar: 'from-purple-400 to-brand-600', avatar: 'bg-purple-100 text-purple-700', rank: 'bg-purple-600' };
-  const max = Math.max(...items.map((i) => i.count), 1);
-
-  return (
-    <div className="surface">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', accent.iconBg)}>
-            <Icon className={cn('h-4 w-4', accent.iconColor)} />
-          </div>
-          <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
-          {items.length > 0 && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">{items.length}</span>
-          )}
+      {/* Insights */}
+      {insights.length > 0 && (
+        <div className="surface flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
+          <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-brand-700"><Sparkles className="h-3.5 w-3.5 text-accent-500" strokeWidth={1.75} /> Insights</span>
+          <ul className="flex flex-1 flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-x-6">
+            {insights.map((t, i) => <li key={i} className="flex items-center gap-2 text-sm text-slate-600"><span className={cn('h-1.5 w-1.5 rounded-full', i === 0 && complianceRisk.length ? 'bg-red-500' : 'bg-brand-400')} />{t}</li>)}
+          </ul>
         </div>
-        <Link
-          href={basePath}
-          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-        >
-          View all
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+      )}
+
+      {/* Row A — hiring trend by type + workforce by type */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <SectionCard title="Hiring trend by type" subtitle="New hires per month · last 8 months" icon={TrendingUp} className="lg:col-span-2">
+          {emps.length ? (
+            <CompareBarChart data={hiringByType} xKey="month" stacked height={280} bars={CLASSES.map((c) => ({ key: CLASS_LABEL[c], name: CLASS_LABEL[c], color: TYPE_COLOR[c] }))} />
+          ) : <p className="py-16 text-center text-sm text-slate-400">No employees match the filters.</p>}
+        </SectionCard>
+        <SectionCard title="Workforce by type" subtitle={`${emps.length} in view`} icon={PieIcon}>
+          {typeDonut.length ? <DonutChart data={typeDonut} height={280} /> : <p className="py-16 text-center text-sm text-slate-400">No employees.</p>}
+        </SectionCard>
       </div>
-      <div className="p-3 sm:p-4">
-        {items.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-slate-400">No assignments yet.</p>
-        ) : (
-          <ol className="space-y-1">
-            {items.map((item, idx) => {
-              const sharePct = total ? Math.round((item.count / total) * 100) : 0;
-              return (
-                <li key={item.id || `${item.name}-${idx}`}>
-                  <Link
-                    href={item.id ? `${basePath}/${item.id}` : basePath}
-                    className="group -mx-1 flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-slate-50"
-                  >
-                    <span className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-bold tabular-nums',
-                      idx === 0 ? cn(accent.rank, 'text-white') : 'bg-slate-100 text-slate-500'
-                    )}>
-                      {idx + 1}
-                    </span>
-                    <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold', accent.avatar)}>
-                      {item.name?.charAt(0)?.toUpperCase() ?? '?'}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-semibold text-slate-800 group-hover:text-slate-900">
-                          {item.name}
-                        </span>
-                        <span className="shrink-0 text-xs font-medium text-slate-500">
-                          <span className="font-bold tabular-nums text-slate-900">{item.count}</span> · {sharePct}%
-                        </span>
+
+      {/* Row B — status + billable mix + utilization (comparisons) */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <SectionCard title="Active vs terminated" subtitle="Workforce status" icon={Users}>
+          {statusDonut.length ? <DonutChart data={statusDonut} height={240} /> : <p className="py-14 text-center text-sm text-slate-400">No status data.</p>}
+        </SectionCard>
+        <SectionCard title="Billable vs non-billable" subtitle="By employment class" icon={BarChart3}>
+          {billableData.length ? <CompareBarChart data={billableData} xKey="type" stacked height={240} bars={[{ key: 'Billable', name: 'Billable', color: VIZ.emerald }, { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
+        </SectionCard>
+        <SectionCard title="Utilization by class" subtitle="Billable share %" icon={Gauge}>
+          {utilData.length ? <CompareBarChart data={utilData} xKey="type" height={240} bars={[{ key: 'Utilization', name: 'Utilization %', color: VIZ.brand }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
+        </SectionCard>
+      </div>
+
+      {/* Row C — revenue + compliance */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <SectionCard title={revenueMode ? 'Revenue by client' : 'Top clients'} subtitle={revenueMode ? 'Billed from timesheets · click a bar to drill in' : 'By people placed'} icon={Building2} className="lg:col-span-2">
+          {clientChart.length ? <HBarChart data={clientChart as Record<string, unknown>[]} categoryKey="name" valueKey="value" money={revenueMode} color={revenueMode ? VIZ.brand : VIZ.teal} height={280} onBarClick={onClientBar} /> : <p className="py-16 text-center text-sm text-slate-400">No client placements yet.</p>}
+        </SectionCard>
+        <SectionCard title="Compliance expiry" subtitle="Next 90 days" icon={CalendarClock} action={<button onClick={() => router.push('/dashboard/compliance')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}>
+          {expiryTimeline.length === 0 ? (
+            <p className="py-12 text-center text-sm text-slate-400">Nothing expiring in 90 days.</p>
+          ) : (
+            <ul className="space-y-2.5">
+              {expiryTimeline.slice(0, 6).map(({ e, days, auth }) => {
+                const tone = days < 7 ? { bar: 'bg-red-500', chip: 'bg-red-50 text-red-600 ring-red-200' } : days < 30 ? { bar: 'bg-accent-400', chip: 'bg-accent-50 text-accent-700 ring-accent-200' } : { bar: 'bg-slate-300', chip: 'bg-slate-50 text-slate-500 ring-slate-200' };
+                const fill = Math.max(6, Math.min(100, 100 - (days / 90) * 100));
+                return (
+                  <li key={e.id}>
+                    <button onClick={() => router.push(`/dashboard/employees/${e.id}`)} className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
+                          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
+                        </div>
+                        <p className="truncate text-[11px] text-slate-400">{auth || 'Work authorization'}</p>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className={cn('h-full rounded-full bg-gradient-to-r transition-all', accent.bar)}
-                          style={{ width: `${(item.count / max) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function WidgetCard({
-  title,
-  icon: Icon,
-  href,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="surface">
-      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-            <Icon className="h-4 w-4 text-brand-700" />
-          </div>
-          <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
-        </div>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-        >
-          View all
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
-
-function LeavesCard() {
-  const { leaves } = useLeaves();
-  const { employees } = useEmployees();
-  const counts: Record<string, number> = { Pending: 0, Approved: 0, Rejected: 0 };
-  leaves.forEach((l) => { counts[l.status] = (counts[l.status] || 0) + 1; });
-  const total = leaves.length;
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  const upcoming = leaves
-    .filter((l) => l.status === 'Approved' && l.startDate >= todayStr)
-    .sort((a, b) => a.startDate.localeCompare(b.startDate))
-    .slice(0, 3);
-  const seg = [
-    { k: 'Pending', c: counts.Pending, bar: 'bg-amber-400', text: 'text-amber-700', dot: 'bg-amber-400' },
-    { k: 'Approved', c: counts.Approved, bar: 'bg-emerald-500', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-    { k: 'Rejected', c: counts.Rejected, bar: 'bg-red-400', text: 'text-red-700', dot: 'bg-red-400' },
-  ];
-
-  return (
-    <WidgetCard title="Leave requests" icon={CalendarDays} href="/dashboard/leaves">
-      {total === 0 ? (
-        <p className="py-5 text-center text-sm text-slate-400">No leave requests yet.</p>
-      ) : (
-        <>
-          <div className="mb-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-black/[0.03]">
-            {seg.filter((s) => s.c > 0).map((s) => (
-              <div key={s.k} className={cn('h-full', s.bar)} style={{ width: `${(s.c / total) * 100}%` }} title={`${s.k}: ${s.c}`} />
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {seg.map((s) => (
-              <div key={s.k} className="rounded-lg bg-slate-50 px-2.5 py-2">
-                <div className="flex items-center gap-1.5">
-                  <span className={cn('h-2 w-2 rounded-full', s.dot)} />
-                  <span className="text-[11px] font-medium text-slate-500">{s.k}</span>
-                </div>
-                <p className={cn('mt-0.5 font-display text-lg font-bold', s.text)}>{s.c}</p>
-              </div>
-            ))}
-          </div>
-          {upcoming.length > 0 && (
-            <div className="mt-4 border-t border-slate-100 pt-3">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Upcoming approved</p>
-              <ul className="space-y-1.5">
-                {upcoming.map((l) => (
-                  <li key={l.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate font-medium text-slate-700">
-                      {resolveName(l.employeeId, employees, { unknown: 'Unknown employee' })}
-                    </span>
-                    <span className="shrink-0 text-xs text-slate-500">
-                      {l.startDate}{l.endDate && l.endDate !== l.startDate ? ` → ${l.endDate}` : ''}
-                    </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
+                    </button>
                   </li>
-                ))}
-              </ul>
-            </div>
+                );
+              })}
+            </ul>
           )}
-        </>
-      )}
-    </WidgetCard>
-  );
-}
-
-function AttendanceCard() {
-  const { records } = useAttendance();
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  const todays = records.filter((r) => r.date === todayStr);
-  const counts: Record<string, number> = { Present: 0, Remote: 0, 'Half-day': 0, Absent: 0, Leave: 0 };
-  todays.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
-  const total = todays.length;
-  const presentish = counts.Present + counts.Remote + counts['Half-day'];
-  const rate = total ? Math.round((presentish / total) * 100) : 0;
-  const seg = [
-    { k: 'Present', c: counts.Present, text: 'text-emerald-700', dot: 'bg-emerald-500' },
-    { k: 'Remote', c: counts.Remote, text: 'text-sky-700', dot: 'bg-sky-500' },
-    { k: 'Half-day', c: counts['Half-day'], text: 'text-amber-700', dot: 'bg-amber-400' },
-    { k: 'Absent', c: counts.Absent, text: 'text-red-700', dot: 'bg-red-400' },
-  ];
-
-  return (
-    <WidgetCard title="Attendance today" icon={CalendarCheck} href="/dashboard/attendance">
-      {total === 0 ? (
-        <p className="py-5 text-center text-sm text-slate-400">No attendance logged today.</p>
-      ) : (
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col items-center">
-            <span className="font-display text-3xl font-bold text-slate-900">{rate}%</span>
-            <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">present</span>
-          </div>
-          <div className="grid flex-1 grid-cols-2 gap-2">
-            {seg.map((s) => (
-              <div key={s.k} className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1.5">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className={cn('h-2 w-2 rounded-full', s.dot)} />{s.k}
-                </span>
-                <span className={cn('font-display text-sm font-bold', s.text)}>{s.c}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </WidgetCard>
-  );
-}
-
-function ChartCard({
-  title,
-  subtitle,
-  icon: Icon,
-  children,
-  className,
-  delay = 0,
-}: {
-  title: string;
-  subtitle?: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  return (
-    <div
-      className={cn(
-        'surface surface-hover p-4 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both] sm:p-5',
-        className
-      )}
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
-        </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 ring-1 ring-brand-100">
-          <Icon className="h-[18px] w-[18px] text-brand-600" />
-        </div>
+        </SectionCard>
       </div>
-      {children}
+
+      {isLoading && employees.length === 0 && (
+        <p className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Loading workforce…</p>
+      )}
+
+      <PeopleListModal
+        isOpen={peopleModal !== null}
+        onClose={() => setPeopleModal(null)}
+        title={peopleModal?.title ?? ''}
+        description={peopleModal?.description}
+        people={peopleModal?.people ?? []}
+        contextGetter={peopleModal?.ctx}
+        tone={peopleModal?.tone}
+        footerLink={{ href: '/dashboard/employees', label: 'Open the full employee list' }}
+      />
+
+      {clientModal && drillClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={() => setClientModal(null)} />
+          <div className="surface relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden p-0">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <h3 className="font-display text-lg font-bold text-slate-900">{drillClient.name}</h3>
+                <p className="text-xs text-slate-500">Hours billed vs. paid · {usd0(drillClient.revenue)} revenue</p>
+              </div>
+              <button onClick={() => setClientModal(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Close"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                  <th className="px-5 py-2.5 text-left">Worker</th><th className="px-3 py-2.5 text-right">Hours</th><th className="px-3 py-2.5 text-right">Billed</th><th className="px-3 py-2.5 text-right">Paid</th><th className="px-5 py-2.5 text-right">Margin</th>
+                </tr></thead>
+                <tbody>
+                  {drillRows.map((r) => {
+                    const margin = r.bill > 0 ? ((r.bill - r.pay) / r.bill) * 100 : 0;
+                    return (
+                      <tr key={r.name} className="border-b border-slate-50 last:border-0">
+                        <td className="px-5 py-2.5 font-medium text-slate-800">{r.name}</td>
+                        <td className="tnum px-3 py-2.5 text-right text-slate-600">{r.hours}</td>
+                        <td className="tnum px-3 py-2.5 text-right font-semibold text-slate-900">{usd0(r.bill)}</td>
+                        <td className="tnum px-3 py-2.5 text-right text-slate-500">{usd0(r.pay)}</td>
+                        <td className={cn('tnum px-5 py-2.5 text-right font-semibold', margin >= 25 ? 'text-emerald-600' : 'text-accent-600')}>{margin.toFixed(0)}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-sm">
+              <span className="text-slate-500">{drillClient.hours} hrs · gross profit</span>
+              <span className="font-display text-lg font-bold text-emerald-700">{usd0(drillClient.revenue - drillClient.cost)}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
