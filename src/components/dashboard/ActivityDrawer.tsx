@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   X, UsersRound, Building2, Package, UserRoundCheck, CalendarOff, HeartPulse, Inbox,
@@ -113,7 +114,28 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
 
   const go = (href: string) => { onClose(); router.push(href); };
 
-  return (
+  // Render to <body> so the panel escapes the Topbar's `backdrop-blur`
+  // ancestor, which otherwise becomes the containing block for our
+  // `position: fixed` layers and clips the drawer to the header's height.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Close on Escape + lock background scroll while open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <div
         className={cn(
@@ -174,6 +196,7 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
           )}
         </div>
       </aside>
-    </>
+    </>,
+    document.body,
   );
 }

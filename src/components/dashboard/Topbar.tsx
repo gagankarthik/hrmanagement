@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search, Menu, Bell, ChevronDown, LogOut,
@@ -15,6 +15,25 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { ActivityDrawer } from '@/components/dashboard/ActivityDrawer';
 
 type Result = { key: string; label: string; sub?: string; group: string; href: string; icon: React.ElementType };
+
+/**
+ * Dismiss a popover by listening for pointer events outside `ref`.
+ * Replaces `fixed inset-0` click-away overlays, which break when an ancestor
+ * (e.g. the Topbar's `backdrop-blur` header) becomes the containing block for
+ * fixed-positioned children and confines the overlay to the header.
+ */
+function useClickOutside<T extends HTMLElement>(enabled: boolean, onOutside: () => void) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const handler = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onOutside();
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [enabled, onOutside]);
+  return ref;
+}
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
@@ -34,6 +53,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const email = user?.email ?? '';
   const initials = (user?.name ?? user?.email ?? 'U')
     .split(/[ @]/).map((s) => s[0]).slice(0, 2).join('').toUpperCase();
+
+  const searchRef = useClickOutside<HTMLDivElement>(open, useCallback(() => setOpen(false), []));
+  const menuRef = useClickOutside<HTMLDivElement>(menuOpen, useCallback(() => setMenuOpen(false), []));
 
   const q = query.trim().toLowerCase();
 
@@ -79,18 +101,20 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/90 px-3 backdrop-blur sm:gap-3 sm:px-5">
-      {/* Mobile menu */}
-      <button
-        onClick={onMenuClick}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
-        aria-label="Open menu"
-      >
-        <Menu className="h-4 w-4" strokeWidth={1.75} />
-      </button>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/90 px-3 backdrop-blur sm:gap-3 sm:px-5 lg:grid lg:grid-cols-[1fr_minmax(0,28rem)_1fr]">
+      {/* Left — mobile menu trigger */}
+      <div className="flex items-center">
+        <button
+          onClick={onMenuClick}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-4 w-4" strokeWidth={1.75} />
+        </button>
+      </div>
 
-      {/* Global search */}
-      <div className="relative w-full max-w-md">
+      {/* Center — global search */}
+      <div ref={searchRef} className="relative w-full max-w-md lg:justify-self-center">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
         <input
           type="text"
@@ -107,7 +131,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
         {open && q && (
           <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden />
             <div
               role="listbox"
               className="surface absolute left-0 right-0 z-20 mt-2 max-h-[70vh] overflow-y-auto p-1.5 animate-in fade-in slide-in-from-top-1 duration-150"
@@ -159,7 +182,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         )}
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+      <div className="ml-auto flex items-center justify-end gap-1.5 sm:gap-2 lg:ml-0">
         {/* Notifications → recent activity side sheet */}
         <button
           onClick={() => setActivityOpen(true)}
@@ -172,7 +195,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </button>
 
         {/* User dropdown */}
-        <div className="relative">
+        <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-2 transition-colors hover:bg-slate-50"
@@ -188,7 +211,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
           {menuOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden />
               <div className="surface absolute right-0 z-20 mt-2 w-60 overflow-hidden p-0 animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">

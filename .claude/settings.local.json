@@ -12,7 +12,10 @@
       "Bash(powershell -Command \"\\(Get-Content 'src/app/dashboard/clients/[id]/page.tsx' | Measure-Object -Line\\).Lines\")",
       "Bash(powershell -Command \"\\(Get-Content -LiteralPath 'src/app/dashboard/clients/[id]/page.tsx' | Measure-Object -Line\\).Lines\")",
       "Bash(powershell -Command \"if \\(!\\(Test-Path -LiteralPath 'src/app/dashboard/analytics'\\)\\) { New-Item -ItemType Directory -Path 'src/app/dashboard/analytics' | Out-Null; Write-Output 'created' } else { Write-Output 'exists' }\")",
-      "Bash(powershell -Command \"if \\(Test-Path README.md\\) { Write-Output 'exists' } else { Write-Output 'missing' }\")"
+      "Bash(powershell -Command \"if \\(Test-Path README.md\\) { Write-Output 'exists' } else { Write-Output 'missing' }\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gagan\\\\Desktop\\\\Projects\\\\hrmanagement\\\\src\" -Recurse -Filter \"page.tsx\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
