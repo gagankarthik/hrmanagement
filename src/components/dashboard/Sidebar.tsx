@@ -7,7 +7,7 @@ import {
   LayoutDashboard, UsersRound, Building2, Package, UserRoundCheck,
   UserRoundPlus, BarChart3, X,
   PanelLeftClose, PanelLeftOpen, CalendarOff, CalendarCheck, BookOpen, ScrollText,
-  HeartPulse, ShieldCheck, Target, ClipboardList,
+  HeartPulse, ShieldCheck, Target, ClipboardList, UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/ui/brand-mark';
@@ -54,6 +54,12 @@ const sections: NavSection[] = [
       { label: 'Policies', href: '/dashboard/policies', icon: ScrollText },
       { label: 'Benefits', href: '/dashboard/benefits', icon: HeartPulse },
       { label: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
+    ],
+  },
+  {
+    heading: 'Administration',
+    items: [
+      { label: 'Users', href: '/dashboard/users', icon: UserCog },
     ],
   },
 ];
