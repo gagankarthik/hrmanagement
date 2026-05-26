@@ -10,7 +10,7 @@ interface VendorContextType {
 
   // CRUD Operations
   fetchVendors: () => Promise<void>;
-  createVendor: (vendor: VendorFormData) => Promise<void>;
+  createVendor: (vendor: VendorFormData) => Promise<Vendor>;
   updateVendor: (id: string, vendor: Partial<VendorFormData>) => Promise<void>;
   deleteVendor: (id: string) => Promise<void>;
   getVendorById: (id: string) => Vendor | undefined;
@@ -60,6 +60,7 @@ export function VendorProvider({ children }: { children: React.ReactNode }) {
 
       if (result.success) {
         setVendors((prev) => [...prev, result.data]);
+        return result.data as Vendor;
       } else {
         throw new Error(result.error || 'Failed to create vendor');
       }

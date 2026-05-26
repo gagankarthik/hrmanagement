@@ -10,7 +10,7 @@ interface ClientContextType {
 
   // CRUD Operations
   fetchClients: () => Promise<void>;
-  createClient: (client: ClientFormData) => Promise<void>;
+  createClient: (client: ClientFormData) => Promise<Client>;
   updateClient: (id: string, client: Partial<ClientFormData>) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
   getClientById: (id: string) => Client | undefined;
@@ -60,6 +60,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
 
       if (result.success) {
         setClients((prev) => [...prev, result.data]);
+        return result.data as Client;
       } else {
         throw new Error(result.error || 'Failed to create client');
       }

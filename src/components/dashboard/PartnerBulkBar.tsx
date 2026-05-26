@@ -7,6 +7,8 @@ import { useClients } from '@/context/ClientContext';
 import { useEndClients } from '@/context/EndClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
+import { useEmployees } from '@/context/EmployeeContext';
+import { Employee } from '@/types/employee';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -34,10 +36,21 @@ const KIND_LABEL: Record<PartnerKind, string> = {
 
 const ALL_KINDS: PartnerKind[] = ['clients', 'endclients', 'vendors', 'subcontractors'];
 
+// How each partner kind maps onto an employee's assignment fields, so a Move can
+// carry the assigned employees across to the target list.
+const ASSIGN: Record<PartnerKind, { arr: string; key: string; legacyId: string; legacyName?: string }> = {
+  clients: { arr: 'clientAssignments', key: 'clientId', legacyId: 'clientId', legacyName: 'client' },
+  endclients: { arr: 'endClientAssignments', key: 'clientId', legacyId: 'endClientId' },
+  vendors: { arr: 'vendorAssignments', key: 'vendorId', legacyId: 'vendorId', legacyName: 'vendorName' },
+  subcontractors: { arr: 'subcontractorAssignments', key: 'subcontractorId', legacyId: 'subcontractorId' },
+};
+
+type AssignEntry = Record<string, unknown>;
+
 /**
  * Floating bulk-action bar for the partner list pages. Copy (duplicate, keep
- * originals) or Move (recreate + delete originals) the selected records into
- * another partner list via dropdown menus. Renders nothing when nothing is selected.
+ * originals) or Move (recreate, re-point the assigned employees to the new record,
+ * then delete originals) the selected records into another partner list.
  */
 export function PartnerBulkBar({
   source,
@@ -52,12 +65,13 @@ export function PartnerBulkBar({
   const endclients = useEndClients();
   const vendors = useVendors();
   const subs = useSubcontractors();
+  const { employees, updateEmployee } = useEmployees();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [moveTarget, setMoveTarget] = useState<PartnerKind | null>(null);
   const [openMenu, setOpenMenu] = useState<null | 'copy' | 'move'>(null);
 
-  const create: Record<PartnerKind, (d: PartnerFormData) => Promise<void>> = {
+  const create: Record<PartnerKind, (d: PartnerFormData) => Promise<{ id: string }>> = {
     clients: clients.createClient,
     endclients: endclients.createEndClient,
     vendors: vendors.createVendor,
@@ -85,12 +99,61 @@ export function PartnerBulkBar({
     if (busy || selected.length === 0) return;
     setBusy(true);
     try {
+      const src = ASSIGN[source];
+      const tgt = ASSIGN[target];
+      // Accumulated per-employee assignment changes (move only). Keyed by employee id.
+      const empUpdates = new Map<string, Record<string, unknown>>();
+      const seed = (emp: Employee) => {
+        let u = empUpdates.get(emp.id);
+        if (!u) {
+          const e = emp as unknown as Record<string, unknown>;
+          u = {
+            [src.arr]: [...(((e[src.arr] as AssignEntry[]) || []))],
+            [tgt.arr]: [...(((e[tgt.arr] as AssignEntry[]) || []))],
+          };
+          empUpdates.set(emp.id, u);
+        }
+        return u;
+      };
+
       for (const r of selected) {
-        await create[target](toFormData(r));
-        if (mode === 'move') await remove[source](r.id);
+        const created = await create[target](toFormData(r));
+        const newId = created.id;
+
+        if (mode === 'move') {
+          for (const emp of employees) {
+            const e = emp as unknown as Record<string, unknown>;
+            const u = empUpdates.get(emp.id);
+            const curArr = ((u ? u[src.arr] : e[src.arr]) as AssignEntry[] | undefined) || [];
+            const matches = curArr.filter((a) => a && a[src.key] === r.id);
+            const legacyIdMatch = e[src.legacyId] === r.id && r.id !== '';
+            const legacyNameMatch =
+              !!src.legacyName && !!r.name && e[src.legacyName] === r.name && curArr.length === 0 && !legacyIdMatch;
+            if (matches.length === 0 && !legacyIdMatch && !legacyNameMatch) continue;
+
+            const uu = seed(emp);
+            const dates = (matches[0] || {}) as { startDate?: string; endDate?: string };
+            uu[src.arr] = (uu[src.arr] as AssignEntry[]).filter((a) => !(a && a[src.key] === r.id));
+            (uu[tgt.arr] as AssignEntry[]).push({ [tgt.key]: newId, startDate: dates.startDate, endDate: dates.endDate });
+            if (legacyIdMatch) uu[src.legacyId] = '';
+            if (legacyNameMatch && src.legacyName) uu[src.legacyName] = '';
+          }
+        }
       }
+
+      if (mode === 'move') {
+        for (const [empId, u] of empUpdates) {
+          await updateEmployee(empId, u as Partial<Employee>);
+        }
+        for (const r of selected) {
+          await remove[source](r.id);
+        }
+      }
+
+      const movedEmps = empUpdates.size;
       toast.success(
         `${mode === 'copy' ? 'Copied' : 'Moved'} ${selected.length} ${selected.length === 1 ? 'record' : 'records'} to ${KIND_LABEL[target]}`,
+        mode === 'move' && movedEmps > 0 ? `${movedEmps} employee${movedEmps === 1 ? '' : 's'} re-assigned` : undefined,
       );
       onDone();
     } catch (e) {
@@ -201,7 +264,7 @@ export function PartnerBulkBar({
         description={
           <>
             This recreates {selected.length === 1 ? 'this record' : `these ${selected.length} records`} under{' '}
-            <span className="font-semibold text-slate-900">{moveTarget ? KIND_LABEL[moveTarget] : ''}</span> and removes {selected.length === 1 ? 'it' : 'them'} from {KIND_LABEL[source]}.
+            <span className="font-semibold text-slate-900">{moveTarget ? KIND_LABEL[moveTarget] : ''}</span>, moves their assigned employees across, and removes {selected.length === 1 ? 'it' : 'them'} from {KIND_LABEL[source]}.
           </>
         }
         confirmLabel="Move"

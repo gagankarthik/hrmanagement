@@ -33,8 +33,8 @@ interface AuthContextType {
   /** True when sign-in returned the FORCE_CHANGE_PASSWORD challenge (admin-created users). */
   newPasswordRequired: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  /** Completes the FORCE_CHANGE_PASSWORD challenge with the user's chosen password. */
-  confirmNewPassword: (newPassword: string) => Promise<void>;
+  /** Completes the FORCE_CHANGE_PASSWORD challenge with the user's chosen password (and required attributes such as name). */
+  confirmNewPassword: (newPassword: string, name?: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   confirmSignUp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -99,15 +99,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleConfirmNewPassword = async (newPassword: string) => {
-    try {
-      const result = await confirmSignIn({ challengeResponse: newPassword });
-      if (result.isSignedIn) {
-        setNewPasswordRequired(false);
-        await checkAuth();
-      }
-    } catch (error) {
-      throw error;
+  const handleConfirmNewPassword = async (newPassword: string, name?: string) => {
+    // Cognito requires any still-missing required attributes (e.g. `name`) to be
+    // supplied when completing the NEW_PASSWORD_REQUIRED challenge.
+    const result = await confirmSignIn({
+      challengeResponse: newPassword,
+      options: name && name.trim() ? { userAttributes: { name: name.trim() } } : undefined,
+    });
+    if (result.isSignedIn) {
+      setNewPasswordRequired(false);
+      await checkAuth();
     }
   };
 

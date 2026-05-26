@@ -10,7 +10,7 @@ interface SubcontractorContextType {
 
   // CRUD Operations
   fetchSubcontractors: () => Promise<void>;
-  createSubcontractor: (subcontractor: SubcontractorFormData) => Promise<void>;
+  createSubcontractor: (subcontractor: SubcontractorFormData) => Promise<Subcontractor>;
   updateSubcontractor: (id: string, subcontractor: Partial<SubcontractorFormData>) => Promise<void>;
   deleteSubcontractor: (id: string) => Promise<void>;
   getSubcontractorById: (id: string) => Subcontractor | undefined;
@@ -60,6 +60,7 @@ export function SubcontractorProvider({ children }: { children: React.ReactNode 
 
       if (result.success) {
         setSubcontractors((prev) => [...prev, result.data]);
+        return result.data as Subcontractor;
       } else {
         throw new Error(result.error || 'Failed to create subcontractor');
       }

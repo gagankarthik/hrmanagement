@@ -10,7 +10,7 @@ interface EndClientContextType {
 
   // CRUD Operations
   fetchEndClients: () => Promise<void>;
-  createEndClient: (endClient: EndClientFormData) => Promise<void>;
+  createEndClient: (endClient: EndClientFormData) => Promise<EndClient>;
   updateEndClient: (id: string, endClient: Partial<EndClientFormData>) => Promise<void>;
   deleteEndClient: (id: string) => Promise<void>;
   getEndClientById: (id: string) => EndClient | undefined;
@@ -60,6 +60,7 @@ export function EndClientProvider({ children }: { children: React.ReactNode }) {
 
       if (result.success) {
         setEndClients((prev) => [...prev, result.data]);
+        return result.data as EndClient;
       } else {
         throw new Error(result.error || 'Failed to create end client');
       }
