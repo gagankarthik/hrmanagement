@@ -31,6 +31,8 @@ import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { AssignEmployeesModal } from '@/components/dashboard/AssignEmployeesModal';
+import { UserPlus } from 'lucide-react';
 
 const typeBadge: Record<string, string> = {
   W2: 'bg-blue-100 text-blue-700',
@@ -48,6 +50,7 @@ function ClientDetailPageContent() {
   const { clients, isLoading, deleteClient } = useClients();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   const client = useMemo(() => {
     if (!clientId) return undefined;
@@ -380,6 +383,12 @@ function ClientDetailPageContent() {
             <h2 className="font-display text-base font-bold text-slate-900">Employees</h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{clientEmployees.length}</span>
           </div>
+          <button
+            onClick={() => setAssignOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+          >
+            <UserPlus className="h-3.5 w-3.5" /> Add employees
+          </button>
         </div>
 
         {clientEmployees.length === 0 ? (
@@ -388,7 +397,12 @@ function ClientDetailPageContent() {
               icon={Users}
               tone="emerald"
               title="No employees assigned"
-              description="When you assign employees to this client they'll appear here."
+              description="Assign existing employees to this client and they'll appear here."
+              action={
+                <button onClick={() => setAssignOpen(true)} className="btn-primary">
+                  <UserPlus className="h-4 w-4" /> Add employees
+                </button>
+              }
             />
           </div>
         ) : (
@@ -466,6 +480,14 @@ function ClientDetailPageContent() {
         }
         confirmLabel="Delete Client"
         isLoading={isDeleting}
+      />
+
+      <AssignEmployeesModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        partnerKind="clients"
+        partnerId={client.id}
+        partnerName={client.name}
       />
     </div>
   );

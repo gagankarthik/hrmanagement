@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) router.push("/dashboard");
@@ -57,9 +58,25 @@ export default function LoginPage() {
       setError("Passwords do not match.");
       return;
     }
+    // Cognito requires phone_number in E.164 format, e.g. +14155552671
+    const toE164 = (raw: string) => {
+      let cleaned = raw.replace(/[^\d+]/g, "");
+      if (cleaned.startsWith("00")) cleaned = `+${cleaned.slice(2)}`; // 00 intl prefix → +
+      cleaned = cleaned.replace(/(?!^)\+/g, ""); // drop any non-leading +
+      if (!cleaned) return "";
+      return cleaned.startsWith("+") ? cleaned : `+${cleaned}`;
+    };
+    const phoneE164 = toE164(phone);
+    if (!/^\+[1-9]\d{7,14}$/.test(phoneE164)) {
+      setError("Enter a valid phone number with country code, e.g. +1 415 555 2671.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await confirmNewPassword(newPassword, fullName);
+      await confirmNewPassword(newPassword, {
+        name: fullName.trim(),
+        phone_number: phoneE164,
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not set your new password.");
     } finally {
@@ -185,6 +202,20 @@ export default function LoginPage() {
                     placeholder="Jane Doe"
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Phone number</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 415 555 2671"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  />
+                  <p className="text-xs text-slate-400">Include your country code (e.g. +1 for the US).</p>
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700">New password</label>
