@@ -18,6 +18,7 @@ import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
 export default function VendorsPage() {
   const { vendors, isLoading, deleteVendor } = useVendors();
@@ -29,6 +30,7 @@ export default function VendorsPage() {
     vendor: null, isDeleting: false,
   });
   const toast = useToast();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const getVendorEmps = (vendorId: string, vendorName: string) =>
     employees.filter((emp) =>
@@ -59,6 +61,11 @@ export default function VendorsPage() {
 
   const totalActive = enriched.filter((v) => v.status === 'Active').length;
   const totalInactive = enriched.filter((v) => v.status === 'Inactive').length;
+
+  const allOnPageSelected = filtered.length > 0 && filtered.every((x) => selectedIds.has(x.id));
+  const toggleOne = (id: string) => setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleAll = () => setSelectedIds((prev) => { const next = new Set(prev); if (filtered.every((x) => prev.has(x.id))) filtered.forEach((x) => next.delete(x.id)); else filtered.forEach((x) => next.add(x.id)); return next; });
+  const selectedRecords: PartnerRecord[] = validVendors.filter((x) => selectedIds.has(x.id));
 
   const handleExport = () => {
     if (filtered.length === 0) return;
@@ -134,6 +141,9 @@ export default function VendorsPage() {
         <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" hint={validVendors.length ? `${Math.round((totalInactive / validVendors.length) * 100)}% of total` : undefined} />
       </StatGrid>
 
+      {/* Bulk copy / move */}
+      <PartnerBulkBar source="vendors" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
+
       {/* Table card */}
       <div className="surface">
         {/* Toolbar */}
@@ -188,6 +198,9 @@ export default function VendorsPage() {
             <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="w-10 px-5 py-3">
+                    <input type="checkbox" aria-label="Select all" checked={allOnPageSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+                  </th>
                   {['Vendor', 'Contact', 'Email', 'Phone', 'Employees', 'Status', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                       {h}
@@ -200,8 +213,14 @@ export default function VendorsPage() {
                   <tr
                     key={vendor.id ?? idx}
                     onClick={() => router.push(`/dashboard/vendors/${vendor.id}`)}
-                    className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
+                    className={cn(
+                      'group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50',
+                      selectedIds.has(vendor.id) && 'bg-brand-50/50'
+                    )}
                   >
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" aria-label={`Select ${vendor.name}`} checked={selectedIds.has(vendor.id)} onChange={() => toggleOne(vendor.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+                    </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">

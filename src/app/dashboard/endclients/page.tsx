@@ -7,9 +7,9 @@ import {
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
 import { PageHeader } from '@/components/dashboard/PageHeader';
-import { useClients } from '@/context/ClientContext';
+import { useEndClients } from '@/context/EndClientContext';
 import { useEmployees } from '@/context/EmployeeContext';
-import { Client } from '@/types/client';
+import { EndClient } from '@/types/endclient';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -20,26 +20,25 @@ import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
-export default function ClientsPage() {
-  const { clients, isLoading, deleteClient } = useClients();
+export default function EndClientsPage() {
+  const { endClients, isLoading, deleteEndClient } = useEndClients();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive'>('all');
-  const [deleteState, setDeleteState] = useState<{ client: Client | null; isDeleting: boolean }>({
-    client: null, isDeleting: false,
+  const [deleteState, setDeleteState] = useState<{ endClient: EndClient | null; isDeleting: boolean }>({
+    endClient: null, isDeleting: false,
   });
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const getEmpCount = (clientId: string, clientName: string) =>
+  const getEmpCount = (endClientId: string) =>
     employees.filter((emp) =>
-      emp.clientAssignments?.some((a) => a.clientId === clientId) ||
-      emp.clientId === clientId ||
-      emp.client === clientName
+      emp.endClientAssignments?.some((a) => a.clientId === endClientId) ||
+      emp.endClientId === endClientId
     ).length;
 
-  const valid = clients.filter((c) => c && c.id);
+  const valid = endClients.filter((c) => c && c.id);
 
   const filtered = valid.filter((c) => {
     const q = searchQuery.toLowerCase();
@@ -51,43 +50,34 @@ export default function ClientsPage() {
   const totalActive = valid.filter((c) => c.status === 'Active').length;
   const totalInactive = valid.filter((c) => c.status === 'Inactive').length;
 
-  const allOnPageSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c.id));
-  const toggleOne = (id: string) => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
-  const toggleAll = () => setSelectedIds((prev) => {
-    const next = new Set(prev);
-    if (filtered.every((c) => prev.has(c.id))) filtered.forEach((c) => next.delete(c.id));
-    else filtered.forEach((c) => next.add(c.id));
-    return next;
-  });
-  const selectedRecords: PartnerRecord[] = valid.filter((c) => selectedIds.has(c.id));
+  const allOnPageSelected = filtered.length > 0 && filtered.every((x) => selectedIds.has(x.id));
+  const toggleOne = (id: string) => setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleAll = () => setSelectedIds((prev) => { const next = new Set(prev); if (filtered.every((x) => prev.has(x.id))) filtered.forEach((x) => next.delete(x.id)); else filtered.forEach((x) => next.add(x.id)); return next; });
+  const selectedRecords: PartnerRecord[] = valid.filter((x) => selectedIds.has(x.id));
 
   const handleExport = () => {
     if (filtered.length === 0) return;
     const rows = filtered as unknown as Record<string, unknown>[];
-    exportToCsv('clients', rows, [
+    exportToCsv('endclients', rows, [
       { key: 'name', label: 'Name' },
       { key: 'contactPerson', label: 'Contact Person' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
       { key: 'status', label: 'Status' },
-      { key: 'employees', label: 'Employees', value: (c) => getEmpCount(c.id as string, c.name as string) },
+      { key: 'employees', label: 'Employees', value: (c) => getEmpCount(c.id as string) },
     ]);
   };
 
   const confirmDelete = async () => {
-    const client = deleteState.client;
-    if (!client) return;
+    const endClient = deleteState.endClient;
+    if (!endClient) return;
     setDeleteState((prev) => ({ ...prev, isDeleting: true }));
     try {
-      await deleteClient(client.id);
-      toast.success('Client deleted', `${client.name} has been removed.`);
-      setDeleteState({ client: null, isDeleting: false });
+      await deleteEndClient(endClient.id);
+      toast.success('End client deleted', `${endClient.name} has been removed.`);
+      setDeleteState({ endClient: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete client', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete end client', err instanceof Error ? err.message : 'Please try again.');
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -111,8 +101,8 @@ export default function ClientsPage() {
       <PageHeader
         icon={Building2}
         eyebrow="Partners"
-        title="Clients"
-        description="Manage client organizations and the employees placed with each"
+        title="End Clients"
+        description="Manage end client organizations and the employees placed with each"
         tone="emerald"
         actions={
           <>
@@ -124,10 +114,10 @@ export default function ClientsPage() {
               <Download className="h-4 w-4" /> Export CSV
             </button>
             <button
-              onClick={() => router.push('/dashboard/clients/new')}
+              onClick={() => router.push('/dashboard/endclients/new')}
               className="btn-primary"
             >
-              <Plus className="h-4 w-4" /> Add Client
+              <Plus className="h-4 w-4" /> Add End Client
             </button>
           </>
         }
@@ -135,13 +125,13 @@ export default function ClientsPage() {
 
       {/* Stats */}
       <StatGrid cols={3}>
-        <StatCard label="Total clients" value={valid.length} icon={Building2} tone="slate" hint="all on record" />
+        <StatCard label="Total end clients" value={valid.length} icon={Building2} tone="slate" hint="all on record" />
         <StatCard label="Active" value={totalActive} icon={CheckCircle2} tone="emerald" hint={valid.length ? `${Math.round((totalActive / valid.length) * 100)}% of total` : undefined} />
         <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" hint={valid.length ? `${Math.round((totalInactive / valid.length) * 100)}% of total` : undefined} />
       </StatGrid>
 
       {/* Bulk copy / move */}
-      <PartnerBulkBar source="clients" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
+      <PartnerBulkBar source="endclients" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
 
       {/* Table card */}
       <div className="surface">
@@ -150,7 +140,7 @@ export default function ClientsPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="Search end clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
@@ -177,15 +167,15 @@ export default function ClientsPage() {
             <EmptyState
               icon={Building2}
               tone="emerald"
-              title={searchQuery ? 'No clients match your search' : 'No clients yet'}
-              description={searchQuery ? 'Try different keywords or clear filters.' : 'Add your first client to start tracking relationships.'}
+              title={searchQuery ? 'No end clients match your search' : 'No end clients yet'}
+              description={searchQuery ? 'Try different keywords or clear filters.' : 'Add your first end client to start tracking relationships.'}
               action={
                 !searchQuery ? (
                   <button
-                    onClick={() => router.push('/dashboard/clients/new')}
+                    onClick={() => router.push('/dashboard/endclients/new')}
                     className="btn-primary"
                   >
-                    <Plus className="h-4 w-4" /> Add Client
+                    <Plus className="h-4 w-4" /> Add End Client
                   </button>
                 ) : undefined
               }
@@ -199,7 +189,7 @@ export default function ClientsPage() {
                   <th className="w-10 px-5 py-3">
                     <input type="checkbox" aria-label="Select all" checked={allOnPageSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
                   </th>
-                  {['Client', 'Contact', 'Email', 'Phone', 'Employees', 'Status', ''].map((h) => (
+                  {['End Client', 'Contact', 'Email', 'Phone', 'Employees', 'Status', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                       {h}
                     </th>
@@ -207,45 +197,45 @@ export default function ClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((client, idx) => {
-                  const empCount = getEmpCount(client.id, client.name);
+                {filtered.map((endClient, idx) => {
+                  const empCount = getEmpCount(endClient.id);
                   return (
                     <tr
-                      key={client.id ?? idx}
-                      onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                      key={endClient.id ?? idx}
+                      onClick={() => router.push(`/dashboard/endclients/${endClient.id}`)}
                       className={cn(
                         'group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50',
-                        selectedIds.has(client.id) && 'bg-brand-50/50'
+                        selectedIds.has(endClient.id) && 'bg-brand-50/50'
                       )}
                     >
                       <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" aria-label={`Select ${client.name}`} checked={selectedIds.has(client.id)} onChange={() => toggleOne(client.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+                        <input type="checkbox" aria-label={`Select ${endClient.name}`} checked={selectedIds.has(endClient.id)} onChange={() => toggleOne(endClient.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-700">
-                            {client.name?.charAt(0) ?? '?'}
+                            {endClient.name?.charAt(0) ?? '?'}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-slate-900">{client.name}</p>
-                            {client.address && (
+                            <p className="text-sm font-semibold text-slate-900">{endClient.name}</p>
+                            {endClient.address && (
                               <p className="flex items-center gap-1 text-xs text-slate-400">
                                 <MapPin className="h-3 w-3" />
-                                <span className="truncate max-w-[140px]">{client.address}</span>
+                                <span className="truncate max-w-[140px]">{endClient.address}</span>
                               </p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">{client.contactPerson || <span className="text-slate-300">—</span>}</td>
+                      <td className="px-5 py-3.5 text-sm text-slate-600">{endClient.contactPerson || <span className="text-slate-300">—</span>}</td>
                       <td className="px-5 py-3.5">
-                        {client.email
-                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><Mail className="h-3.5 w-3.5 text-slate-300" />{client.email}</span>
+                        {endClient.email
+                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><Mail className="h-3.5 w-3.5 text-slate-300" />{endClient.email}</span>
                           : <span className="text-slate-300 text-sm">—</span>}
                       </td>
                       <td className="px-5 py-3.5">
-                        {client.phone
-                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><Phone className="h-3.5 w-3.5 text-slate-300" />{client.phone}</span>
+                        {endClient.phone
+                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><Phone className="h-3.5 w-3.5 text-slate-300" />{endClient.phone}</span>
                           : <span className="text-slate-300 text-sm">—</span>}
                       </td>
                       <td className="px-5 py-3.5">
@@ -254,7 +244,7 @@ export default function ClientsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        {client.status === 'Active' ? (
+                        {endClient.status === 'Active' ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                             <CheckCircle2 className="h-3 w-3" /> Active
                           </span>
@@ -268,9 +258,9 @@ export default function ClientsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <ActionMenu
                             items={[
-                              { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/clients/${client.id}`) },
-                              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/clients/${client.id}/edit`) },
-                              { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ client, isDeleting: false }) },
+                              { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/endclients/${endClient.id}`) },
+                              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/endclients/${endClient.id}/edit`) },
+                              { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ endClient, isDeleting: false }) },
                             ]}
                           />
                           <ChevronRight className="h-4 w-4 text-slate-300" />
@@ -285,25 +275,25 @@ export default function ClientsPage() {
         )}
 
         <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">{filtered.length} of {valid.length} client{valid.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-slate-400">{filtered.length} of {valid.length} end client{valid.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
       <ConfirmDialog
-        isOpen={deleteState.client !== null}
-        onClose={() => setDeleteState({ client: null, isDeleting: false })}
+        isOpen={deleteState.endClient !== null}
+        onClose={() => setDeleteState({ endClient: null, isDeleting: false })}
         onConfirm={confirmDelete}
-        title="Delete Client"
+        title="Delete End Client"
         description={
-          deleteState.client ? (
+          deleteState.endClient ? (
             <>
               Are you sure you want to delete{' '}
-              <span className="font-semibold text-slate-900">{deleteState.client.name}</span>?
+              <span className="font-semibold text-slate-900">{deleteState.endClient.name}</span>?
               This action cannot be undone.
             </>
           ) : null
         }
-        confirmLabel="Delete Client"
+        confirmLabel="Delete End Client"
         isLoading={deleteState.isDeleting}
       />
     </div>

@@ -6,6 +6,7 @@ import {
   signOut,
   signUp,
   confirmSignUp,
+  confirmSignIn,
   resetPassword,
   confirmResetPassword,
   getCurrentUser,
@@ -29,7 +30,11 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** True when sign-in returned the FORCE_CHANGE_PASSWORD challenge (admin-created users). */
+  newPasswordRequired: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  /** Completes the FORCE_CHANGE_PASSWORD challenge with the user's chosen password. */
+  confirmNewPassword: (newPassword: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   confirmSignUp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -43,6 +48,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [newPasswordRequired, setNewPasswordRequired] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -71,12 +77,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signIn({ username: email, password });
       if (result.isSignedIn) {
+        setNewPasswordRequired(false);
         await checkAuth();
-      } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
+        return;
+      }
+      const step = result.nextStep?.signInStep;
+      if (step === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        // Admin-created (Cognito console) users land here — they must set a new password.
+        setNewPasswordRequired(true);
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(false);
+      if (step === 'CONFIRM_SIGN_UP') {
         throw new Error('Please confirm your email first');
       }
+      throw new Error('Additional verification is required to sign in. Please contact your administrator.');
     } catch (error) {
       setIsLoading(false);
+      throw error;
+    }
+  };
+
+  const handleConfirmNewPassword = async (newPassword: string) => {
+    try {
+      const result = await confirmSignIn({ challengeResponse: newPassword });
+      if (result.isSignedIn) {
+        setNewPasswordRequired(false);
+        await checkAuth();
+      }
+    } catch (error) {
       throw error;
     }
   };
@@ -126,7 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    newPasswordRequired,
     signIn: handleSignIn,
+    confirmNewPassword: handleConfirmNewPassword,
     signUp: handleSignUp,
     confirmSignUp: handleConfirmSignUp,
     signOut: handleSignOut,

@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
+import { useEndClients } from '@/context/EndClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import {
@@ -54,6 +55,7 @@ export default function EmployeeForm({ mode, initial, defaultType = 'W2' }: Empl
   const { createEmployee, updateEmployee } = useEmployees();
   const toast = useToast();
   const { clients, isLoading: clientsLoading, fetchClients } = useClients();
+  const { endClients, isLoading: endClientsLoading, fetchEndClients } = useEndClients();
   const { vendors, isLoading: vendorsLoading, fetchVendors } = useVendors();
   const { subcontractors, isLoading: subcontractorsLoading, fetchSubcontractors } = useSubcontractors();
 
@@ -65,9 +67,10 @@ export default function EmployeeForm({ mode, initial, defaultType = 'W2' }: Empl
   // Ensure related entities are loaded.
   useEffect(() => {
     fetchClients();
+    fetchEndClients();
     fetchVendors();
     fetchSubcontractors();
-  }, [fetchClients, fetchVendors, fetchSubcontractors]);
+  }, [fetchClients, fetchEndClients, fetchVendors, fetchSubcontractors]);
 
   // Initialize form data (and migrate any legacy single-id fields to assignment arrays).
   useEffect(() => {
@@ -440,8 +443,8 @@ export default function EmployeeForm({ mode, initial, defaultType = 'W2' }: Empl
             selectLabel="End Client"
             emptyText='No end clients added. Click "Add End Client" to assign one.'
             accent="sky"
-            options={clients.filter((c) => c?.id && c?.name)}
-            optionsLoading={clientsLoading}
+            options={endClients.filter((c) => c?.id && c?.name)}
+            optionsLoading={endClientsLoading}
             idKey="clientId"
             list={(formData.endClientAssignments as EmployeeEndClientAssignment[]) || []}
             onChange={(list) => setFormData((prev) => ({ ...prev, endClientAssignments: list }))}

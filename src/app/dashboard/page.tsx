@@ -60,6 +60,23 @@ const revenueOptions = [
   { value: 'NB', label: 'Non-Billable' },
 ];
 
+// Time-range presets — scope the whole dashboard by employee hire date.
+const periodPresets = [
+  { value: 'all', label: 'All time' },
+  { value: '6m', label: 'Last 6 months' },
+  { value: 'custom', label: 'Custom range' },
+  { value: 'ytd', label: 'Year to date' },
+  { value: 'year', label: 'By year' },
+] as const;
+
+type PeriodMode = (typeof periodPresets)[number]['value'];
+
+const toMonthStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+const parseMonthStr = (s: string) => {
+  const [y, m] = s.split('-').map(Number);
+  return new Date(y || new Date().getFullYear(), (m || 1) - 1, 1);
+};
+
 const typeAccent: Record<string, string> = {
   W2: 'bg-blue-500',
   Contract: 'bg-purple-500',
@@ -93,6 +110,12 @@ export default function DashboardPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [trendWindow, setTrendWindow] = useState(12); // months shown in the hiring-trend chart
+
+  // Time-range filter (by hire date) — scopes the entire dashboard
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('all');
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
+  const [customStart, setCustomStart] = useState<string>(() => toMonthStr(new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1)));
+  const [customEnd, setCustomEnd] = useState<string>(() => toMonthStr(new Date()));
 
   // id -> name lookups so we resolve real names instead of showing raw IDs
   const clientMap = useMemo(() => {
@@ -132,6 +155,55 @@ export default function DashboardPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [employees, vendorMap]);
 
+  // Years present in the data (newest first) for the "By year" dropdown
+  const availableYears = useMemo(() => {
+    const cur = new Date().getFullYear();
+    let min = cur;
+    employees.forEach((e) => {
+      if (!e.hireDate) return;
+      const y = new Date(e.hireDate).getFullYear();
+      if (!Number.isNaN(y) && y < min) min = y;
+    });
+    const years: number[] = [];
+    for (let y = cur; y >= min; y--) years.push(y);
+    return years;
+  }, [employees]);
+
+  // Resolve the selected period to a concrete [start, end] window
+  const dateRange = useMemo<{ start: Date | null; end: Date | null }>(() => {
+    const now = new Date();
+    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    switch (periodMode) {
+      case '6m':
+        return { start: new Date(now.getFullYear(), now.getMonth() - 5, 1), end: endOfDay(now) };
+      case 'ytd':
+        return { start: new Date(now.getFullYear(), 0, 1), end: endOfDay(now) };
+      case 'year':
+        return { start: new Date(selectedYear, 0, 1), end: new Date(selectedYear, 11, 31, 23, 59, 59, 999) };
+      case 'custom': {
+        const a = parseMonthStr(customStart);
+        const b = parseMonthStr(customEnd);
+        const [lo, hi] = a <= b ? [a, b] : [b, a];
+        return {
+          start: new Date(lo.getFullYear(), lo.getMonth(), 1),
+          end: new Date(hi.getFullYear(), hi.getMonth() + 1, 0, 23, 59, 59, 999), // last day of end month
+        };
+      }
+      default:
+        return { start: null, end: null };
+    }
+  }, [periodMode, selectedYear, customStart, customEnd]);
+
+  const periodLabel = useMemo(() => {
+    switch (periodMode) {
+      case '6m': return 'Last 6 months';
+      case 'ytd': return `Year to date ${new Date().getFullYear()}`;
+      case 'year': return `Year ${selectedYear}`;
+      case 'custom': return `${format(parseMonthStr(customStart), 'MMM yyyy')} → ${format(parseMonthStr(customEnd), 'MMM yyyy')}`;
+      default: return 'All time';
+    }
+  }, [periodMode, selectedYear, customStart, customEnd]);
+
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       if (selectedType !== 'all' && emp.type !== selectedType) return false;
@@ -145,16 +217,33 @@ export default function DashboardPage() {
         const ids = emp.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) || (emp.vendorId ? [emp.vendorId] : []);
         if (!ids.includes(selectedVendor)) return false;
       }
+      if (dateRange.start || dateRange.end) {
+        if (!emp.hireDate) return false;
+        const h = new Date(emp.hireDate);
+        if (Number.isNaN(h.getTime())) return false;
+        if (dateRange.start && h < dateRange.start) return false;
+        if (dateRange.end && h > dateRange.end) return false;
+      }
       return true;
     });
-  }, [employees, selectedType, selectedStatus, selectedRevenue, selectedClient, selectedVendor]);
+  }, [employees, selectedType, selectedStatus, selectedRevenue, selectedClient, selectedVendor, dateRange]);
 
   const hasActiveFilters =
     selectedType !== 'all' ||
     selectedStatus !== 'all' ||
     selectedRevenue !== 'all' ||
     selectedClient !== 'all' ||
-    selectedVendor !== 'all';
+    selectedVendor !== 'all' ||
+    periodMode !== 'all';
+
+  const activeFilterCount = [
+    selectedType !== 'all',
+    selectedStatus !== 'all',
+    selectedRevenue !== 'all',
+    selectedClient !== 'all',
+    selectedVendor !== 'all',
+    periodMode !== 'all',
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     setSelectedType('all');
@@ -162,6 +251,7 @@ export default function DashboardPage() {
     setSelectedRevenue('all');
     setSelectedClient('all');
     setSelectedVendor('all');
+    setPeriodMode('all');
   };
 
   const handleRefresh = async () => {
@@ -170,14 +260,21 @@ export default function DashboardPage() {
     try { await fetchEmployees(); } finally { setIsRefreshing(false); }
   };
 
-  // Headcount by type
+  // Active (non-terminated) employees. Financial / workforce-composition stats
+  // exclude terminated staff; only the status breakdown shows the active-vs-terminated split.
+  const activeEmployees = useMemo(
+    () => filteredEmployees.filter((e) => !('status' in e) || (e as { status?: string }).status !== 'Terminated'),
+    [filteredEmployees]
+  );
+
+  // Headcount by type (active workforce only)
   const typeDistribution = useMemo(() => {
     const map: Record<EmployeeType, number> = { W2: 0, Contract: 0, '1099': 0, Offshore: 0 };
-    filteredEmployees.forEach((e) => { map[e.type] += 1; });
+    activeEmployees.forEach((e) => { map[e.type] += 1; });
     return Object.entries(map).map(([label, value]) => ({ label, value })) as { label: EmployeeType; value: number }[];
-  }, [filteredEmployees]);
+  }, [activeEmployees]);
 
-  const totalHeadcount = filteredEmployees.length;
+  const totalHeadcount = activeEmployees.length;
   const maxTypeValue = Math.max(...typeDistribution.map((t) => t.value), 1);
 
   // Status donut
@@ -192,47 +289,54 @@ export default function DashboardPage() {
     return { active, terminated, total: active + terminated };
   }, [filteredEmployees]);
 
-  // Top clients/vendors — resolve IDs to names, fold in legacy text names, never surface a raw ID
+  // Top clients/vendors (active workforce). Only resolvable client/vendor records
+  // or legacy text names are ranked — unresolved IDs are dropped so no "Unknown" rows appear.
   const topClients = useMemo(() => {
     const dist: Record<string, { id: string; name: string; count: number }> = {};
-    filteredEmployees.forEach((e) => {
-      const ids = (e.clientAssignments?.map((a) => a.clientId).filter(Boolean) as string[] | undefined);
-      const list = Array.from(new Set(ids && ids.length ? ids : (e.clientId ? [e.clientId] : [])));
-      const refs = list.length
-        ? list.map((id) => {
-            const known = clientMap.has(id);
-            const name = clientMap.get(id) || e.client || 'Unknown client';
-            // Unknown/legacy refs collapse into one bucket per name (avoids duplicate rows)
-            return { key: known ? id : `name:${name.toLowerCase()}`, id: known ? id : '', name };
-          })
-        : (e.client ? [{ key: `name:${e.client.toLowerCase()}`, id: '', name: e.client }] : []);
-      refs.forEach(({ key, id, name }) => {
-        if (!dist[key]) dist[key] = { id, name, count: 0 };
+    activeEmployees.forEach((e) => {
+      const ids = Array.from(new Set(
+        (e.clientAssignments?.map((a) => a.clientId).filter(Boolean) as string[] | undefined) ?? (e.clientId ? [e.clientId] : [])
+      ));
+      const resolved = ids.filter((id) => clientMap.has(id));
+      if (resolved.length) {
+        resolved.forEach((id) => {
+          const name = clientMap.get(id) as string;
+          if (!dist[id]) dist[id] = { id, name, count: 0 };
+          dist[id].count += 1;
+        });
+      } else if (e.client) {
+        // Legacy free-text client name (no linked record)
+        const key = `name:${e.client.toLowerCase()}`;
+        if (!dist[key]) dist[key] = { id: '', name: e.client, count: 0 };
         dist[key].count += 1;
-      });
+      }
+      // else: only an unresolved/deleted client id → skip (no "Unknown client" row)
     });
     return Object.values(dist).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [filteredEmployees, clientMap]);
+  }, [activeEmployees, clientMap]);
 
   const topVendors = useMemo(() => {
     const dist: Record<string, { id: string; name: string; count: number }> = {};
-    filteredEmployees.forEach((e) => {
-      const ids = (e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) as string[] | undefined);
-      const list = Array.from(new Set(ids && ids.length ? ids : (e.vendorId ? [e.vendorId] : [])));
-      const refs = list.length
-        ? list.map((id) => {
-            const known = vendorMap.has(id);
-            const name = vendorMap.get(id) || e.vendorName || 'Unknown vendor';
-            return { key: known ? id : `name:${name.toLowerCase()}`, id: known ? id : '', name };
-          })
-        : (e.vendorName ? [{ key: `name:${e.vendorName.toLowerCase()}`, id: '', name: e.vendorName }] : []);
-      refs.forEach(({ key, id, name }) => {
-        if (!dist[key]) dist[key] = { id, name, count: 0 };
+    activeEmployees.forEach((e) => {
+      const ids = Array.from(new Set(
+        (e.vendorAssignments?.map((a) => a.vendorId).filter(Boolean) as string[] | undefined) ?? (e.vendorId ? [e.vendorId] : [])
+      ));
+      const resolved = ids.filter((id) => vendorMap.has(id));
+      if (resolved.length) {
+        resolved.forEach((id) => {
+          const name = vendorMap.get(id) as string;
+          if (!dist[id]) dist[id] = { id, name, count: 0 };
+          dist[id].count += 1;
+        });
+      } else if (e.vendorName) {
+        const key = `name:${e.vendorName.toLowerCase()}`;
+        if (!dist[key]) dist[key] = { id: '', name: e.vendorName, count: 0 };
         dist[key].count += 1;
-      });
+      }
+      // else: only an unresolved/deleted vendor id → skip (no "Unknown vendor" row)
     });
     return Object.values(dist).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [filteredEmployees, vendorMap]);
+  }, [activeEmployees, vendorMap]);
 
   // ── Interactive chart data ──
   const typePie = useMemo(
@@ -250,37 +354,62 @@ export default function DashboardPage() {
 
   const billableByType = useMemo(
     () => (['W2', 'Contract', '1099', 'Offshore'] as const).map((type) => {
-      const list = filteredEmployees.filter((e) => e.type === type);
+      const list = activeEmployees.filter((e) => e.type === type);
       const billable = list.filter((e) => 'revenueStatus' in e && (e as { revenueStatus?: string }).revenueStatus === 'B').length;
       return { type, Billable: billable, 'Non-billable': list.length - billable };
     }),
-    [filteredEmployees]
+    [activeEmployees]
   );
 
-  const hiringTrend = useMemo(() => {
+  // Month buckets for the hiring-trend chart: spans the active period when one
+  // is set, otherwise the last N months chosen by the toggle.
+  const trendMonths = useMemo(() => {
     const now = new Date();
-    const mn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const rows: { month: string; W2: number; Contract: number; '1099': number; Offshore: number }[] = [];
+    const buckets: { start: Date; end: Date }[] = [];
+    if (dateRange.start && dateRange.end) {
+      const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), 1);
+      const endRef = dateRange.end < now ? dateRange.end : now; // don't chart empty future months
+      const e = new Date(endRef.getFullYear(), endRef.getMonth(), 1);
+      const cursor = new Date(s);
+      while (cursor <= e) {
+        buckets.push({
+          start: new Date(cursor.getFullYear(), cursor.getMonth(), 1),
+          end: new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1),
+        });
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+      if (buckets.length === 0) buckets.push({ start: s, end: new Date(s.getFullYear(), s.getMonth() + 1, 1) });
+      return buckets.slice(-36); // cap to keep the chart readable
+    }
     for (let i = trendWindow - 1; i >= 0; i--) {
-      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const monthEmps = filteredEmployees.filter((e) => {
+      buckets.push({
+        start: new Date(now.getFullYear(), now.getMonth() - i, 1),
+        end: new Date(now.getFullYear(), now.getMonth() - i + 1, 1),
+      });
+    }
+    return buckets;
+  }, [dateRange, trendWindow]);
+
+  const hiringTrend = useMemo(() => {
+    const mn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const multiYear = trendMonths.length > 12;
+    return trendMonths.map(({ start, end }) => {
+      const monthEmps = activeEmployees.filter((e) => {
         if (!e.hireDate) return false;
         const h = new Date(e.hireDate);
         return h >= start && h < end;
       });
       // Add a 2-digit year suffix when the window spans more than a year (avoids repeated month labels)
-      const label = trendWindow > 12 ? `${mn[start.getMonth()]} '${String(start.getFullYear()).slice(2)}` : mn[start.getMonth()];
-      rows.push({
+      const label = multiYear ? `${mn[start.getMonth()]} '${String(start.getFullYear()).slice(2)}` : mn[start.getMonth()];
+      return {
         month: label,
         W2: monthEmps.filter((e) => e.type === 'W2').length,
         Contract: monthEmps.filter((e) => e.type === 'Contract').length,
         '1099': monthEmps.filter((e) => e.type === '1099').length,
         Offshore: monthEmps.filter((e) => e.type === 'Offshore').length,
-      });
-    }
-    return rows;
-  }, [filteredEmployees, trendWindow]);
+      };
+    });
+  }, [activeEmployees, trendMonths]);
 
   if (isLoading) {
     return (
@@ -336,7 +465,7 @@ export default function DashboardPage() {
               Filters
               {hasActiveFilters && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-                  {[selectedType !== 'all', selectedStatus !== 'all', selectedRevenue !== 'all', selectedClient !== 'all', selectedVendor !== 'all'].filter(Boolean).length}
+                  {activeFilterCount}
                 </span>
               )}
             </button>
@@ -344,9 +473,94 @@ export default function DashboardPage() {
         }
       />
 
+      {/* Quick employee-type filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {employeeTypes.map((t) => {
+          const active = selectedType === t.value;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setSelectedType(t.value as EmployeeType | 'all')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                active
+                  ? 'border-brand-600 bg-brand-600 text-white shadow-sm'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              )}
+            >
+              {t.value !== 'all' && (
+                <span className={cn('h-2 w-2 rounded-full', active ? 'bg-white/80' : typeAccent[t.value] || 'bg-slate-300')} />
+              )}
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filters Panel */}
       {showFilters && (
         <div className="surface p-5 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Period — scopes the whole dashboard by employee hire date */}
+          <div className="mb-4 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Period · by hire date</span>
+            </div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {periodPresets.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPeriodMode(p.value)}
+                  className={cn(
+                    'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
+                    periodMode === p.value
+                      ? 'border-brand-600 bg-brand-600 text-white'
+                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+
+              {periodMode === 'year' && (
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  aria-label="Year"
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                >
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              )}
+
+              {periodMode === 'custom' && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="month"
+                    value={customStart}
+                    max={customEnd}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    aria-label="Start month"
+                    className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  />
+                  <span className="text-slate-400">→</span>
+                  <input
+                    type="month"
+                    value={customEnd}
+                    min={customStart}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    aria-label="End month"
+                    className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <FilterSelect label="Type" value={selectedType} onChange={(v) => setSelectedType(v as EmployeeType | 'all')} options={employeeTypes} />
             <FilterSelect label="Status" value={selectedStatus} onChange={(v) => setSelectedStatus(v as 'Active' | 'Terminated' | 'all')} options={statusOptions} />
@@ -357,9 +571,10 @@ export default function DashboardPage() {
               options={[{ value: 'all', label: 'All Vendors' }, ...uniqueVendors.map((v) => ({ value: v.id, label: v.name }))]} />
           </div>
           {hasActiveFilters && (
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
               <span className="text-xs text-slate-500">
                 {filteredEmployees.length} of {employees.length} employees shown
+                {periodMode !== 'all' && <> · <span className="font-medium text-slate-600">{periodLabel}</span></>}
               </span>
               <button
                 onClick={clearFilters}
@@ -380,7 +595,7 @@ export default function DashboardPage() {
 
       {/* Distribution & trends — interactive charts */}
       <section className="grid gap-5 lg:grid-cols-3">
-        <ChartCard title="Workforce by type" subtitle={`${totalHeadcount} employees`} icon={Users} delay={40}>
+        <ChartCard title="Workforce by type" subtitle={`${totalHeadcount} active employees`} icon={Users} delay={40}>
           {typePie.length ? (
             <DonutChart data={typePie} />
           ) : (
@@ -390,28 +605,30 @@ export default function DashboardPage() {
 
         <ChartCard
           title="Hiring trend"
-          subtitle={`New hires by category · last ${trendWindow} months`}
+          subtitle={periodMode === 'all' ? `New hires by category · last ${trendWindow} months` : `New hires by category · ${periodLabel}`}
           icon={TrendingUp}
           delay={100}
           className="lg:col-span-2"
         >
-          <div className="mb-3 flex justify-end">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
-              {[6, 12, 24].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setTrendWindow(n)}
-                  className={cn(
-                    'rounded-md px-2.5 py-1 font-medium transition-colors',
-                    trendWindow === n ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'
-                  )}
-                >
-                  {n}M
-                </button>
-              ))}
+          {periodMode === 'all' && (
+            <div className="mb-3 flex justify-end">
+              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
+                {[6, 12, 24].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setTrendWindow(n)}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 font-medium transition-colors',
+                      trendWindow === n ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'
+                    )}
+                  >
+                    {n}M
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <TrendAreaChart
             data={hiringTrend}
             xKey="month"

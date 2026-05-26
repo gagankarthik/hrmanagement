@@ -50,3 +50,34 @@ export interface SopFormData {
   description?: string;
   documents?: UploadedDoc[];
 }
+
+// Suggested categories for Handbook forms (hiring, termination, leave, etc.).
+export const HANDBOOK_FORM_CATEGORIES = [
+  'Hiring',
+  'Onboarding',
+  'Termination',
+  'Leave',
+  'Payroll',
+  'Benefits',
+  'General',
+] as const;
+
+export type HandbookFormCategory = (typeof HANDBOOK_FORM_CATEGORIES)[number];
+
+// Company form / document repository entry (hiring, termination, leave requests, etc.).
+export interface HandbookForm {
+  id: string;
+  title: string;
+  category?: string; // one of HANDBOOK_FORM_CATEGORIES
+  description?: string;
+  documents?: UploadedDoc[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HandbookFormData {
+  title: string;
+  category?: string;
+  description?: string;
+  documents?: UploadedDoc[];
+}

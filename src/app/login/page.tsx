@@ -8,7 +8,7 @@ import { Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function LoginPage() {
-  const { isAuthenticated, isLoading, signIn } = useAuth();
+  const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
 
   useEffect(() => {
     if (isAuthenticated) router.push("/dashboard");
@@ -38,6 +40,27 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid email or password";
       setError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSetNewPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPwd) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await confirmNewPassword(newPassword);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not set your new password.");
     } finally {
       setSubmitting(false);
     }
@@ -140,6 +163,59 @@ export default function LoginPage() {
         </div>
 
         <div className="surface relative w-full max-w-[400px] space-y-6 p-7 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {newPasswordRequired ? (
+            <>
+              <div>
+                <p className="eyebrow">Almost there</p>
+                <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Set a new password</h2>
+                <p className="mt-1.5 text-sm text-slate-500">Your account was created with a temporary password. Choose a new one to continue.</p>
+              </div>
+
+              <form onSubmit={handleSetNewPassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700">New password</label>
+                  <div className="relative">
+                    <input
+                      id="newPassword"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                    />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" tabIndex={-1}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="confirmPwd" className="block text-sm font-medium text-slate-700">Confirm password</label>
+                  <input
+                    id="confirmPwd"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={confirmPwd}
+                    onChange={(e) => setConfirmPwd(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  />
+                </div>
+
+                {error && (
+                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+                )}
+
+                <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
+                  {submitting ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : null}
+                  {submitting ? "Saving…" : "Set password & continue"}
+                </button>
+              </form>
+            </>
+          ) : (
+          <>
           <div>
             <p className="eyebrow">Welcome back</p>
             <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to ZenHR</h2>
@@ -224,6 +300,8 @@ export default function LoginPage() {
             <span className="cursor-pointer underline decoration-slate-300">Terms</span> and{" "}
             <span className="cursor-pointer underline decoration-slate-300">Privacy Policy</span>.
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>

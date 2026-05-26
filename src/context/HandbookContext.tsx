@@ -1,20 +1,25 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { CategoryPolicy, SopDoc, SopFormData } from '@/types/handbook';
+import { CategoryPolicy, SopDoc, SopFormData, HandbookForm, HandbookFormData } from '@/types/handbook';
 import { EmployeeType } from '@/types/employee';
 
 interface HandbookContextType {
   policies: CategoryPolicy[];
   sops: SopDoc[];
+  forms: HandbookForm[];
   isLoading: boolean;
   error: string | null;
   fetchHandbook: () => Promise<void>;
+  fetchForms: () => Promise<void>;
   getPolicy: (type: EmployeeType) => CategoryPolicy;
   savePolicy: (policy: CategoryPolicy) => Promise<void>;
   createSop: (data: SopFormData) => Promise<void>;
   updateSop: (id: string, data: Partial<SopDoc>) => Promise<void>;
   deleteSop: (id: string) => Promise<void>;
+  createForm: (data: HandbookFormData) => Promise<void>;
+  updateForm: (id: string, data: Partial<HandbookForm>) => Promise<void>;
+  deleteForm: (id: string) => Promise<void>;
 }
 
 const HandbookContext = createContext<HandbookContextType | undefined>(undefined);
@@ -22,6 +27,7 @@ const HandbookContext = createContext<HandbookContextType | undefined>(undefined
 export function HandbookProvider({ children }: { children: React.ReactNode }) {
   const [policies, setPolicies] = useState<CategoryPolicy[]>([]);
   const [sops, setSops] = useState<SopDoc[]>([]);
+  const [forms, setForms] = useState<HandbookForm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,18 +35,29 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const [pRes, sRes] = await Promise.all([
+      const [pRes, sRes, fRes] = await Promise.all([
         fetch('/api/handbook/policies').then((r) => r.json()),
         fetch('/api/handbook/sops').then((r) => r.json()),
+        fetch('/api/handbook/forms').then((r) => r.json()),
       ]);
       if (pRes.success) setPolicies(pRes.data || []);
       if (sRes.success) setSops(sRes.data || []);
-      if (!pRes.success || !sRes.success) setError('Failed to load handbook');
+      if (fRes.success) setForms(fRes.data || []);
+      if (!pRes.success || !sRes.success || !fRes.success) setError('Failed to load handbook');
     } catch (err) {
       console.error('Error fetching handbook:', err);
       setError('Failed to load handbook');
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  const fetchForms = useCallback(async () => {
+    try {
+      const res = await fetch('/api/handbook/forms').then((r) => r.json());
+      if (res.success) setForms(res.data || []);
+    } catch (err) {
+      console.error('Error fetching handbook forms:', err);
     }
   }, []);
 
@@ -94,13 +111,43 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
     setSops((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
+  const createForm = useCallback(async (data: HandbookFormData) => {
+    const res = await fetch('/api/handbook/forms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error || 'Failed to create form');
+    setForms((prev) => [...prev, result.data]);
+  }, []);
+
+  const updateForm = useCallback(async (id: string, data: Partial<HandbookForm>) => {
+    const existing = forms.find((f) => f.id === id);
+    const res = await fetch(`/api/handbook/forms/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...existing, ...data }),
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error || 'Failed to update form');
+    setForms((prev) => prev.map((f) => (f.id === id ? result.data : f)));
+  }, [forms]);
+
+  const deleteForm = useCallback(async (id: string) => {
+    const res = await fetch(`/api/handbook/forms/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error || 'Failed to delete form');
+    setForms((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
   useEffect(() => {
     fetchHandbook();
   }, [fetchHandbook]);
 
   return (
     <HandbookContext.Provider
-      value={{ policies, sops, isLoading, error, fetchHandbook, getPolicy, savePolicy, createSop, updateSop, deleteSop }}
+      value={{ policies, sops, forms, isLoading, error, fetchHandbook, fetchForms, getPolicy, savePolicy, createSop, updateSop, deleteSop, createForm, updateForm, deleteForm }}
     >
       {children}
     </HandbookContext.Provider>

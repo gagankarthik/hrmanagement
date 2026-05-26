@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { ClientProvider } from '@/context/ClientContext';
+import { EndClientProvider } from '@/context/EndClientContext';
 import { VendorProvider } from '@/context/VendorContext';
 import { SubcontractorProvider } from '@/context/SubcontractorContext';
 import { LeaveProvider } from '@/context/LeaveContext';
@@ -23,6 +24,7 @@ export default function DashboardLayout({
   return (
     <ProtectedRoute>
       <ClientProvider>
+        <EndClientProvider>
         <VendorProvider>
           <SubcontractorProvider>
             <EmployeeProvider>
@@ -46,6 +48,7 @@ export default function DashboardLayout({
             </EmployeeProvider>
           </SubcontractorProvider>
         </VendorProvider>
+        </EndClientProvider>
       </ClientProvider>
     </ProtectedRoute>
   );

@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { exportToCsv } from '@/lib/export';
+import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
 export default function SubcontractorsPage() {
   const { subcontractors, isLoading, deleteSubcontractor } = useSubcontractors();
@@ -29,6 +30,7 @@ export default function SubcontractorsPage() {
     subcontractor: null, isDeleting: false,
   });
   const toast = useToast();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const getSubconEmps = (subcontractorId: string) =>
     employees.filter((emp) =>
@@ -58,6 +60,11 @@ export default function SubcontractorsPage() {
 
   const totalActive = enriched.filter((s) => s.status === 'Active').length;
   const totalInactive = enriched.filter((s) => s.status === 'Inactive').length;
+
+  const allOnPageSelected = filtered.length > 0 && filtered.every((x) => selectedIds.has(x.id));
+  const toggleOne = (id: string) => setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleAll = () => setSelectedIds((prev) => { const next = new Set(prev); if (filtered.every((x) => prev.has(x.id))) filtered.forEach((x) => next.delete(x.id)); else filtered.forEach((x) => next.add(x.id)); return next; });
+  const selectedRecords: PartnerRecord[] = validSubcontractors.filter((x) => selectedIds.has(x.id));
 
   const handleExport = () => {
     exportToCsv('subcontractors', filtered, [
@@ -136,6 +143,9 @@ export default function SubcontractorsPage() {
         <StatCard label="Inactive" value={totalInactive} icon={XCircle} tone="red" hint={validSubcontractors.length ? `${Math.round((totalInactive / validSubcontractors.length) * 100)}% of total` : undefined} />
       </StatGrid>
 
+      {/* Bulk copy / move */}
+      <PartnerBulkBar source="subcontractors" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
+
       {/* Table card */}
       <div className="surface">
         {/* Toolbar */}
@@ -190,6 +200,9 @@ export default function SubcontractorsPage() {
             <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
+                  <th className="w-10 px-5 py-3">
+                    <input type="checkbox" aria-label="Select all" checked={allOnPageSelected} onChange={toggleAll} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+                  </th>
                   {['Subcontractor', 'Contact', 'Email', 'Phone', 'Employees', 'Status', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                       {h}
@@ -202,8 +215,14 @@ export default function SubcontractorsPage() {
                   <tr
                     key={subcontractor.id ?? idx}
                     onClick={() => router.push(`/dashboard/subcontractors/${subcontractor.id}`)}
-                    className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
+                    className={cn(
+                      'group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50',
+                      selectedIds.has(subcontractor.id) && 'bg-brand-50/50'
+                    )}
                   >
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" aria-label={`Select ${subcontractor.name}`} checked={selectedIds.has(subcontractor.id)} onChange={() => toggleOne(subcontractor.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+                    </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-sm font-bold text-teal-700">

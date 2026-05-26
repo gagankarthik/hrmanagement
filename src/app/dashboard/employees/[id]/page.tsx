@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
+import { useEndClients } from '@/context/EndClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useLeaves } from '@/context/LeaveContext';
@@ -78,6 +79,7 @@ function EmployeeDetailPageContent() {
   const employeeId = params?.id ?? '';
   const { employees, deleteEmployee, isLoading } = useEmployees();
   const { clients } = useClients();
+  const { endClients } = useEndClients();
   const { vendors } = useVendors();
   const { subcontractors } = useSubcontractors();
   const { leaves } = useLeaves();
@@ -142,6 +144,29 @@ function EmployeeDetailPageContent() {
     }
     return [];
   }, [employee, subcontractors]);
+
+  const endClientAssignmentNames = useMemo(() => {
+    if (!employee) return [];
+    const list = employee.endClientAssignments?.length
+      ? employee.endClientAssignments
+      : (employee.endClientId ? [{ clientId: employee.endClientId, startDate: undefined, endDate: undefined }] : []);
+    return list.map((a) => ({
+      ...a,
+      // Resolve against End Clients first; fall back to Clients for legacy picks
+      name: resolveName(a.clientId, endClients, { unknown: resolveName(a.clientId, clients, { unknown: 'Unknown end client' }) }),
+    }));
+  }, [employee, endClients, clients]);
+
+  const endVendorAssignmentNames = useMemo(() => {
+    if (!employee) return [];
+    const list = employee.endVendorAssignments?.length
+      ? employee.endVendorAssignments
+      : (employee.endVendorId ? [{ vendorId: employee.endVendorId, startDate: undefined, endDate: undefined }] : []);
+    return list.map((a) => ({
+      ...a,
+      name: resolveName(a.vendorId, vendors, { unknown: 'Unknown end vendor' }),
+    }));
+  }, [employee, vendors]);
 
   const age = useMemo(() => {
     if (!employee?.dob) return null;
@@ -212,6 +237,12 @@ function EmployeeDetailPageContent() {
       : 'N/A';
     const vendorsText = vendorAssignmentNames.length
       ? vendorAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
+      : 'N/A';
+    const endClientsText = endClientAssignmentNames.length
+      ? endClientAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
+      : 'N/A';
+    const endVendorsText = endVendorAssignmentNames.length
+      ? endVendorAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
       : 'N/A';
 
     const workAuthSection = employee.type !== 'Offshore' && 'workAuthorization' in employee ? `
@@ -290,7 +321,9 @@ function EmployeeDetailPageContent() {
           ${'revenueStatus' in employee ? `<tr><td class="label">Revenue Status</td><td>${(employee as { revenueStatus: string }).revenueStatus === 'B' ? 'Billable' : 'Non-Billable'}</td></tr>` : ''}
           ${'pay' in employee && (employee as { pay?: number }).pay ? `<tr><td class="label">Pay</td><td>$${(employee as { pay: number }).pay.toLocaleString()}</td></tr>` : ''}
           <tr><td class="label">Client(s)</td><td>${clientsText}</td></tr>
+          <tr><td class="label">End Client(s)</td><td>${endClientsText}</td></tr>
           <tr><td class="label">Vendor(s)</td><td>${vendorsText}</td></tr>
+          <tr><td class="label">End Vendor(s)</td><td>${endVendorsText}</td></tr>
         </table>
       </div>
     </div>
@@ -351,6 +384,19 @@ function EmployeeDetailPageContent() {
   const revenueStatus = 'revenueStatus' in employee ? (employee as { revenueStatus?: string }).revenueStatus : null;
   const offshore = employee.type === 'Offshore' && 'panNumber' in employee
     ? (employee as { panNumber?: string; aadharNumber?: string; pfNumber?: string; uanNumber?: string })
+    : null;
+
+  // Type-specific scalar fields surfaced in the Employment Information card
+  const officeEmail = (employee as { officeEmail?: string }).officeEmail;
+  const contractorName = (employee as { contractorName?: string }).contractorName;
+  const vonageNo = (employee as { vonageNo?: string }).vonageNo;
+  const rehireDate = (employee as { rehireDate?: string }).rehireDate;
+  const salaryType = (employee as { salaryType?: string }).salaryType;
+  const subcontractorStatus = (employee as { subcontractorStatus?: string }).subcontractorStatus;
+  const medicalBenefit = (employee as { medicalBenefit?: boolean }).medicalBenefit;
+  const benefit401k = (employee as { benefit401k?: boolean }).benefit401k;
+  const offshoreComp = employee.type === 'Offshore'
+    ? (employee as { salary?: number; medicalReimbursement?: number; payrollEntity?: string; employmentType?: string })
     : null;
 
   const isAuthExpired = workAuth?.expiryDate && new Date(workAuth.expiryDate) < new Date();
@@ -516,6 +562,18 @@ function EmployeeDetailPageContent() {
             {revenueStatus && (
               <InfoRow icon={DollarSign} label="Revenue Status" value={revenueStatus === 'B' ? 'Billable' : 'Non-Billable'} />
             )}
+            {officeEmail && <InfoRow icon={Mail} label="Office Email" value={officeEmail} />}
+            {contractorName && <InfoRow icon={Briefcase} label="Contractor Name" value={contractorName} />}
+            {rehireDate && <InfoRow icon={Calendar} label="Rehire Date" value={format(new Date(rehireDate), 'MMMM d, yyyy')} />}
+            {salaryType && <InfoRow icon={DollarSign} label="Salary Type" value={salaryType} />}
+            {vonageNo && <InfoRow icon={Phone} label="Vonage Number" value={vonageNo} />}
+            {offshoreComp?.salary != null && <InfoRow icon={DollarSign} label="Salary (Monthly)" value={`$${offshoreComp.salary.toLocaleString()}`} />}
+            {offshoreComp?.medicalReimbursement != null && <InfoRow icon={HeartPulse} label="Medical Reimbursement" value={`$${offshoreComp.medicalReimbursement.toLocaleString()}`} />}
+            {offshoreComp?.payrollEntity && <InfoRow icon={Building2} label="Payroll Entity" value={offshoreComp.payrollEntity} />}
+            {offshoreComp?.employmentType && <InfoRow icon={Briefcase} label="Employment Type" value={offshoreComp.employmentType} />}
+            {subcontractorStatus && <InfoRow icon={UserCheck} label="Subcontractor Status" value={subcontractorStatus} />}
+            {employee.type === 'W2' && <InfoRow icon={HeartPulse} label="Medical Benefit" value={medicalBenefit ? 'Yes' : 'No'} />}
+            {employee.type === 'W2' && <InfoRow icon={Shield} label="401(k) Benefit" value={benefit401k ? 'Yes' : 'No'} />}
           </div>
         </div>
 
@@ -537,8 +595,8 @@ function EmployeeDetailPageContent() {
             {leaveBalance.allowance === 0 ? (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-center">
                 <p className="text-sm text-slate-500">No leave policy set for this category.</p>
-                <Link href="/dashboard/handbook" className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
-                  Configure in Handbook →
+                <Link href="/dashboard/policies" className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                  Configure in Policies →
                 </Link>
               </div>
             ) : (
@@ -746,6 +804,92 @@ function EmployeeDetailPageContent() {
                     <span className={cn(
                       'rounded-full px-2 py-0.5 text-xs font-semibold',
                       isActive ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-500'
+                    )}>
+                      {isActive ? 'Active' : 'Ended'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* End Client Assignments */}
+        <div className="surface p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
+              <Building2 className="h-4 w-4 text-sky-600" />
+            </div>
+            <h2 className="font-display text-base font-bold text-slate-900">End Client Assignments</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{endClientAssignmentNames.length}</span>
+          </div>
+          {endClientAssignmentNames.length === 0 ? (
+            <p className="text-sm text-slate-400">No end client assignments</p>
+          ) : (
+            <div className="space-y-2">
+              {endClientAssignmentNames.map((a, i) => {
+                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
+                return (
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-xs font-bold text-white">
+                        {a.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
+                        {(a.startDate || a.endDate) && (
+                          <p className="text-xs text-slate-500">
+                            {a.startDate || '—'} → {a.endDate || 'Present'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-semibold',
+                      isActive ? 'bg-sky-100 text-sky-700' : 'bg-slate-200 text-slate-500'
+                    )}>
+                      {isActive ? 'Active' : 'Ended'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* End Vendor Assignments */}
+        <div className="surface p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+              <Package className="h-4 w-4 text-amber-600" />
+            </div>
+            <h2 className="font-display text-base font-bold text-slate-900">End Vendor Assignments</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{endVendorAssignmentNames.length}</span>
+          </div>
+          {endVendorAssignmentNames.length === 0 ? (
+            <p className="text-sm text-slate-400">No end vendor assignments</p>
+          ) : (
+            <div className="space-y-2">
+              {endVendorAssignmentNames.map((a, i) => {
+                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
+                return (
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-xs font-bold text-white">
+                        {a.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
+                        {(a.startDate || a.endDate) && (
+                          <p className="text-xs text-slate-500">
+                            {a.startDate || '—'} → {a.endDate || 'Present'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-semibold',
+                      isActive ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-500'
                     )}>
                       {isActive ? 'Active' : 'Ended'}
                     </span>
