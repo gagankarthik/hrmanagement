@@ -8,7 +8,8 @@ import {
   UserRoundPlus, BarChart3, X,
   PanelLeftClose, PanelLeftOpen, CalendarOff, CalendarCheck, BookOpen, ScrollText,
   HeartPulse, ShieldCheck, Target, ClipboardList, UserCog,
-  TrendingUp, Clock, Receipt, Banknote,
+  TrendingUp, Clock, Receipt, Banknote, BadgeCheck, GraduationCap, FolderArchive,
+  LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/ui/brand-mark';
@@ -29,6 +30,7 @@ const sections: NavSection[] = [
     items: [
       { label: 'Employees', href: '/dashboard/employees', icon: UsersRound },
       { label: 'Onboard', href: '/dashboard/onboard', icon: UserRoundPlus },
+      { label: 'Documents', href: '/dashboard/documents', icon: FolderArchive },
     ],
   },
   {
@@ -64,6 +66,8 @@ const sections: NavSection[] = [
       { label: 'Policies', href: '/dashboard/policies', icon: ScrollText },
       { label: 'Benefits', href: '/dashboard/benefits', icon: HeartPulse },
       { label: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
+      { label: 'Form I-9', href: '/dashboard/i9', icon: BadgeCheck },
+      { label: 'Form I-983', href: '/dashboard/i983', icon: GraduationCap },
     ],
   },
   {
@@ -73,6 +77,16 @@ const sections: NavSection[] = [
     ],
   },
 ];
+
+const HEADING_ICONS: Record<string, React.ElementType> = {
+  Overview: LayoutGrid,
+  People: Users,
+  'Time & Leave': CalendarDays,
+  Billing: Wallet,
+  Partners: Network,
+  Company: Landmark,
+  Administration: Settings,
+};
 
 const STORAGE_KEY = 'zenhr:sidebar-collapsed';
 
@@ -86,7 +100,7 @@ function SidebarContent({
   const pathname = usePathname();
 
   const isActive = (item: NavItem) =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+    item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
   return (
     <div className="flex h-full flex-col border-r border-slate-200/70 bg-white/95 backdrop-blur-sm">
@@ -111,7 +125,10 @@ function SidebarContent({
         {sections.map((section, si) => (
           <div key={section.heading} className={cn(si > 0 && (collapsed ? 'mt-3' : 'mt-3.5'))}>
             {!collapsed ? (
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{section.heading}</p>
+              <p className="mb-1 flex items-center gap-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {HEADING_ICONS[section.heading] && React.createElement(HEADING_ICONS[section.heading], { className: 'h-3 w-3', strokeWidth: 2 })}
+                {section.heading}
+              </p>
             ) : (
               si > 0 && <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
             )}

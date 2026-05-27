@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck } from 'lucide-react';
+import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck, Upload, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Stepper } from '@/components/ui/stepper';
@@ -25,6 +25,8 @@ import {
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
 import { Confetti } from '@/components/ui/confetti';
+import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
+import { EMPLOYEE_IMPORTS } from '@/lib/bulk-import/configs';
 
 const employeeTypes: {
   value: EmployeeType;
@@ -88,12 +90,13 @@ type WizardStep = 0 | 1 | 2;
 
 export default function OnboardPage() {
   const router = useRouter();
-  const { createEmployee } = useEmployees();
+  const { createEmployee, fetchEmployees } = useEmployees();
   const toast = useToast();
   const { clients, fetchClients } = useClients();
   const { vendors, fetchVendors } = useVendors();
   const { subcontractors, fetchSubcontractors } = useSubcontractors();
   const [step, setStep] = useState<WizardStep>(0);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<EmployeeType | null>(null);
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -334,16 +337,23 @@ export default function OnboardPage() {
       );
     }
     if (field.type === 'checkbox') {
+      const on = Boolean(value);
       return (
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(value)}
-            onChange={(e) => handleInputChange(field, e.target.checked)}
-            className="h-4.5 w-4.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span className="text-sm text-slate-700">{field.label}</span>
-        </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          onClick={() => handleInputChange(field, !on)}
+          className={cn(
+            'flex w-full items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-colors',
+            on ? 'border-brand-300 bg-brand-50 text-brand-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+          )}
+        >
+          <span>{on ? 'Yes' : 'No'}</span>
+          <span className={cn('relative h-5 w-9 shrink-0 rounded-full transition-colors', on ? 'bg-brand-600' : 'bg-slate-300')}>
+            <span className={cn('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all', on ? 'left-[18px]' : 'left-0.5')} />
+          </span>
+        </button>
       );
     }
     if (field.type === 'number') {
@@ -354,6 +364,8 @@ export default function OnboardPage() {
           onChange={(e) => handleInputChange(field, e.target.valueAsNumber || '')}
           placeholder={field.placeholder}
           className={base}
+          min="0"
+          step={/pay|salary|rate/i.test(field.name) ? '0.01' : '1'}
         />
       );
     }
@@ -370,13 +382,21 @@ export default function OnboardPage() {
 
   // Render a labelled input cell for the details step.
   const renderFieldCell = (field: FormField) => (
-    <div key={field.name} className={field.type === 'checkbox' ? 'flex items-end pb-1' : ''}>
-      {field.type !== 'checkbox' && (
-        <label className="mb-1.5 block text-sm font-medium text-slate-700">
+    <div key={field.name}>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <label className="block text-sm font-medium text-slate-700">
           {field.label}
           {field.required && <span className="ml-1 text-red-500">*</span>}
         </label>
-      )}
+        {field.hint && (
+          <span className="group relative inline-flex">
+            <Info className="h-3.5 w-3.5 cursor-help text-slate-400" />
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 hidden w-52 -translate-x-1/2 rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-normal leading-snug text-white shadow-lg group-hover:block">
+              {field.hint}
+            </span>
+          </span>
+        )}
+      </div>
       {renderField(field)}
       {errors[field.name] && (
         <p className="mt-1 text-xs text-red-500">{errors[field.name]}</p>
@@ -525,11 +545,28 @@ export default function OnboardPage() {
             : 'Step 3 of 3 — Review & confirm'
         }
         actions={
-          <Link href="/dashboard/employees" className="btn-ghost">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
+          <>
+            <button onClick={() => setImportOpen(true)} className="btn-ghost">
+              <Upload className="h-4 w-4" /> Import
+            </button>
+            <Link href="/dashboard/employees" className="btn-ghost">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Link>
+          </>
         }
+      />
+
+      <BulkImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        configs={EMPLOYEE_IMPORTS}
+        title="Import Employees"
+        lookups={{ clients, vendors }}
+        onImported={(n) => {
+          fetchEmployees();
+          toast.success('Employees imported', `${n} employee${n !== 1 ? 's' : ''} added.`);
+        }}
       />
 
       {/* Stepper */}

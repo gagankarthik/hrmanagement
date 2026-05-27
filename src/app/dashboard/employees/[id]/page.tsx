@@ -11,36 +11,17 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useLeaves } from '@/context/LeaveContext';
 import { useHandbook } from '@/context/HandbookContext';
 import { useBenefits } from '@/context/BenefitsContext';
+import { useI9 } from '@/context/I9Context';
+import { useI983 } from '@/context/I983Context';
+import { useEmployeeDocs } from '@/context/EmployeeDocsContext';
 import { LeaveType } from '@/types/leave';
+import { nextEvaluationDue } from '@/types/i983';
 import { format } from 'date-fns';
 import {
-  ArrowLeft,
-  User,
-  Briefcase,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  DollarSign,
-  Building2,
-  Package,
-  UserCheck,
-  FileText,
-  Shield,
-  Globe,
-  CreditCard,
-  Clock,
-  Trash2,
-  XCircle,
-  Cake,
-  Award,
-  Printer,
-  CheckCircle2,
-  AlertTriangle,
-  CalendarCheck,
-  Hourglass,
-  Pencil,
-  HeartPulse,
+  ArrowLeft, Mail, Phone, Building2, Package, UserCheck,
+  FileText, Shield, Trash2, XCircle, Printer,
+  CheckCircle2, AlertTriangle, CalendarCheck, Hourglass, Pencil, HeartPulse,
+  BadgeCheck, GraduationCap, FolderArchive, ChevronRight, Download, ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
@@ -50,18 +31,114 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
+import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
+import type { UploadedDoc } from '@/types/uploads';
 
-function InfoRow({ icon: Icon, label, value, className }: { icon: React.ElementType; label: string; value: React.ReactNode; className?: string }) {
-  if (!value) return null;
+/** Label-over-value field used in the tabbed detail grids. */
+function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
-    <div className={cn('flex items-start gap-3', className)}>
-      <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
-        <Icon className="h-4 w-4 text-slate-500" />
+    <div className="min-w-0">
+      <p className="text-xs text-slate-500">{label}</p>
+      <div className="mt-0.5 break-words text-sm font-semibold text-slate-900">{value || <span className="font-normal text-slate-400">N/A</span>}</div>
+    </div>
+  );
+}
+
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-b border-dashed border-slate-200 pb-6 last:border-0 last:pb-0">
+      <h3 className="font-display text-[15px] font-bold text-brand-900">{title}</h3>
+      <div className="mt-4 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+    </section>
+  );
+}
+
+type AssignmentItem = { name: string; startDate?: string; endDate?: string };
+function AssignmentCard({ title, icon: Icon, tone, items }: { title: string; icon: React.ElementType; tone: string; items: AssignmentItem[] }) {
+  return (
+    <div className="surface p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', tone)}><Icon className="h-4 w-4" /></div>
+        <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{items.length}</span>
       </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-slate-400">No {title.toLowerCase()}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((a, i) => {
+            const active = !a.endDate || new Date(a.endDate) >= new Date();
+            return (
+              <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">{a.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{a.name}</p>
+                    {(a.startDate || a.endDate) && <p className="text-xs text-slate-500">{a.startDate || '—'} → {a.endDate || 'Present'}</p>}
+                  </div>
+                </div>
+                <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500')}>{active ? 'Active' : 'Ended'}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocRefList({ title, docs }: { title: string; docs?: UploadedDoc[] }) {
+  if (!docs || docs.length === 0) return null;
+  return (
+    <div>
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
+      <div className="space-y-1.5">
+        {docs.map((d) => (
+          <a key={d.key} href={`/api/uploads/view?key=${encodeURIComponent(d.key)}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-brand-200 hover:bg-white">
+            <FileText className="h-4 w-4 shrink-0 text-brand-600" /><span className="truncate">{d.name}</span>
+            <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-400" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Self-contained Documents tab: inline upload to the employee's doc store + read-only refs to compliance-form docs. */
+function DocsTab({ employeeId, employeeName, i9Docs, i983Docs }: { employeeId: string; employeeName: string; i9Docs?: UploadedDoc[]; i983Docs?: UploadedDoc[] }) {
+  const { getByEmployee, saveRecord } = useEmployeeDocs();
+  const rec = getByEmployee(employeeId);
+  const [docs, setDocs] = React.useState<UploadedDoc[]>([]);
+  const [hydrated, setHydrated] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  React.useEffect(() => {
+    if (!hydrated && rec) { setDocs(rec.documents || []); setHydrated(true); }
+  }, [rec, hydrated]);
+  const onChange = async (next: UploadedDoc[]) => {
+    setDocs(next);
+    if (!hydrated) setHydrated(true);
+    setSaving(true);
+    try { await saveRecord({ employeeId, employeeName, documents: next }); } finally { setSaving(false); }
+  };
+  const hasCompliance = (i9Docs?.length || 0) + (i983Docs?.length || 0) > 0;
+  return (
+    <div className="space-y-6">
       <div>
-        <p className="text-xs font-medium text-slate-500">{label}</p>
-        <p className="mt-0.5 text-sm font-semibold text-slate-900">{value}</p>
+        <div className="mb-3 flex items-center gap-2">
+          <FolderArchive className="h-4 w-4 text-brand-600" />
+          <h3 className="font-display text-[15px] font-bold text-brand-900">Documents</h3>
+          {saving && <span className="text-xs text-slate-400">Saving…</span>}
+        </div>
+        <DocumentUploader value={docs} onChange={onChange} folder={`employee-docs/${employeeId}`} label="" />
+        <p className="mt-2 text-xs text-slate-400">Offers, IDs, certifications, contracts — everything for this employee in one place.</p>
       </div>
+      {hasCompliance && (
+        <div className="space-y-4 border-t border-dashed border-slate-200 pt-5">
+          <p className="text-xs text-slate-500">Also attached to this employee&apos;s compliance forms:</p>
+          <DocRefList title="Form I-9 documents" docs={i9Docs} />
+          <DocRefList title="Form I-983 documents" docs={i983Docs} />
+        </div>
+      )}
     </div>
   );
 }
@@ -72,6 +149,19 @@ const typeColors: Record<string, string> = {
   '1099': 'bg-teal-100 text-teal-700',
   Offshore: 'bg-pink-100 text-pink-700',
 };
+
+type TabKey = 'details' | 'projects' | 'workauth' | 'forms' | 'i9' | 'docs' | 'notes';
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'details', label: 'Employment Details' },
+  { key: 'projects', label: 'Projects' },
+  { key: 'workauth', label: 'Work Authorization' },
+  { key: 'forms', label: 'Forms' },
+  { key: 'i9', label: 'Form I-9' },
+  { key: 'docs', label: 'Documents' },
+  { key: 'notes', label: 'Notes' },
+];
+
+const tileBase = 'group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-brand-300 hover:shadow-sm';
 
 function EmployeeDetailPageContent() {
   const router = useRouter();
@@ -85,9 +175,13 @@ function EmployeeDetailPageContent() {
   const { leaves } = useLeaves();
   const { getPolicy } = useHandbook();
   const { plans } = useBenefits();
+  const { getByEmployee: getI9Record } = useI9();
+  const { getByEmployee: getI983Record } = useI983();
+  const { getByEmployee: getDocsRecord } = useEmployeeDocs();
   const toast = useToast();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [tab, setTab] = React.useState<TabKey>('details');
 
   const employee = useMemo(() => {
     if (!employeeId) return undefined;
@@ -97,46 +191,33 @@ function EmployeeDetailPageContent() {
   const clientAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.clientAssignments?.length) {
-      return employee.clientAssignments.map((a) => ({
-        ...a,
-        name: resolveName(a.clientId, clients, { unknown: 'Unknown client' }),
-      }));
+      return employee.clientAssignments.map((a) => ({ ...a, name: resolveName(a.clientId, clients, { unknown: 'Unknown client' }) }));
     }
     if (employee.clientId) {
       const name = resolveName(employee.clientId, clients, { legacy: employee.client, unknown: 'Unknown client' });
       return [{ clientId: employee.clientId, name, startDate: undefined, endDate: undefined }];
     }
-    if (employee.client) {
-      return [{ clientId: '', name: employee.client, startDate: undefined, endDate: undefined }];
-    }
+    if (employee.client) return [{ clientId: '', name: employee.client, startDate: undefined, endDate: undefined }];
     return [];
   }, [employee, clients]);
 
   const vendorAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.vendorAssignments?.length) {
-      return employee.vendorAssignments.map((a) => ({
-        ...a,
-        name: resolveName(a.vendorId, vendors, { unknown: 'Unknown vendor' }),
-      }));
+      return employee.vendorAssignments.map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown vendor' }) }));
     }
     if (employee.vendorId) {
       const name = resolveName(employee.vendorId, vendors, { legacy: employee.vendorName, unknown: 'Unknown vendor' });
       return [{ vendorId: employee.vendorId, name, startDate: undefined, endDate: undefined }];
     }
-    if (employee.vendorName) {
-      return [{ vendorId: '', name: employee.vendorName, startDate: undefined, endDate: undefined }];
-    }
+    if (employee.vendorName) return [{ vendorId: '', name: employee.vendorName, startDate: undefined, endDate: undefined }];
     return [];
   }, [employee, vendors]);
 
   const subcontractorAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.subcontractorAssignments?.length) {
-      return employee.subcontractorAssignments.map((a) => ({
-        ...a,
-        name: resolveName(a.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' }),
-      }));
+      return employee.subcontractorAssignments.map((a) => ({ ...a, name: resolveName(a.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' }) }));
     }
     if (employee.subcontractorId) {
       const name = resolveName(employee.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' });
@@ -150,11 +231,7 @@ function EmployeeDetailPageContent() {
     const list = employee.endClientAssignments?.length
       ? employee.endClientAssignments
       : (employee.endClientId ? [{ clientId: employee.endClientId, startDate: undefined, endDate: undefined }] : []);
-    return list.map((a) => ({
-      ...a,
-      // Resolve against End Clients first; fall back to Clients for legacy picks
-      name: resolveName(a.clientId, endClients, { unknown: resolveName(a.clientId, clients, { unknown: 'Unknown end client' }) }),
-    }));
+    return list.map((a) => ({ ...a, name: resolveName(a.clientId, endClients, { unknown: resolveName(a.clientId, clients, { unknown: 'Unknown end client' }) }) }));
   }, [employee, endClients, clients]);
 
   const endVendorAssignmentNames = useMemo(() => {
@@ -162,10 +239,7 @@ function EmployeeDetailPageContent() {
     const list = employee.endVendorAssignments?.length
       ? employee.endVendorAssignments
       : (employee.endVendorId ? [{ vendorId: employee.endVendorId, startDate: undefined, endDate: undefined }] : []);
-    return list.map((a) => ({
-      ...a,
-      name: resolveName(a.vendorId, vendors, { unknown: 'Unknown end vendor' }),
-    }));
+    return list.map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown end vendor' }) }));
   }, [employee, vendors]);
 
   const age = useMemo(() => {
@@ -194,19 +268,12 @@ function EmployeeDetailPageContent() {
     const used = approved.reduce((sum, l) => sum + (l.days || 0), 0);
     const remaining = Math.max(0, allowance - used);
     const pendingCount = mine.filter((l) => l.status === 'Pending').length;
-
     const byType = new Map<LeaveType, number>();
-    approved.forEach((l) => {
-      byType.set(l.type, (byType.get(l.type) || 0) + (l.days || 0));
-    });
-    const breakdown = Array.from(byType.entries())
-      .filter(([, days]) => days > 0)
-      .sort((a, b) => b[1] - a[1]);
-
+    approved.forEach((l) => { byType.set(l.type, (byType.get(l.type) || 0) + (l.days || 0)); });
+    const breakdown = Array.from(byType.entries()).filter(([, days]) => days > 0).sort((a, b) => b[1] - a[1]);
     const pct = allowance > 0 ? Math.min(100, (used / allowance) * 100) : 0;
     const over = allowance > 0 && used > allowance;
     const nearLimit = allowance > 0 && !over && used / allowance >= 0.85;
-
     return { allowance, used, remaining, pendingCount, breakdown, pct, over, nearLimit };
   }, [employee, leaves, getPolicy]);
 
@@ -232,18 +299,13 @@ function EmployeeDetailPageContent() {
 
   const handlePrint = () => {
     if (!employee) return;
-    const clientsText = clientAssignmentNames.length
-      ? clientAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
-      : 'N/A';
-    const vendorsText = vendorAssignmentNames.length
-      ? vendorAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
-      : 'N/A';
-    const endClientsText = endClientAssignmentNames.length
-      ? endClientAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
-      : 'N/A';
-    const endVendorsText = endVendorAssignmentNames.length
-      ? endVendorAssignmentNames.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
-      : 'N/A';
+    const fmtAssign = (list: AssignmentItem[]) => (list.length
+      ? list.map((a) => `${a.name}${a.startDate ? ` (${a.startDate}${a.endDate ? ` → ${a.endDate}` : ' → Present'})` : ''}`).join(', ')
+      : 'N/A');
+    const clientsText = fmtAssign(clientAssignmentNames);
+    const vendorsText = fmtAssign(vendorAssignmentNames);
+    const endClientsText = fmtAssign(endClientAssignmentNames);
+    const endVendorsText = fmtAssign(endVendorAssignmentNames);
 
     const workAuthSection = employee.type !== 'Offshore' && 'workAuthorization' in employee ? `
       <div class="section">
@@ -270,16 +332,16 @@ function EmployeeDetailPageContent() {
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; padding: 32px; font-size: 13px; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #6366f1; margin-bottom: 24px; }
-      .header-left h1 { font-size: 24px; font-weight: 700; color: #4f46e5; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #103d33; margin-bottom: 24px; }
+      .header-left h1 { font-size: 24px; font-weight: 700; color: #103d33; }
       .header-left p { color: #64748b; margin-top: 4px; }
       .header-right { text-align: right; color: #64748b; font-size: 12px; }
       .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
       .badge-active { background: #d1fae5; color: #065f46; }
       .badge-terminated { background: #fee2e2; color: #991b1b; }
-      .badge-type { background: #e0e7ff; color: #3730a3; }
+      .badge-type { background: #d2e8dd; color: #103d33; }
       .section { margin-bottom: 20px; }
-      .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6366f1; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 12px; }
+      .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #266b55; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 12px; }
       .info-table { width: 100%; border-collapse: collapse; }
       .info-table td { padding: 6px 0; vertical-align: top; }
       .info-table td.label { width: 180px; color: #64748b; font-weight: 500; }
@@ -343,19 +405,11 @@ function EmployeeDetailPageContent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-9 w-44" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-28" />
-            <Skeleton className="h-9 w-24" />
-          </div>
+          <div className="flex gap-2"><Skeleton className="h-9 w-28" /><Skeleton className="h-9 w-24" /></div>
         </div>
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
-        </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-56 w-full rounded-2xl" />
-          ))}
+        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+          <Skeleton className="h-96 w-full rounded-2xl" />
+          <div className="space-y-4">{[0, 1, 2].map((i) => <SkeletonCard key={i} />)}</div>
         </div>
       </div>
     );
@@ -368,11 +422,7 @@ function EmployeeDetailPageContent() {
         tone="default"
         title="Employee Not Found"
         description="We couldn't find that employee. They may have been deleted or the link is invalid."
-        action={
-          <button onClick={() => router.push('/dashboard/employees')} className="btn-primary">
-            Back to Employees
-          </button>
-        }
+        action={<button onClick={() => router.push('/dashboard/employees')} className="btn-primary">Back to Employees</button>}
         className="mt-12"
       />
     );
@@ -386,7 +436,6 @@ function EmployeeDetailPageContent() {
     ? (employee as { panNumber?: string; aadharNumber?: string; pfNumber?: string; uanNumber?: string })
     : null;
 
-  // Type-specific scalar fields surfaced in the Employment Information card
   const officeEmail = (employee as { officeEmail?: string }).officeEmail;
   const contractorName = (employee as { contractorName?: string }).contractorName;
   const vonageNo = (employee as { vonageNo?: string }).vonageNo;
@@ -398,561 +447,334 @@ function EmployeeDetailPageContent() {
   const offshoreComp = employee.type === 'Offshore'
     ? (employee as { salary?: number; medicalReimbursement?: number; payrollEntity?: string; employmentType?: string })
     : null;
+  const workCountry = (employee as { workCountry?: string }).workCountry;
+  const i9Status2 = (employee as { i9Status?: string }).i9Status;
+  const agreementStatus = (employee as { agreementStatus?: string }).agreementStatus;
+  const gender = (employee as { gender?: string }).gender;
+  const department = (employee as { department?: string }).department;
+  const reportingManager = (employee as { reportingManager?: string }).reportingManager;
 
   const isAuthExpired = workAuth?.expiryDate && new Date(workAuth.expiryDate) < new Date();
   const isAuthExpiringSoon = workAuth?.expiryDate && !isAuthExpired && new Date(workAuth.expiryDate) <= new Date(Date.now() + 90 * 86400000);
 
+  const i9Record = getI9Record(employeeId);
+  const i983Record = getI983Record(employeeId);
+  const docsRecord = getDocsRecord(employeeId);
+  const i9Status = i9Record?.status ?? 'Not started';
+  const i983Status = i983Record?.status ?? 'Not started';
+  const docCount = docsRecord?.documents?.length ?? 0;
+  const authHistCount = i9Record?.workAuthHistory?.length ?? 0;
+
+  // Derived display values
+  const nameParts = (employee.name || '').trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+  const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '';
+  const primaryClient = clients.find((c) => c.id === clientAssignmentNames[0]?.clientId);
+  const currentProject = clientAssignmentNames[0];
+  const fmt = (d?: string) => (d ? format(new Date(d), 'MM/dd/yyyy') : undefined);
+  const wageRate = pay?.pay != null
+    ? `$${pay.pay.toLocaleString()} / ${salaryType === 'Hourly' ? 'Hourly' : 'Yearly'}`
+    : offshoreComp?.salary != null ? `$${offshoreComp.salary.toLocaleString()} / Monthly` : undefined;
+  const benefitsList = [medicalBenefit && 'Medical', benefit401k && '401(k)'].filter(Boolean).join(', ');
+  const i983Due = i983Record ? nextEvaluationDue(i983Record) : null;
+
+  const alerts: { tone: 'red' | 'amber' | 'slate'; text: string }[] = [];
+  if (isAuthExpired) alerts.push({ tone: 'red', text: 'Work authorization has expired' });
+  else if (isAuthExpiringSoon) alerts.push({ tone: 'amber', text: 'Work authorization expires within 90 days' });
+  if (workAuth && i9Status !== 'Verified' && i9Status !== 'E-Verified') alerts.push({ tone: 'amber', text: `Form I-9 ${i9Status === 'Not started' ? 'not started' : 'incomplete'}` });
+  if (i983Due && i983Due.dueDate && (i983Due.overdue || i983Due.days <= 30)) alerts.push({ tone: i983Due.overdue ? 'red' : 'amber', text: `${i983Due.label} ${i983Due.overdue ? `${Math.abs(i983Due.days)}d overdue` : `due in ${i983Due.days}d`}` });
+  if (docCount === 0) alerts.push({ tone: 'slate', text: 'No documents on file' });
+
+  const alertDot = { red: 'bg-red-500', amber: 'bg-accent-400', slate: 'bg-slate-300' };
+
+  const railField = (label: string, value?: React.ReactNode) => (
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-semibold text-slate-800">{value || <span className="font-normal text-slate-400">N/A</span>}</p>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Nav */}
+    <div className="space-y-5">
+      {/* Top bar */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.push('/dashboard/employees')}
-          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Employees
+        <button onClick={() => router.push('/dashboard/employees')} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-white hover:shadow-sm">
+          <ArrowLeft className="h-4 w-4" /> Back to Employees
         </button>
         <div className="flex items-center gap-2.5">
-          <button onClick={handlePrint} className="btn-ghost">
-            <Printer className="h-4 w-4" />
-            Print / PDF
-          </button>
-          <Link href={`/dashboard/employees/${employeeId}/edit`} className="btn-primary">
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Link>
-          <ActionMenu
-            items={[
-              { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/employees/${employeeId}/edit`) },
-              { label: 'Delete', icon: Trash2, onClick: handleDelete, danger: true, separatorBefore: true },
-            ]}
-          />
+          <button onClick={handlePrint} className="btn-ghost"><Printer className="h-4 w-4" /> Print / PDF</button>
+          <Link href={`/dashboard/employees/${employeeId}/edit`} className="btn-primary"><Pencil className="h-4 w-4" /> Update</Link>
+          <ActionMenu items={[
+            { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/employees/${employeeId}/edit`) },
+            { label: 'Delete', icon: Trash2, onClick: handleDelete, danger: true, separatorBefore: true },
+          ]} />
         </div>
       </div>
 
-      {/* Profile hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-brand-600 to-brand-600 p-6 text-white shadow-lg">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
-        <div className="relative flex items-center gap-5">
-          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 font-display text-3xl font-bold backdrop-blur-sm">
-            {employee.name?.charAt(0) ?? '?'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display text-2xl font-bold truncate">{employee.name}</h1>
-            <p className="mt-0.5 text-white/80 truncate">{employee.position}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold bg-white/20 text-white')}>
-                <Briefcase className="h-3 w-3" />{employee.type}
-              </span>
-              {status && (
-                <span className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold',
-                  status === 'Active' ? 'bg-emerald-400/30 text-white' : 'bg-red-400/30 text-white'
-                )}>
-                  {status === 'Active' ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                  {status}
-                </span>
-              )}
-              {revenueStatus && (
-                <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white">
-                  {revenueStatus === 'B' ? 'Billable' : 'Non-Billable'}
-                </span>
-              )}
+      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+        {/* ── Left rail ── */}
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <div className="surface p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 font-display text-xl font-bold text-white">{employee.name?.charAt(0)?.toUpperCase() ?? '?'}</div>
+              <div className="min-w-0">
+                <p className="truncate font-display text-lg font-bold text-brand-900">{employee.name}</p>
+                <p className="truncate text-sm text-slate-500">{employee.position || '—'}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold', typeColors[employee.type] || 'bg-slate-100 text-slate-600')}>{employee.type}</span>
+              {status && <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold', status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>{status === 'Active' ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}{status}</span>}
+              {revenueStatus && <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">{revenueStatus === 'B' ? 'Billable' : 'Non-Billable'}</span>}
+            </div>
+            <div className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
+              {employee.personalEmail && <a href={`mailto:${employee.personalEmail}`} className="flex items-center gap-2 text-slate-600 hover:text-brand-700"><Mail className="h-4 w-4 shrink-0 text-slate-400" /><span className="truncate">{employee.personalEmail}</span></a>}
+              {employee.contactNo && <span className="flex items-center gap-2 text-slate-600"><Phone className="h-4 w-4 shrink-0 text-slate-400" /> {employee.contactNo}</span>}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-4">
+              {railField('Work Authorization', workAuth?.workAuthorization || workCountry)}
+              {railField(workAuth?.workAuthorization?.includes('OPT') ? 'STEM OPT Validity' : 'Auth Expiry', fmt(workAuth?.expiryDate))}
+              {railField('Project Start', fmt(currentProject?.startDate))}
+              {railField('Project End', fmt(currentProject?.endDate))}
+              {railField('Employment Start', fmt(employee.hireDate))}
+              {railField('Reporting Manager', reportingManager)}
+              {railField('Client Name', currentProject?.name)}
+              {railField('Client Contact', primaryClient?.contactPerson || primaryClient?.email)}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Quick stats */}
-      {(age !== null || yearsOfService !== null) && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {age !== null && (
-            <div className="surface flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100">
-                <Cake className="h-5 w-5 text-pink-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Age</p>
-                <p className="font-display text-xl font-bold text-slate-900">{age}</p>
-              </div>
+          {/* Alerts */}
+          <div className="surface p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-accent-600" strokeWidth={1.75} />
+              <h2 className="font-display text-sm font-bold text-slate-900">Alerts</h2>
+              {alerts.length > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">{alerts.length}</span>}
             </div>
-          )}
-          {yearsOfService !== null && (
-            <div className="surface flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100">
-                <Award className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Years</p>
-                <p className="font-display text-xl font-bold text-slate-900">{yearsOfService}</p>
-              </div>
-            </div>
-          )}
-          {employee.hireDate && (
-            <div className="surface flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Hire Date</p>
-                <p className="font-display text-sm font-bold text-slate-900">{format(new Date(employee.hireDate), 'MMM d, yyyy')}</p>
-              </div>
-            </div>
-          )}
-          {pay?.pay && (
-            <div className="surface flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
-                <DollarSign className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">{pay.salaryType === 'Hourly' ? '/hr' : '/yr'}</p>
-                <p className="font-display text-sm font-bold text-slate-900">${pay.pay.toLocaleString()}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Personal Info */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-              <User className="h-4 w-4 text-brand-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Personal Information</h2>
-          </div>
-          <div className="space-y-4">
-            <InfoRow icon={Mail} label="Email" value={employee.personalEmail} />
-            <InfoRow icon={Phone} label="Phone" value={employee.contactNo} />
-            <InfoRow icon={Cake} label="Date of Birth" value={employee.dob ? format(new Date(employee.dob), 'MMMM d, yyyy') : undefined} />
-            <InfoRow icon={MapPin} label="Address" value={[employee.address, employee.city, employee.state, employee.pincode].filter(Boolean).join(', ')} />
-          </div>
-        </div>
-
-        {/* Employment Info */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-              <Briefcase className="h-4 w-4 text-brand-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Employment Information</h2>
-          </div>
-          <div className="space-y-4">
-            <InfoRow icon={FileText} label="Employee Type" value={employee.type} />
-            <InfoRow icon={Calendar} label="Hire Date" value={employee.hireDate ? format(new Date(employee.hireDate), 'MMMM d, yyyy') : undefined} />
-            {employee.dor && <InfoRow icon={Clock} label="Date of Release" value={format(new Date(employee.dor), 'MMMM d, yyyy')} />}
-            {status && (
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                  <CheckCircle2 className="h-4 w-4 text-slate-500" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Status</p>
-                  <span className={cn(
-                    'mt-0.5 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                    status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                  )}>
-                    {status}
-                  </span>
-                </div>
-              </div>
-            )}
-            {revenueStatus && (
-              <InfoRow icon={DollarSign} label="Revenue Status" value={revenueStatus === 'B' ? 'Billable' : 'Non-Billable'} />
-            )}
-            {officeEmail && <InfoRow icon={Mail} label="Office Email" value={officeEmail} />}
-            {contractorName && <InfoRow icon={Briefcase} label="Contractor Name" value={contractorName} />}
-            {rehireDate && <InfoRow icon={Calendar} label="Rehire Date" value={format(new Date(rehireDate), 'MMMM d, yyyy')} />}
-            {salaryType && <InfoRow icon={DollarSign} label="Salary Type" value={salaryType} />}
-            {vonageNo && <InfoRow icon={Phone} label="Vonage Number" value={vonageNo} />}
-            {offshoreComp?.salary != null && <InfoRow icon={DollarSign} label="Salary (Monthly)" value={`$${offshoreComp.salary.toLocaleString()}`} />}
-            {offshoreComp?.medicalReimbursement != null && <InfoRow icon={HeartPulse} label="Medical Reimbursement" value={`$${offshoreComp.medicalReimbursement.toLocaleString()}`} />}
-            {offshoreComp?.payrollEntity && <InfoRow icon={Building2} label="Payroll Entity" value={offshoreComp.payrollEntity} />}
-            {offshoreComp?.employmentType && <InfoRow icon={Briefcase} label="Employment Type" value={offshoreComp.employmentType} />}
-            {subcontractorStatus && <InfoRow icon={UserCheck} label="Subcontractor Status" value={subcontractorStatus} />}
-            {employee.type === 'W2' && <InfoRow icon={HeartPulse} label="Medical Benefit" value={medicalBenefit ? 'Yes' : 'No'} />}
-            {employee.type === 'W2' && <InfoRow icon={Shield} label="401(k) Benefit" value={benefit401k ? 'Yes' : 'No'} />}
-          </div>
-        </div>
-
-        {/* Leave Balance */}
-        {leaveBalance && (
-          <div className="surface p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-                <CalendarCheck className="h-4 w-4 text-brand-600" />
-              </div>
-              <h2 className="font-display text-base font-bold text-slate-900">Leave balance</h2>
-              {leaveBalance.pendingCount > 0 && (
-                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                  <Hourglass className="h-3 w-3" />{leaveBalance.pendingCount} pending
-                </span>
-              )}
-            </div>
-
-            {leaveBalance.allowance === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-center">
-                <p className="text-sm text-slate-500">No leave policy set for this category.</p>
-                <Link href="/dashboard/policies" className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
-                  Configure in Policies →
-                </Link>
-              </div>
+            {alerts.length === 0 ? (
+              <p className="flex items-center gap-2 text-sm text-emerald-600"><CheckCircle2 className="h-4 w-4" /> All clear</p>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">Used</p>
-                    <p className="font-display text-2xl font-bold text-slate-900">
-                      {leaveBalance.used} <span className="text-base font-semibold text-slate-400">of {leaveBalance.allowance} days</span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-slate-500">Remaining</p>
-                    <p className={cn(
-                      'font-display text-2xl font-bold',
-                      leaveBalance.over ? 'text-red-600' : 'text-brand-600'
-                    )}>
-                      {leaveBalance.remaining}
-                    </p>
-                  </div>
-                </div>
+              <ul className="space-y-2.5">
+                {alerts.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                    <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', alertDot[a.tone])} />{a.text}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
 
-                {/* Progress bar */}
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all',
-                      leaveBalance.over ? 'bg-red-500' : leaveBalance.nearLimit ? 'bg-amber-500' : 'bg-brand-500'
+        {/* ── Right pane: tabs ── */}
+        <div className="surface min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-100 px-4">
+            {TABS.map((t) => (
+              <button key={t.key} onClick={() => setTab(t.key)} className={cn('relative whitespace-nowrap px-3 py-3.5 text-sm font-semibold transition-colors', tab === t.key ? 'text-brand-700' : 'text-slate-500 hover:text-slate-800')}>
+                {t.label}
+                {tab === t.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-brand-600" />}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5 sm:p-6">
+            {/* Employment Details */}
+            {tab === 'details' && (
+              <div className="space-y-6">
+                <DetailSection title="Personal Details">
+                  <Field label="First Name" value={firstName} />
+                  <Field label="Middle Name" value={middleName} />
+                  <Field label="Last Name" value={lastName} />
+                  <Field label="Designation" value={employee.position} />
+                  <Field label="Gender" value={gender} />
+                  <Field label="Date of Birth" value={employee.dob ? `${format(new Date(employee.dob), 'MM/dd/yyyy')}${age != null ? ` (age ${age})` : ''}` : undefined} />
+                </DetailSection>
+                <DetailSection title="Contact Information">
+                  <Field label="Email Address" value={employee.personalEmail} />
+                  <Field label="Phone Number" value={employee.contactNo} />
+                  {officeEmail && <Field label="Office Email" value={officeEmail} />}
+                  {vonageNo && <Field label="Vonage Number" value={vonageNo} />}
+                </DetailSection>
+                <DetailSection title="Employment Details">
+                  <Field label="Employment Type" value={offshoreComp?.employmentType || employee.type} />
+                  <Field label="Employment Start" value={fmt(employee.hireDate)} />
+                  <Field label="Period of Employment" value={yearsOfService != null ? `${yearsOfService} year(s)` : undefined} />
+                  <Field label="Employee ID" value={employee.id.slice(0, 8).toUpperCase()} />
+                  <Field label="Wage Rate" value={wageRate} />
+                  <Field label="Department" value={department} />
+                  <Field label="Reporting Manager" value={reportingManager} />
+                  <Field label="Benefits Status" value={employee.type === 'W2' ? (benefitsList ? 'Applicable' : 'N/A') : undefined} />
+                  <Field label="Benefits Type" value={benefitsList || undefined} />
+                  {contractorName && <Field label="Contractor Name" value={contractorName} />}
+                  {rehireDate && <Field label="Rehire Date" value={fmt(rehireDate)} />}
+                  {employee.dor && <Field label="Date of Release" value={fmt(employee.dor)} />}
+                  {subcontractorStatus && <Field label="Subcontractor Status" value={subcontractorStatus} />}
+                </DetailSection>
+                <DetailSection title="Current Home Address">
+                  <Field label="Address" value={employee.address} />
+                  <Field label="City, State" value={[employee.city, employee.state].filter(Boolean).join(', ')} />
+                  <Field label="ZIP Code" value={employee.pincode} />
+                  {offshoreComp?.payrollEntity && <Field label="Payroll Entity" value={offshoreComp.payrollEntity} />}
+                </DetailSection>
+
+                {/* Leave + Benefits */}
+                <div className="grid gap-5 lg:grid-cols-2">
+                  {leaveBalance && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <CalendarCheck className="h-4 w-4 text-brand-600" />
+                        <h3 className="font-display text-sm font-bold text-slate-900">Leave balance</h3>
+                        {leaveBalance.pendingCount > 0 && <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"><Hourglass className="h-3 w-3" />{leaveBalance.pendingCount}</span>}
+                      </div>
+                      {leaveBalance.allowance === 0 ? (
+                        <p className="text-sm text-slate-500">No leave policy set. <Link href="/dashboard/policies" className="font-semibold text-brand-600">Configure →</Link></p>
+                      ) : (
+                        <>
+                          <p className="text-sm text-slate-600"><span className="font-display text-xl font-bold text-slate-900">{leaveBalance.used}</span> of {leaveBalance.allowance} days used · <span className={cn('font-semibold', leaveBalance.over ? 'text-red-600' : 'text-brand-600')}>{leaveBalance.remaining} left</span></p>
+                          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                            <div className={cn('h-full rounded-full', leaveBalance.over ? 'bg-red-500' : leaveBalance.nearLimit ? 'bg-amber-500' : 'bg-brand-500')} style={{ width: `${Math.max(leaveBalance.pct, leaveBalance.used > 0 ? 4 : 0)}%` }} />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <HeartPulse className="h-4 w-4 text-pink-600" />
+                      <h3 className="font-display text-sm font-bold text-slate-900">Benefits</h3>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{enrolledBenefits.length}</span>
+                    </div>
+                    {enrolledBenefits.length === 0 ? (
+                      <p className="text-sm text-slate-400">Not enrolled in any plans</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {enrolledBenefits.map((plan) => (
+                          <div key={plan.id} className="flex items-center justify-between rounded-lg bg-white px-3 py-2">
+                            <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{plan.name}</p><p className="text-xs text-slate-500">{plan.type}</p></div>
+                            {typeof plan.employerContribution === 'number' && <p className="text-sm font-semibold text-emerald-600">${plan.employerContribution.toLocaleString()}</p>}
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    style={{ width: `${Math.max(leaveBalance.pct, leaveBalance.used > 0 ? 4 : 0)}%` }}
-                  />
+                  </div>
                 </div>
-                {leaveBalance.over && (
-                  <p className="text-xs font-semibold text-red-600">
-                    Over allowance by {leaveBalance.used - leaveBalance.allowance} day{leaveBalance.used - leaveBalance.allowance !== 1 ? 's' : ''}.
-                  </p>
-                )}
+              </div>
+            )}
 
-                {/* By-type breakdown */}
-                {leaveBalance.breakdown.length > 0 && (
-                  <div className="border-t border-slate-100 pt-3">
-                    <p className="mb-2 text-xs font-medium text-slate-500">By type</p>
-                    <div className="flex flex-wrap gap-2">
-                      {leaveBalance.breakdown.map(([type, days]) => (
-                        <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                          {type}
-                          <span className="rounded-full bg-white px-1.5 text-[11px] font-bold text-slate-700">{days}</span>
-                        </span>
+            {/* Projects */}
+            {tab === 'projects' && (
+              <div className="grid gap-5 lg:grid-cols-2">
+                <AssignmentCard title="Client Assignments" icon={Building2} tone="bg-emerald-100 text-emerald-600" items={clientAssignmentNames} />
+                <AssignmentCard title="Vendor Assignments" icon={Package} tone="bg-purple-100 text-purple-600" items={vendorAssignmentNames} />
+                <AssignmentCard title="Subcontractor Assignments" icon={UserCheck} tone="bg-teal-100 text-teal-600" items={subcontractorAssignmentNames} />
+                <AssignmentCard title="End Client Assignments" icon={Building2} tone="bg-sky-100 text-sky-600" items={endClientAssignmentNames} />
+                <AssignmentCard title="End Vendor Assignments" icon={Package} tone="bg-amber-100 text-amber-600" items={endVendorAssignmentNames} />
+              </div>
+            )}
+
+            {/* Work Authorization */}
+            {tab === 'workauth' && (
+              <div className="space-y-6">
+                <DetailSection title="Work Authorization">
+                  <Field label="Authorization Type" value={workAuth?.workAuthorization} />
+                  <Field label="Expiry Date" value={fmt(workAuth?.expiryDate)} />
+                  <Field label="Work Country" value={workCountry} />
+                  <Field label="I-9 / Eligibility" value={i9Status2} />
+                  <Field label="Contractor Agreement" value={agreementStatus} />
+                  {(isAuthExpired || isAuthExpiringSoon) && (
+                    <div className="sm:col-span-2 lg:col-span-4">
+                      <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold', isAuthExpired ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700')}>
+                        {isAuthExpired ? <XCircle className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}{isAuthExpired ? 'Expired' : 'Expiring soon'}
+                      </span>
+                    </div>
+                  )}
+                </DetailSection>
+
+                {authHistCount > 0 && i9Record?.workAuthHistory && (
+                  <div>
+                    <h3 className="font-display text-[15px] font-bold text-brand-900">Authorization history</h3>
+                    <div className="mt-3 space-y-2">
+                      {i9Record.workAuthHistory.map((a) => (
+                        <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm">
+                          <span className="font-semibold text-slate-900">{a.type || '—'}</span>
+                          {a.number && <span className="text-slate-500">#{a.number}</span>}
+                          <span className="text-slate-400">{fmt(a.issued) || '—'} → {fmt(a.expiry) || '—'}</span>
+                          {a.status && <span className="ml-auto rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">{a.status}</span>}
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {offshore && (
+                  <DetailSection title="India Tax & Provident Fund">
+                    <Field label="Aadhar Number" value={offshore.aadharNumber} />
+                    <Field label="PAN Number" value={offshore.panNumber} />
+                    <Field label="PF Number" value={offshore.pfNumber} />
+                    <Field label="UAN No." value={offshore.uanNumber} />
+                  </DetailSection>
+                )}
+                <Link href={`/dashboard/i9/${employeeId}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">Manage work authorization & I-9 <ChevronRight className="h-4 w-4" /></Link>
+              </div>
+            )}
+
+            {/* Forms */}
+            {tab === 'forms' && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link href={`/dashboard/i9/${employeeId}`} className={tileBase}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100"><BadgeCheck className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Form I-9 / E-Verify</p><p className="truncate text-sm font-bold text-slate-900">{i9Status}</p></div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-brand-500" />
+                </Link>
+                <Link href={`/dashboard/i9/${employeeId}`} className={tileBase}>
+                  <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1', isAuthExpired ? 'bg-red-50 text-red-600 ring-red-100' : isAuthExpiringSoon ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-emerald-50 text-emerald-700 ring-emerald-100')}><Shield className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Work authorization{authHistCount > 0 ? ` · ${authHistCount} on file` : ''}</p><p className="truncate text-sm font-bold text-slate-900">{workAuth?.workAuthorization || workCountry || 'Not set'}</p></div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-brand-500" />
+                </Link>
+                <Link href={`/dashboard/i983/${employeeId}`} className={tileBase}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-700 ring-1 ring-purple-100"><GraduationCap className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Form I-983 · STEM OPT</p><p className="truncate text-sm font-bold text-slate-900">{i983Status}</p></div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-brand-500" />
+                </Link>
+                <Link href={`/dashboard/documents/${employeeId}`} className={tileBase}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-50 text-accent-700 ring-1 ring-accent-100"><FolderArchive className="h-5 w-5" strokeWidth={1.75} /></span>
+                  <div className="min-w-0 flex-1"><p className="text-xs text-slate-500">Documents</p><p className="truncate text-sm font-bold text-slate-900">{docCount} file{docCount !== 1 ? 's' : ''}</p></div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-brand-500" />
+                </Link>
+              </div>
+            )}
+
+            {/* Form I-9 */}
+            {tab === 'i9' && (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100"><BadgeCheck className="h-5 w-5" strokeWidth={1.75} /></span>
+                    <div><p className="text-xs text-slate-500">Form I-9 / E-Verify status</p><p className="font-display text-base font-bold text-slate-900">{i9Status}</p></div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {i9Record && <a href={`/api/i9/${employeeId}/pdf`} target="_blank" rel="noreferrer" className="btn-ghost"><Download className="h-4 w-4" strokeWidth={1.75} /> Download filled I-9</a>}
+                    <Link href={`/dashboard/i9/${employeeId}`} className="btn-primary">{i9Record ? 'Manage I-9' : 'Start I-9'}</Link>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400">Generates a pre-filled official USCIS Form I-9 from this employee&apos;s data, ready for review and signatures.</p>
+              </div>
+            )}
+
+            {/* Documents */}
+            {tab === 'docs' && (
+              <DocsTab employeeId={employeeId} employeeName={employee.name} i9Docs={i9Record?.documents} i983Docs={i983Record?.documents} />
+            )}
+
+            {/* Notes */}
+            {tab === 'notes' && (
+              <div className="py-10 text-center">
+                <FileText className="mx-auto h-8 w-8 text-slate-300" strokeWidth={1.5} />
+                <p className="mt-2 text-sm font-medium text-slate-500">No notes yet</p>
+                <p className="text-xs text-slate-400">Use the audit trails on the I-9 and I-983 records for compliance history.</p>
               </div>
             )}
           </div>
-        )}
-
-        {/* Benefits */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-100">
-              <HeartPulse className="h-4 w-4 text-pink-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Benefits</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{enrolledBenefits.length}</span>
-          </div>
-          {enrolledBenefits.length === 0 ? (
-            <p className="text-sm text-slate-400">Not enrolled in any benefit plans</p>
-          ) : (
-            <div className="space-y-2">
-              {enrolledBenefits.map((plan) => (
-                <div key={plan.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">{plan.name}</p>
-                    <p className="text-xs text-slate-500">{plan.type}</p>
-                  </div>
-                  {typeof plan.employerContribution === 'number' && (
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Employer pays</p>
-                      <p className="text-sm font-semibold text-emerald-600">${plan.employerContribution.toLocaleString()}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-
-        {/* Client Assignments */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
-              <Building2 className="h-4 w-4 text-emerald-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Client Assignments</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{clientAssignmentNames.length}</span>
-          </div>
-          {clientAssignmentNames.length === 0 ? (
-            <p className="text-sm text-slate-400">No client assignments</p>
-          ) : (
-            <div className="space-y-2">
-              {clientAssignmentNames.map((a, i) => {
-                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
-                return (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-xs font-bold text-white">
-                        {a.name?.charAt(0) ?? '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
-                        {(a.startDate || a.endDate) && (
-                          <p className="text-xs text-slate-500">
-                            {a.startDate || '—'} → {a.endDate || 'Present'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {isActive ? 'Active' : 'Ended'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Vendor Assignments */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
-              <Package className="h-4 w-4 text-purple-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Vendor Assignments</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{vendorAssignmentNames.length}</span>
-          </div>
-          {vendorAssignmentNames.length === 0 ? (
-            <p className="text-sm text-slate-400">No vendor assignments</p>
-          ) : (
-            <div className="space-y-2">
-              {vendorAssignmentNames.map((a, i) => {
-                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
-                return (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-brand-600 text-xs font-bold text-white">
-                        {a.name?.charAt(0) ?? '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
-                        {(a.startDate || a.endDate) && (
-                          <p className="text-xs text-slate-500">
-                            {a.startDate || '—'} → {a.endDate || 'Present'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {isActive ? 'Active' : 'Ended'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Subcontractor Assignments */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
-              <UserCheck className="h-4 w-4 text-teal-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">Subcontractor Assignments</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{subcontractorAssignmentNames.length}</span>
-          </div>
-          {subcontractorAssignmentNames.length === 0 ? (
-            <p className="text-sm text-slate-400">No subcontractor assignments</p>
-          ) : (
-            <div className="space-y-2">
-              {subcontractorAssignmentNames.map((a, i) => {
-                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
-                return (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-xs font-bold text-white">
-                        {a.name?.charAt(0) ?? '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
-                        {(a.startDate || a.endDate) && (
-                          <p className="text-xs text-slate-500">
-                            {a.startDate || '—'} → {a.endDate || 'Present'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {isActive ? 'Active' : 'Ended'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* End Client Assignments */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
-              <Building2 className="h-4 w-4 text-sky-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">End Client Assignments</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{endClientAssignmentNames.length}</span>
-          </div>
-          {endClientAssignmentNames.length === 0 ? (
-            <p className="text-sm text-slate-400">No end client assignments</p>
-          ) : (
-            <div className="space-y-2">
-              {endClientAssignmentNames.map((a, i) => {
-                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
-                return (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-xs font-bold text-white">
-                        {a.name?.charAt(0) ?? '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
-                        {(a.startDate || a.endDate) && (
-                          <p className="text-xs text-slate-500">
-                            {a.startDate || '—'} → {a.endDate || 'Present'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-sky-100 text-sky-700' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {isActive ? 'Active' : 'Ended'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* End Vendor Assignments */}
-        <div className="surface p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-              <Package className="h-4 w-4 text-amber-600" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">End Vendor Assignments</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">{endVendorAssignmentNames.length}</span>
-          </div>
-          {endVendorAssignmentNames.length === 0 ? (
-            <p className="text-sm text-slate-400">No end vendor assignments</p>
-          ) : (
-            <div className="space-y-2">
-              {endVendorAssignmentNames.map((a, i) => {
-                const isActive = !a.endDate || new Date(a.endDate) >= new Date();
-                return (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-xs font-bold text-white">
-                        {a.name?.charAt(0) ?? '?'}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{a.name}</p>
-                        {(a.startDate || a.endDate) && (
-                          <p className="text-xs text-slate-500">
-                            {a.startDate || '—'} → {a.endDate || 'Present'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-500'
-                    )}>
-                      {isActive ? 'Active' : 'Ended'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Work Authorization */}
-        {workAuth && employee.type !== 'Offshore' && (
-          <div className="surface p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-                <Shield className="h-4 w-4 text-brand-600" />
-              </div>
-              <h2 className="font-display text-base font-bold text-slate-900">Work Authorization</h2>
-            </div>
-            <div className="space-y-4">
-              <InfoRow icon={FileText} label="Authorization Type" value={workAuth.workAuthorization} />
-              {workAuth.expiryDate && (
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                    <Calendar className="h-4 w-4 text-slate-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">Expiry Date</p>
-                    <p className="mt-0.5 text-sm font-semibold text-slate-900">{format(new Date(workAuth.expiryDate), 'MMMM d, yyyy')}</p>
-                    {isAuthExpired && (
-                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-                        <XCircle className="h-3 w-3" />Expired
-                      </span>
-                    )}
-                    {isAuthExpiringSoon && (
-                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                        <AlertTriangle className="h-3 w-3" />Expiring Soon
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* India Tax Info */}
-        {offshore && (
-          <div className="surface p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-                <CreditCard className="h-4 w-4 text-brand-600" />
-              </div>
-              <h2 className="font-display text-base font-bold text-slate-900">India Tax &amp; Provident Fund</h2>
-            </div>
-            <div className="space-y-4">
-              <InfoRow icon={Globe} label="Aadhar Number" value={offshore.aadharNumber} />
-              <InfoRow icon={FileText} label="PAN Number" value={offshore.panNumber} />
-              {offshore.pfNumber && <InfoRow icon={CreditCard} label="PF Number" value={offshore.pfNumber} />}
-              {offshore.uanNumber && <InfoRow icon={CreditCard} label="UAN No." value={offshore.uanNumber} />}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Timestamps */}
@@ -968,13 +790,7 @@ function EmployeeDetailPageContent() {
         onClose={() => !isDeleting && setDeleteOpen(false)}
         onConfirm={confirmDelete}
         title="Delete Employee"
-        description={
-          <>
-            Are you sure you want to delete{' '}
-            <span className="font-semibold text-slate-900">{employee.name}</span>?
-            This action cannot be undone.
-          </>
-        }
+        description={<>Are you sure you want to delete <span className="font-semibold text-slate-900">{employee.name}</span>? This action cannot be undone.</>}
         confirmLabel="Delete Employee"
         isLoading={isDeleting}
       />

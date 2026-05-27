@@ -15,7 +15,7 @@ export const EMPLOYEE_FORM_SECTIONS: EmployeeFormSection[] = [
     id: 'personal',
     title: 'Personal',
     description: 'Identity and contact details',
-    fields: ['name', 'position', 'dob', 'personalEmail', 'contactNo', 'vonageNo'],
+    fields: ['name', 'position', 'gender', 'dob', 'personalEmail', 'contactNo', 'vonageNo'],
   },
   {
     id: 'address',
@@ -28,8 +28,8 @@ export const EMPLOYEE_FORM_SECTIONS: EmployeeFormSection[] = [
     title: 'Employment',
     description: 'Status, dates and compensation',
     fields: [
-      'hireDate', 'rehireDate', 'dor', 'status', 'revenueStatus',
-      'salaryType', 'pay', 'salary', 'employmentType', 'payrollEntity',
+      'department', 'reportingManager', 'hireDate', 'rehireDate', 'dor', 'status', 'revenueStatus',
+      'salaryType', 'pay', 'salary', 'billRate', 'payRate', 'employmentType', 'payrollEntity',
       'contractorName', 'subcontractorStatus', 'medicalBenefit',
       'benefit401k', 'medicalReimbursement',
     ],

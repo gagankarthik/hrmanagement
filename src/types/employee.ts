@@ -64,6 +64,10 @@ export interface BaseEmployee {
   workCountry?: string;
   i9Status?: string;
   agreementStatus?: string;
+  // Workforce attributes
+  gender?: string;
+  department?: string;
+  reportingManager?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -173,6 +177,7 @@ export interface FormField {
   required: boolean;
   options?: { value: string; label: string }[];
   placeholder?: string;
+  hint?: string; // short helper text shown beside the field label
 }
 
 // Work Authorization / Visa Types
@@ -209,6 +214,16 @@ export const WORK_AUTHORIZATION_OPTIONS = [
 export const W2_FIELDS: FormField[] = [
   { name: 'name', label: 'Name', type: 'text', required: false, placeholder: 'Full Name' },
   { name: 'position', label: 'Position', type: 'text', required: false, placeholder: 'Job Title' },
+  { name: 'department', label: 'Department', type: 'text', required: false, placeholder: 'e.g. Engineering' },
+  { name: 'reportingManager', label: 'Reporting Manager', type: 'text', required: false, placeholder: 'Manager name' },
+  { name: 'billRate', label: 'Bill Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the client is billed per hour for this person.' },
+  { name: 'payRate', label: 'Pay Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the worker is paid per hour. Bill − Pay = your gross margin.' },
+  { name: 'gender', label: 'Gender', type: 'select', required: false, options: [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Non-binary', label: 'Non-binary' },
+    { value: 'Prefer not to say', label: 'Prefer not to say' },
+  ]},
   { name: 'dob', label: 'Date of Birth', type: 'date', required: false },
   { name: 'hireDate', label: 'Hire Date', type: 'date', required: false },
   { name: 'rehireDate', label: 'Rehire Date', type: 'date', required: false },
@@ -257,6 +272,16 @@ export const W2_FIELDS: FormField[] = [
 export const CONTRACT_FIELDS: FormField[] = [
   { name: 'name', label: 'Name', type: 'text', required: false, placeholder: 'Full Name' },
   { name: 'position', label: 'Position', type: 'text', required: false, placeholder: 'Job Title' },
+  { name: 'department', label: 'Department', type: 'text', required: false, placeholder: 'e.g. Engineering' },
+  { name: 'reportingManager', label: 'Reporting Manager', type: 'text', required: false, placeholder: 'Manager name' },
+  { name: 'billRate', label: 'Bill Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the client is billed per hour for this person.' },
+  { name: 'payRate', label: 'Pay Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the worker is paid per hour. Bill − Pay = your gross margin.' },
+  { name: 'gender', label: 'Gender', type: 'select', required: false, options: [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Non-binary', label: 'Non-binary' },
+    { value: 'Prefer not to say', label: 'Prefer not to say' },
+  ]},
   { name: 'dob', label: 'Date of Birth', type: 'date', required: false },
   { name: 'hireDate', label: 'Hire Date', type: 'date', required: false },
   { name: 'dor', label: 'Date of Release', type: 'date', required: false },
@@ -300,6 +325,16 @@ export const CONTRACT_FIELDS: FormField[] = [
 export const EMPLOYEE_1099_FIELDS: FormField[] = [
   { name: 'name', label: 'Name', type: 'text', required: false, placeholder: 'Full Name' },
   { name: 'position', label: 'Position', type: 'text', required: false, placeholder: 'Job Title' },
+  { name: 'department', label: 'Department', type: 'text', required: false, placeholder: 'e.g. Engineering' },
+  { name: 'reportingManager', label: 'Reporting Manager', type: 'text', required: false, placeholder: 'Manager name' },
+  { name: 'billRate', label: 'Bill Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the client is billed per hour for this person.' },
+  { name: 'payRate', label: 'Pay Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the worker is paid per hour. Bill − Pay = your gross margin.' },
+  { name: 'gender', label: 'Gender', type: 'select', required: false, options: [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Non-binary', label: 'Non-binary' },
+    { value: 'Prefer not to say', label: 'Prefer not to say' },
+  ]},
   { name: 'dob', label: 'Date of Birth', type: 'date', required: false },
   { name: 'hireDate', label: 'Hire Date', type: 'date', required: false },
   { name: 'rehireDate', label: 'Rehire Date', type: 'date', required: false },
@@ -349,6 +384,16 @@ export const EMPLOYEE_1099_FIELDS: FormField[] = [
 export const OFFSHORE_FIELDS: FormField[] = [
   { name: 'name', label: 'Name', type: 'text', required: false, placeholder: 'Full Name' },
   { name: 'position', label: 'Position', type: 'text', required: false, placeholder: 'Job Title' },
+  { name: 'department', label: 'Department', type: 'text', required: false, placeholder: 'e.g. Engineering' },
+  { name: 'reportingManager', label: 'Reporting Manager', type: 'text', required: false, placeholder: 'Manager name' },
+  { name: 'billRate', label: 'Bill Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the client is billed per hour for this person.' },
+  { name: 'payRate', label: 'Pay Rate / hr', type: 'number', required: false, placeholder: '0.00', hint: 'What the worker is paid per hour. Bill − Pay = your gross margin.' },
+  { name: 'gender', label: 'Gender', type: 'select', required: false, options: [
+    { value: 'Male', label: 'Male' },
+    { value: 'Female', label: 'Female' },
+    { value: 'Non-binary', label: 'Non-binary' },
+    { value: 'Prefer not to say', label: 'Prefer not to say' },
+  ]},
   { name: 'dob', label: 'Date of Birth', type: 'date', required: false },
   { name: 'hireDate', label: 'Hire Date', type: 'date', required: false },
   { name: 'dor', label: 'Date of Release', type: 'date', required: false },

@@ -17,6 +17,7 @@ import {
 } from '@/components/dashboard/Charts';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
 import { KpiCard, ProgressRing, Sparkline, CountUp, SectionCard } from '@/components/dashboard/dashboard-ui';
+import PartnersPanel from '@/components/dashboard/PartnersPanel';
 import type { Employee, EmployeeType } from '@/types/employee';
 
 const CLASSES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
@@ -378,6 +379,9 @@ export default function DashboardPage() {
           )}
         </SectionCard>
       </div>
+
+      {/* Top partners — tabbed table */}
+      <PartnersPanel />
 
       {isLoading && employees.length === 0 && (
         <p className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Loading workforce…</p>

@@ -12,6 +12,9 @@ import { HandbookProvider } from '@/context/HandbookContext';
 import { BenefitsProvider } from '@/context/BenefitsContext';
 import { TimesheetProvider } from '@/context/TimesheetContext';
 import { InvoiceProvider } from '@/context/InvoiceContext';
+import { I9Provider } from '@/context/I9Context';
+import { I983Provider } from '@/context/I983Context';
+import { EmployeeDocsProvider } from '@/context/EmployeeDocsContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
@@ -36,6 +39,9 @@ export default function DashboardLayout({
                 <AttendanceProvider>
                 <TimesheetProvider>
                 <InvoiceProvider>
+                <I9Provider>
+                <I983Provider>
+                <EmployeeDocsProvider>
                   <div className="flex min-h-screen bg-slate-50">
                     <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
                     <main className="app-canvas relative flex-1 min-w-0">
@@ -45,6 +51,9 @@ export default function DashboardLayout({
                       </div>
                     </main>
                   </div>
+                </EmployeeDocsProvider>
+                </I983Provider>
+                </I9Provider>
                 </InvoiceProvider>
                 </TimesheetProvider>
                 </AttendanceProvider>
