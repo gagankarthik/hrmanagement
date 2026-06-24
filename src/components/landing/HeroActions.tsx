@@ -45,14 +45,14 @@ export function HeroActions({ align = 'start' }: { align?: 'start' | 'center' })
   return (
     <div className={wrap}>
       <Link
-        href="/signup"
+        href="/login"
         className="btn-primary group justify-center px-6 py-3 text-base sm:justify-start"
       >
-        Get started
+        Sign in
         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={1.75} />
       </Link>
-      <Link href="/login" className="btn-ghost justify-center px-6 py-3 text-base sm:justify-start">
-        Log in
+      <Link href="/signup" className="btn-ghost justify-center px-6 py-3 text-base sm:justify-start">
+        Request access
       </Link>
     </div>
   );

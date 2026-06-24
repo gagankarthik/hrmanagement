@@ -1,22 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
+import { Menu, X, LayoutDashboard, LogOut, ChevronDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { BrandMark } from '@/components/ui/brand-mark';
 import { BRAND } from '@/config/brand';
 
 const navLinks = [
-  { href: '#platform', label: 'Platform' },
-  { href: '#features', label: 'Capabilities' },
-  { href: '#why', label: 'Why us' },
-  { href: '#trust', label: 'Security' },
+  { href: '#culture', label: 'Why us' },
+  { href: '#benefits', label: 'Benefits' },
+  { href: '#join', label: 'Join us' },
 ];
-
-const DEMO_HREF = `mailto:${BRAND.contactEmail}?subject=${encodeURIComponent(`${BRAND.name} demo`)}`;
 
 function Logo({ className, onDark = false }: { className?: string; onDark?: boolean }) {
   return (
@@ -55,6 +52,93 @@ function Avatar({ name, email }: { name?: string; email?: string }) {
   );
 }
 
+/** Authenticated profile control: avatar → dropdown with user info, dashboard, sign out. */
+function UserMenu({ name, email, onSignOut }: { name?: string; email?: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const display = name || email;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Open profile menu"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-slate-100',
+          open && 'bg-slate-100',
+        )}
+      >
+        <Avatar name={name} email={email} />
+        {display && (
+          <span className="hidden max-w-[9rem] truncate text-sm font-medium text-slate-700 sm:block">
+            {display}
+          </span>
+        )}
+        <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', open && 'rotate-180')} strokeWidth={2} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="surface absolute right-0 mt-2 w-64 overflow-hidden p-0 animate-in fade-in zoom-in-95 duration-100"
+        >
+          <div className="flex items-center gap-3 border-b border-slate-100 px-3.5 py-3">
+            <Avatar name={name} email={email} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">{name || 'Signed in'}</p>
+              {email && <p className="truncate text-xs text-slate-500">{email}</p>}
+            </div>
+          </div>
+          <div className="p-1.5">
+            <Link
+              href="/dashboard"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <LayoutDashboard className="h-4 w-4" strokeWidth={1.75} /> Dashboard
+            </Link>
+            <Link
+              href="/dashboard/profile"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <Users className="h-4 w-4" strokeWidth={1.75} /> Your profile
+            </Link>
+            <div className="my-1 h-px bg-slate-100" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); onSignOut(); }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" strokeWidth={1.75} /> Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Landing site navigation — sticky, on-brand, mobile-responsive, auth-aware.
  * Lives inside AuthProvider (wired in src/app/layout.tsx), so useAuth is safe here.
@@ -75,80 +159,57 @@ export function SiteNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e2e8f0] bg-[#f8fafc]/85 backdrop-blur">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
+    <header className="sticky top-0 z-40 border-b border-[#e2e8f0] bg-white/85 backdrop-blur-md">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
         <Logo />
 
-        {/* Center links */}
-        <div className="hidden items-center gap-8 lg:flex">
-          {navLinks.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="text-sm font-medium text-slate-600 transition-colors hover:text-brand-900"
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-
-        {/* Right: auth-aware actions (desktop) */}
-        <div className="hidden items-center gap-3 lg:flex">
-          {isLoading ? (
-            // Neutral placeholder while auth resolves — no flicker, no crash
-            <div className="flex items-center gap-3" aria-hidden>
-              <div className="h-4 w-16 animate-pulse rounded-full bg-black/5" />
-              <div className="h-9 w-28 animate-pulse rounded-full bg-black/5" />
-            </div>
-          ) : isAuthenticated ? (
-            <>
-              <span className="flex items-center gap-2.5">
-                <Avatar name={user?.name} email={user?.email} />
-                {displayName && (
-                  <span className="max-w-[10rem] truncate text-sm font-medium text-slate-700">
-                    {displayName}
-                  </span>
-                )}
-              </span>
-              <Link href="/dashboard" className="btn-primary">
-                <LayoutDashboard className="h-4 w-4" strokeWidth={1.75} />
-                Go to dashboard
-              </Link>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="text-sm font-semibold text-slate-600 transition-colors hover:text-brand-900"
+          {/* Center links */}
+          <div className="hidden items-center gap-1 lg:flex">
+            {navLinks.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-brand-50 hover:text-brand-900"
               >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="text-sm font-semibold text-brand-900 transition-colors hover:underline"
-              >
-                Log in
-              </Link>
-              <a href={DEMO_HREF} className="btn-ghost">
-                Book a demo
+                {l.label}
               </a>
-              <Link href="/signup" className="btn-primary">
-                Get started
-              </Link>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* Hamburger (mobile) */}
-        <button
-          onClick={() => setOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-900 hover:bg-black/5 lg:hidden"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5" strokeWidth={1.75} />
-        </button>
-      </nav>
+          {/* Right: auth-aware actions (desktop) */}
+          <div className="hidden items-center gap-2 lg:flex">
+            {isLoading ? (
+              // Neutral placeholder while auth resolves — no flicker, no crash
+              <div className="flex items-center gap-2" aria-hidden>
+                <div className="h-4 w-14 animate-pulse rounded-full bg-black/5" />
+                <div className="h-9 w-28 animate-pulse rounded-full bg-black/5" />
+              </div>
+            ) : isAuthenticated ? (
+              <UserMenu name={user?.name} email={user?.email} onSignOut={handleSignOut} />
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  className="rounded-full px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-brand-900"
+                >
+                  Request access
+                </Link>
+                <Link href="/login" className="btn-primary">
+                  Sign in
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Hamburger (mobile) */}
+          <button
+            onClick={() => setOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-brand-900 hover:bg-black/5 lg:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+        </nav>
 
       {/* Mobile drawer */}
       {open && (
@@ -218,25 +279,18 @@ export function SiteNav() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="btn-ghost w-full"
-                  >
-                    Log in
-                  </Link>
-                  <a
-                    href={DEMO_HREF}
-                    onClick={() => setOpen(false)}
-                    className="btn-ghost w-full"
-                  >
-                    Book a demo
-                  </a>
-                  <Link
                     href="/signup"
+                    onClick={() => setOpen(false)}
+                    className="btn-ghost w-full"
+                  >
+                    Request access
+                  </Link>
+                  <Link
+                    href="/login"
                     onClick={() => setOpen(false)}
                     className="btn-primary w-full"
                   >
-                    Get started
+                    Sign in
                   </Link>
                 </div>
               )}

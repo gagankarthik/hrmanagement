@@ -20,6 +20,6 @@ export const BRAND = {
     'Run your entire workforce — W-2, contract, 1099, and offshore — alongside the client, vendor, and subcontractor relationships, compliance tracking, and reporting that staffing and consulting firms actually need.',
   /** Short value statement for cards / social. */
   shortDescription: 'The workforce system for staffing and consulting firms.',
-  contactEmail: 'hello@oceanbluecorp.com',
+  contactEmail: 'hr@oceanbluecorp.com',
   domain: 'oceanbluecorp.com',
 } as const;
