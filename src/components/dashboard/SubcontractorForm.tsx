@@ -2,8 +2,4 @@
  * @deprecated Import from `@/features/subcontractors` instead.
  * Re-exported here for backward compatibility during the architecture migration.
  */
-export type {
-  Subcontractor,
-  SubcontractorFormData,
-  SubcontractorWithCount,
-} from '@/features/subcontractors/domain/subcontractor.types';
+export { default } from '@/features/subcontractors/ui/SubcontractorForm';

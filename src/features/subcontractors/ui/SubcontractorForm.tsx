@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useSubcontractors } from '@/context/SubcontractorContext';
-import { Subcontractor, SubcontractorFormData } from '@/types/subcontractor';
+import { useSubcontractors } from '../state/subcontractor.context';
+import { Subcontractor, SubcontractorFormData } from '../domain/subcontractor.types';
 import { useToast } from '@/components/ui/toast';
 import { SectionCard } from '@/components/ui/section-card';
 import { UserCheck, ShieldCheck } from 'lucide-react';

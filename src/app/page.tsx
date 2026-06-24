@@ -1,8 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Users, Building2, Workflow, CalendarClock, BarChart3, UploadCloud,
-  Check, Lock, FileCheck2, KeyRound, ServerCog, Star, FileDown, Plug, Sparkles,
+  Check, Lock, FileCheck2, KeyRound, ServerCog, FileDown, Plug, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BRAND } from '@/config/brand';
@@ -22,7 +23,7 @@ const photos = {
   onboarding: `https://images.unsplash.com/photo-1556761175-b413da4baf72${IMG}&w=1200`,
 };
 
-/** A framed, brand-tinted photo so Unsplash imagery integrates with the bone canvas. */
+/** A cleanly framed photo — soft neutral shadow, no heavy tint or chrome. */
 function Photo({
   src,
   alt,
@@ -37,18 +38,13 @@ function Photo({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-[1.4rem] border border-[#e2e8f0] bg-white shadow-[0_36px_70px_-40px_rgba(29,78,216,0.5)] ring-1 ring-black/[0.03]',
+        'relative overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-[0_24px_50px_-32px_rgba(15,23,42,0.35)]',
         className,
       )}
     >
       <div className={aspect}>
         <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
       </div>
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{ background: 'linear-gradient(180deg, rgba(29,78,216,0.05) 0%, transparent 38%, rgba(29,78,216,0.16) 100%)' }}
-      />
     </div>
   );
 }
@@ -113,37 +109,13 @@ const modules = [
 
 const industries = ['IT & engineering staffing', 'Healthcare staffing', 'Consulting & SI', 'Managed services (MSP)', 'Light industrial'];
 
-const facts = [
-  { v: '4', k: 'employment classes, one system' },
-  { v: '5', k: 'relationship types per worker' },
-  { v: '1', k: 'record, fully in your control' },
-];
-
-const quotes = [
-  { q: 'Our W-2, 1099, and offshore people finally live in one place — no more one spreadsheet per team.', who: 'Operations Director', org: 'IT staffing firm' },
-  { q: 'Work-authorization expirations used to surprise us. Now they surface months ahead.', who: 'Compliance Lead', org: 'Healthcare staffing' },
-  { q: 'Onboarding a batch of contractors is a paste-and-import now, not a week of data entry.', who: 'Delivery Manager', org: 'Consulting practice' },
-];
-
-const tiers = [
-  {
-    name: 'Starter',
-    for: 'Small teams getting organized',
-    features: ['Unified worker records', 'Clients, vendors & subcontractors', 'CSV & PDF exports', 'Email support'],
-    highlight: false,
-  },
-  {
-    name: 'Growth',
-    for: 'Growing staffing & consulting firms',
-    features: ['Everything in Starter', 'Bulk spreadsheet onboarding', 'Compliance & expiry alerts', 'Analytics & reporting'],
-    highlight: true,
-  },
-  {
-    name: 'Scale',
-    for: 'Large, multi-client operations',
-    features: ['Everything in Growth', 'Advanced reporting', 'Role-based access controls', 'Priority support'],
-    highlight: false,
-  },
+const whyUs = [
+  { icon: Building2, title: 'One accountable partner', body: 'IT staffing, enterprise solutions, and managed services under a single point of accountability — no finger-pointing across vendors.' },
+  { icon: Users, title: 'Talent that fits, fast', body: 'Vetted W-2, contract, 1099, and offshore professionals matched to your roles and ramped without the usual hiring lag.' },
+  { icon: ServerCog, title: 'Enterprise & government ready', body: 'Proven delivering for large enterprises and government agencies, with the process and rigor those engagements demand.' },
+  { icon: Lock, title: 'Security & compliance first', body: 'Work authorization, COI, and document compliance tracked end to end — encrypted, role-scoped, and audit-ready.' },
+  { icon: BarChart3, title: 'Visibility you can act on', body: 'Real-time dashboards on headcount, utilization, margins, and compliance — the whole engagement at a glance.' },
+  { icon: CalendarClock, title: 'Built to scale with you', body: 'From a single placement to a multi-client bench, the same clean system grows without the rework.' },
 ];
 
 const faqs = [
@@ -164,9 +136,12 @@ const trustPoints = [
 
 function FooterLogo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label={`${BRAND.name} home`}>
-      <BrandMark size={34} variant="light" className="shadow-sm" />
-      <span className="font-display text-lg font-bold tracking-tight text-white">{BRAND.name}</span>
+    <Link
+      href="/"
+      className="inline-flex items-center rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-white/10 transition-transform hover:-translate-y-0.5"
+      aria-label={`${BRAND.name} home`}
+    >
+      <Image src="/logo.png" alt={BRAND.name} width={277} height={76} className="h-8 w-auto" />
     </Link>
   );
 }
@@ -188,34 +163,26 @@ export default function LandingPage() {
       <SiteNav />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden border-b border-[#e2e8f0] grain">
-        <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-          <div className="absolute -right-44 -top-48 h-[44rem] w-[44rem] rounded-full bg-gradient-to-br from-brand-200/55 via-brand-300/25 to-transparent blur-3xl" />
-          <div className="absolute -left-28 top-56 h-[24rem] w-[24rem] rounded-full bg-accent-100/45 blur-3xl" />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'radial-gradient(rgba(29,78,216,0.08) 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-              WebkitMaskImage: 'radial-gradient(125% 92% at 80% 6%, #000 0%, transparent 60%)',
-              maskImage: 'radial-gradient(125% 92% at 80% 6%, #000 0%, transparent 60%)',
-            }}
-          />
-        </div>
+      <section className="relative overflow-hidden border-b border-[#e2e8f0]">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          aria-hidden
+          style={{ background: 'radial-gradient(78% 60% at 88% 0%, rgba(29,78,216,0.07) 0%, transparent 55%)' }}
+        />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="max-w-xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/70 px-3 py-1 text-xs font-semibold text-brand-700 backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-accent-300" />
-              {BRAND.tagline}
+              IT staffing · Enterprise solutions · Managed services
             </span>
             <h1 className="mt-5 text-balance font-display text-4xl font-bold leading-[1.04] tracking-tight text-brand-900 sm:text-5xl lg:text-[3.6rem]">
-              Run your whole workforce in one place
+              The people and platform behind your workforce
             </h1>
             <p className="mt-6 max-w-lg text-pretty text-lg leading-relaxed text-slate-600">
-              {BRAND.name} keeps every worker — W-2, contract, 1099, and offshore — with the
-              clients, vendors, subcontractors, compliance, and reporting that staffing and
-              consulting firms actually operate on.
+              {BRAND.name} is one accountable partner for enterprises and government agencies —
+              bringing every W-2, contract, 1099, and offshore professional together with the
+              clients, compliance, and reporting your operation runs on, in a single system.
             </p>
             <div className="mt-8">
               <HeroActions />
@@ -223,10 +190,10 @@ export default function LandingPage() {
 
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-500">
               <span className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-brand-600" strokeWidth={2.25} /> W-2 · Contract · 1099 · Offshore
+                <Check className="h-4 w-4 text-brand-600" strokeWidth={2.25} /> Enterprises &amp; government agencies
               </span>
               <span className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-brand-600" strokeWidth={2.25} /> Bulk import from a spreadsheet
+                <Check className="h-4 w-4 text-brand-600" strokeWidth={2.25} /> W-2 · Contract · 1099 · Offshore
               </span>
               <span className="inline-flex items-center gap-2">
                 <Check className="h-4 w-4 text-brand-600" strokeWidth={2.25} /> Your data, your control
@@ -332,59 +299,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats ── */}
-      <section className="border-b border-[#e2e8f0]">
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">Made to scale</p>
-            <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-brand-900 sm:text-4xl">
-              One system that grows with your operation
-            </h2>
-            <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600">
-              From a handful of placements to a multi-client bench, {BRAND.name} keeps the same clean
-              record — so reporting stays trustworthy as you grow.
-            </p>
-          </div>
-          <div className="mx-auto mt-12 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-[#e2e8f0] bg-[#e2e8f0] sm:grid-cols-3">
-            {facts.map((f) => (
-              <div key={f.k} className="bg-white px-6 py-8 text-center">
-                <p className="tnum font-display text-4xl font-bold text-brand-900">{f.v}</p>
-                <p className="mt-1.5 text-sm text-slate-500">{f.k}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Quotes ── */}
-      <section className="border-b border-[#e2e8f0] bg-white/50">
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-          <div className="max-w-2xl">
-            <p className="eyebrow">Why teams switch</p>
-            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-brand-900 sm:text-4xl">
-              The outcomes operations teams are after
-            </h2>
-          </div>
-          <div className="mt-12 grid gap-5 lg:grid-cols-3">
-            {quotes.map((t) => (
-              <figure key={t.who} className="surface flex flex-col p-6">
-                <div className="flex gap-0.5 text-accent-300" aria-hidden>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" strokeWidth={0} />
-                  ))}
-                </div>
-                <blockquote className="mt-4 flex-1 text-pretty text-[15px] leading-relaxed text-brand-900">“{t.q}”</blockquote>
-                <figcaption className="mt-5 border-t border-[#efe9dd] pt-4 text-sm">
-                  <span className="font-semibold text-brand-900">{t.who}</span>
-                  <span className="text-slate-400"> · {t.org}</span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-          <p className="mt-6 text-xs text-slate-400">Representative outcomes from staffing and consulting operations.</p>
-        </div>
-      </section>
-
       {/* ── Fits your workflow ── */}
       <section className="border-b border-[#e2e8f0]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
@@ -412,54 +326,39 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
-      <section id="pricing" className="border-b border-[#e2e8f0] bg-white/50">
+      {/* ── Why work with us ── */}
+      <section id="why" className="border-b border-[#e2e8f0] bg-white/50">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow">Pricing</p>
-            <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-brand-900 sm:text-4xl">
-              Straightforward plans, priced to your headcount
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-700 ring-1 ring-accent-100">
+              <Sparkles className="h-3 w-3" strokeWidth={2} /> Why {BRAND.name}
+            </span>
+            <h2 className="mt-4 text-balance font-display text-3xl font-bold tracking-tight text-brand-900 sm:text-4xl">
+              Why teams work with us
             </h2>
             <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600">
-              Pick the tier that matches your operation. Pricing scales with the size of your active
-              workforce — book a demo for a quote tailored to your team.
+              One accountable partner for the people and platforms behind enterprises and government
+              agencies — staffing, enterprise solutions, and managed services, all run on a single
+              source of truth.
             </p>
           </div>
 
-          <div className="mt-12 grid items-stretch gap-5 lg:grid-cols-3">
-            {tiers.map((t) => (
-              <div
-                key={t.name}
-                className={cn(
-                  'relative flex flex-col rounded-2xl border bg-white p-7',
-                  t.highlight
-                    ? 'border-brand-900 shadow-[0_30px_60px_-34px_rgba(29,78,216,0.5)] ring-1 ring-brand-900/10'
-                    : 'border-[#e2e8f0] shadow-[0_1px_2px_rgba(29,78,216,0.04)]',
-                )}
-              >
-                {t.highlight && (
-                  <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-accent-300 px-3 py-1 text-[11px] font-bold text-[#0a1730]">
-                    <Sparkles className="h-3 w-3" strokeWidth={2} /> Most popular
-                  </span>
-                )}
-                <h3 className="font-display text-xl font-bold text-brand-900">{t.name}</h3>
-                <p className="mt-1 text-sm text-slate-500">{t.for}</p>
-                <p className="mt-5 font-display text-3xl font-bold text-brand-900">
-                  Custom <span className="text-sm font-medium text-slate-400">pricing</span>
-                </p>
-                <ul className="mt-6 grid flex-1 gap-3">
-                  {t.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5">
-                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" strokeWidth={2.25} />
-                      <span className="text-sm text-slate-700">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href={DEMO_HREF} className={cn('mt-7', t.highlight ? 'btn-accent' : 'btn-ghost')}>
-                  Book a demo
-                </a>
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {whyUs.map((c) => (
+              <div key={c.title} className="surface surface-hover p-6">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                  <c.icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <h3 className="mt-4 font-display text-lg font-bold text-brand-900">{c.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{c.body}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-12 flex justify-center">
+            <a href={DEMO_HREF} className="btn-accent px-6 py-3 text-base">
+              Start a conversation
+            </a>
           </div>
         </div>
       </section>
@@ -500,16 +399,16 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <div className="max-w-2xl">
             <h2 className="text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Bring your whole workforce into one system
+              Put {BRAND.name} behind your workforce
             </h2>
             <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-white/65">
-              Open the dashboard and see your people, clients, vendors, and compliance the way your
-              operation actually works.
+              Sign in to manage your people, clients, vendors, and compliance in one place — or start
+              a conversation about staffing, enterprise solutions, and managed services.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <HeroActions />
               <a href={DEMO_HREF} className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-white/10">
-                Book a demo
+                Start a conversation
               </a>
             </div>
           </div>
@@ -542,22 +441,13 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <nav aria-label="Product" className="lg:col-span-2 lg:col-start-6">
+              <nav aria-label="Product" className="lg:col-span-3 lg:col-start-7">
                 <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Product</h4>
                 <ul className="mt-4 space-y-3">
                   <li><a href="#platform" className="text-sm text-white/70 transition-colors hover:text-white">Platform</a></li>
-                  <li><a href="#features" className="text-sm text-white/70 transition-colors hover:text-white">Features</a></li>
-                  <li><a href="#pricing" className="text-sm text-white/70 transition-colors hover:text-white">Pricing</a></li>
+                  <li><a href="#features" className="text-sm text-white/70 transition-colors hover:text-white">Capabilities</a></li>
+                  <li><a href="#why" className="text-sm text-white/70 transition-colors hover:text-white">Why us</a></li>
                   <li><a href="#trust" className="text-sm text-white/70 transition-colors hover:text-white">Security</a></li>
-                </ul>
-              </nav>
-
-              <nav aria-label="Use cases" className="lg:col-span-3">
-                <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Who it&apos;s for</h4>
-                <ul className="mt-4 space-y-3">
-                  {industries.slice(0, 4).map((i) => (
-                    <li key={i}><span className="text-sm text-white/70">{i}</span></li>
-                  ))}
                 </ul>
               </nav>
 

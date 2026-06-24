@@ -11,8 +11,8 @@ import { BRAND } from '@/config/brand';
 
 const navLinks = [
   { href: '#platform', label: 'Platform' },
-  { href: '#features', label: 'Features' },
-  { href: '#pricing', label: 'Pricing' },
+  { href: '#features', label: 'Capabilities' },
+  { href: '#why', label: 'Why us' },
   { href: '#trust', label: 'Security' },
 ];
 
