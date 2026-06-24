@@ -1,4 +1,6 @@
 import { Amplify } from 'aws-amplify';
+import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
+import { CookieStorage } from 'aws-amplify/utils';
 
 // NOTE: AWS access keys must NEVER live in this file. It is imported by client
 // components (Amplify Cognito setup), so anything referenced here is bundled
@@ -34,6 +36,16 @@ const amplifyConfig = {
 
 export function configureAmplify() {
   Amplify.configure(amplifyConfig);
+
+  // Store Cognito tokens in cookies (instead of localStorage) so they are sent
+  // on same-origin requests to /api/* and can be verified by the Edge
+  // middleware. `secure` is enabled only over HTTPS so local http dev still works.
+  if (typeof window !== 'undefined') {
+    const secure = window.location.protocol === 'https:';
+    cognitoUserPoolsTokenProvider.setKeyValueStorage(
+      new CookieStorage({ path: '/', sameSite: 'lax', secure, expires: 30 }),
+    );
+  }
 }
 
 export default amplifyConfig;

@@ -148,20 +148,20 @@ function SidebarContent({
                     href={item.href}
                     onClick={onClose}
                     title={collapsed ? item.label : undefined}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-150',
+                      'group relative flex items-center rounded-lg text-sm transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
                       collapsed ? 'h-9 w-full justify-center px-0' : 'gap-2.5 px-3 py-2',
                       active
-                        ? 'bg-gradient-to-r from-brand-50 to-brand-50/60 text-brand-700 shadow-sm shadow-brand-100'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-brand-50 font-semibold text-brand-700'
+                        : 'font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     )}
                   >
-                    {active && !collapsed && (
-                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-gradient-to-b from-brand-500 to-brand-600" />
+                    {active && (
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-brand-600" />
                     )}
                     <Icon strokeWidth={1.75} className={cn('h-[18px] w-[18px] shrink-0 transition-colors', active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
                     {!collapsed && item.label}
-                    {collapsed && active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-brand-500 to-brand-600" />}
                   </Link>
                 );
               })}

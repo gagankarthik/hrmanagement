@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
+import { Users, ShieldCheck, BarChart3, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword } = useAuth();
@@ -153,7 +153,15 @@ export default function LoginPage() {
       </div>
 
       {/* Right sign-in panel */}
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f8fafc] px-6 py-12 sm:px-8">
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto bg-[#f8fafc] px-5 py-16 sm:px-8 sm:py-12">
+        {/* Back to home */}
+        <Link
+          href="/"
+          className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-brand-700 sm:left-6 sm:top-6"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to home
+        </Link>
+
         {/* Subtle light-theme atmosphere behind the card */}
         <div
           className="pointer-events-none absolute inset-0"
