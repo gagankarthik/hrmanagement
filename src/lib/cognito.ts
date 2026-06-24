@@ -26,11 +26,13 @@ const secretAccessKey =
   process.env.APP_AWS_SECRET_ACCESS_KEY ||
   process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY;
 
+// Server override (AWS_USER_POOL_ID) falls back to the public canonical var.
+// No hardcoded fallback — a missing value fails loudly instead of silently
+// using the wrong pool.
 export const USER_POOL_ID =
   process.env.AWS_USER_POOL_ID ||
-  process.env.COGNITO_USER_POOL_ID ||
   process.env.NEXT_PUBLIC_AWS_USER_POOL_ID ||
-  'us-east-2_U2MoiBT97';
+  '';
 
 const client = new CognitoIdentityProviderClient({
   region,

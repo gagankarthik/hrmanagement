@@ -20,8 +20,6 @@ frontend:
         - echo "NEXT_PUBLIC_AWS_REGION=$NEXT_PUBLIC_AWS_REGION" >> .env.production
         - echo "NEXT_PUBLIC_AWS_USER_POOL_ID=$NEXT_PUBLIC_AWS_USER_POOL_ID" >> .env.production
         - echo "NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=$NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID" >> .env.production
-        - echo "NEXT_PUBLIC_COGNITO_USER_POOL_ID=$NEXT_PUBLIC_COGNITO_USER_POOL_ID" >> .env.production
-        - echo "NEXT_PUBLIC_COGNITO_CLIENT_ID=$NEXT_PUBLIC_COGNITO_CLIENT_ID" >> .env.production
         - echo "NEXT_PUBLIC_COGNITO_DOMAIN=$NEXT_PUBLIC_COGNITO_DOMAIN" >> .env.production
         - echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.production
         - npm run build

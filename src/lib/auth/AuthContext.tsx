@@ -35,8 +35,8 @@ const createUserManagerConfig = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return {
-    authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}`,
-    client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "",
+    authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID}`,
+    client_id: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID || "",
     redirect_uri: `${origin}/auth/callback`,
     post_logout_redirect_uri: origin,
     response_type: "code",
@@ -46,12 +46,12 @@ const createUserManagerConfig = () => {
       : undefined,
     // Cognito specific metadata
     metadata: {
-      issuer: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}`,
+      issuer: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID}`,
       authorization_endpoint: `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/authorize`,
       token_endpoint: `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/token`,
       userinfo_endpoint: `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/oauth2/userInfo`,
       end_session_endpoint: `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/logout`,
-      jwks_uri: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}/.well-known/jwks.json`,
+      jwks_uri: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID}/.well-known/jwks.json`,
     },
   };
 };
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userManager = getUserManager();
       // For Cognito, we use the same authorize endpoint but can add a signup hint
       // The Cognito Hosted UI will show signup by navigating to the signup URL directly
-      const signUpUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/signup?client_id=${process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID}&response_type=code&scope=openid+email+phone&redirect_uri=${encodeURIComponent(window.location.origin + "/auth/callback")}`;
+      const signUpUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/signup?client_id=${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}&response_type=code&scope=openid+email+phone&redirect_uri=${encodeURIComponent(window.location.origin + "/auth/callback")}`;
       window.location.href = signUpUrl;
     } catch (err) {
       console.error("Sign up error:", err);
@@ -188,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // For production, redirect to Cognito logout
-      const logoutUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/logout?client_id=${process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent(window.location.origin)}`;
+      const logoutUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/logout?client_id=${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}&logout_uri=${encodeURIComponent(window.location.origin)}`;
       window.location.href = logoutUrl;
     } catch (err) {
       console.error("Sign out error:", err);

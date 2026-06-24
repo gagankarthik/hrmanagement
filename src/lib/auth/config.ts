@@ -1,7 +1,7 @@
 // AWS Cognito OIDC Configuration - Uses environment variables
 export const cognitoAuthConfig = {
-  authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID}`,
-  client_id: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "",
+  authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID}`,
+  client_id: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID || "",
   redirect_uri: typeof window !== "undefined"
     ? `${window.location.origin}/auth/callback`
     : `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
