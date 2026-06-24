@@ -34,7 +34,7 @@ export function CountUp({ value, decimals = 0 }: { value: number; decimals?: num
 
 /* ── Circular progress ring ───────────────────────────────────────────────── */
 export function ProgressRing({
-  value, size = 60, stroke = 7, color = '#103d33', track = '#e6e0d4', label,
+  value, size = 60, stroke = 7, color = '#1d4ed8', track = '#e2e8f0', label,
 }: { value: number; size?: number; stroke?: number; color?: string; track?: string; label?: React.ReactNode }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;

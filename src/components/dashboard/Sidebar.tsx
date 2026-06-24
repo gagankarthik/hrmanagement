@@ -11,6 +11,7 @@ import {
   TrendingUp, Clock, Receipt, Banknote, BadgeCheck, GraduationCap, FolderArchive,
   LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings,
 } from 'lucide-react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { BrandMark } from '@/components/ui/brand-mark';
 
@@ -106,12 +107,17 @@ function SidebarContent({
     <div className="flex h-full flex-col border-r border-slate-200/70 bg-white/95 backdrop-blur-sm">
       {/* Logo */}
       <div className={cn('flex h-14 items-center border-b border-slate-100', collapsed ? 'justify-center px-2' : 'gap-2.5 px-4')}>
-        <BrandMark size={32} className="shadow-sm shadow-brand-900/15" />
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-[15px] font-bold leading-none text-slate-900">Cadre</p>
-            <p className="mt-0.5 text-[10px] tracking-wide text-slate-400">Workforce Platform</p>
-          </div>
+        {collapsed ? (
+          <BrandMark size={32} className="shadow-sm shadow-brand-900/15" />
+        ) : (
+          <Image
+            src="/logo.png"
+            alt="Ocean Blue"
+            width={277}
+            height={76}
+            priority
+            className="h-8 w-auto"
+          />
         )}
         {onClose && (
           <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden">

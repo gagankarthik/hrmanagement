@@ -1,26 +1,27 @@
 import type { Metadata } from "next";
-import { Hanken_Grotesk, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgressBar } from "@/components/ui/route-progress";
 import { BRAND } from "@/config/brand";
 
-// Body — warm, friendly humanist sans
-const hankenGrotesk = Hanken_Grotesk({
+// Brand typeface — Geist Sans across display and body (Ocean Blue brand kit)
+const geistSans = Geist({
   variable: "--font-hanken",
   subsets: ["latin"],
   display: "swap",
 });
 
-// Display — bold, characterful grotesque for headings
-const bricolageDisplay = Bricolage_Grotesque({
+// Display alias — same Geist family, used by the font-display utility for headings
+const geistDisplay = Geist({
   variable: "--font-bricolage",
   subsets: ["latin"],
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+// Geist Mono for code and labels
+const geistMono = Geist_Mono({
   variable: "--font-jb-mono",
   subsets: ["latin"],
   display: "swap",
@@ -65,7 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${hankenGrotesk.variable} ${bricolageDisplay.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistDisplay.variable} ${geistMono.variable} antialiased`}
       >
         <a
           href="#main"

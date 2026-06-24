@@ -35,13 +35,10 @@ export default function EmployeesPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [importOpen, setImportOpen] = useState(false);
-  const [hideTerminated, setHideTerminated] = useState(true);
 
   const filteredByTab = useMemo(() => {
-    let list = activeTab === 'all' ? employees : employees.filter((emp) => emp.type === activeTab);
-    if (hideTerminated) list = list.filter((emp) => (emp as { status?: string }).status !== 'Terminated');
-    return list;
-  }, [employees, activeTab, hideTerminated]);
+    return activeTab === 'all' ? employees : employees.filter((emp) => emp.type === activeTab);
+  }, [employees, activeTab]);
 
   const getTabCount = (tabId: TabType): number => {
     if (tabId === 'all') return stats.totalEmployees;
@@ -87,7 +84,7 @@ export default function EmployeesPage() {
 
       {/* Tab navigation */}
       <div className="surface overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-4">
           <div className="flex items-center gap-1 overflow-x-auto">
           {tabs.map((tab) => {
             const count = getTabCount(tab.id);
@@ -114,19 +111,6 @@ export default function EmployeesPage() {
             );
           })}
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={!hideTerminated}
-            onClick={() => setHideTerminated((val) => !val)}
-            className="flex shrink-0 items-center gap-2 pl-2"
-            title={hideTerminated ? 'Hiding terminated employees — click to include them' : 'Showing terminated employees — click to hide them'}
-          >
-            <span className="hidden text-xs font-medium text-slate-600 sm:inline">Hide terminated</span>
-            <span className={cn('relative h-5 w-9 rounded-full transition-colors', hideTerminated ? 'bg-brand-600' : 'bg-slate-300')}>
-              <span className={cn('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all', hideTerminated ? 'left-[18px]' : 'left-0.5')} />
-            </span>
-          </button>
         </div>
 
         <div className="p-1">

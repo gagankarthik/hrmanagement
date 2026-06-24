@@ -10,28 +10,28 @@
   --font-sans: var(--font-hanken);
   --font-mono: var(--font-jb-mono);
 
-  /* Brand — "Forest" deep evergreen scale (dark → light, monotonic) */
-  --color-brand-50: #ecf5ef;
-  --color-brand-100: #d2e8dd;
-  --color-brand-200: #a8d0bf;
-  --color-brand-300: #79b49b;
-  --color-brand-400: #4e977e;
-  --color-brand-500: #357e66;
-  --color-brand-600: #266b55;
-  --color-brand-700: #1c5a49;
-  --color-brand-800: #16493b;
-  --color-brand-900: #103d33;
-  --color-brand-950: #0a2a23;
+  /* Brand — Ocean Blue "Cobalt → Navy" scale (light → dark, monotonic) */
+  --color-brand-50: #eff4ff;
+  --color-brand-100: #dbe6fe;
+  --color-brand-200: #bfd3fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #6090fa;
+  --color-brand-500: #3b6cf6;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1740ad;
+  --color-brand-800: #183a8a;
+  --color-brand-900: #0e2147;
+  --color-brand-950: #0a1730;
 
-  /* Accent — "Amber" (the single brand accent) */
-  --color-accent-50: #fbf3e3;
-  --color-accent-100: #f4e2c2;
-  --color-accent-200: #eccd97;
-  --color-accent-300: #e0a458;
-  --color-accent-400: #d4923f;
-  --color-accent-500: #c8893a;
-  --color-accent-600: #a66e29;
-  --color-accent-700: #855620;
+  /* Accent — Ocean Blue "Cyan" (the single brand accent) */
+  --color-accent-50: #ecfdff;
+  --color-accent-100: #cff7fd;
+  --color-accent-200: #a3eef9;
+  --color-accent-300: #5ce0f7;
+  --color-accent-400: #2ad8ef;
+  --color-accent-500: #14bfe0;
+  --color-accent-600: #0e9cc0;
+  --color-accent-700: #107c9c;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -77,7 +77,7 @@
   --card-foreground: oklch(0.147 0.004 49.3);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.147 0.004 49.3);
-  --primary: #103d33;
+  --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -89,12 +89,12 @@
   --border: oklch(0.922 0.005 34.3);
   --input: oklch(0.922 0.005 34.3);
   --ring: oklch(0.714 0.014 41.2);
-  /* Cohesive forest + amber + sage chart palette (was generic blue) */
-  --chart-1: #1c5a49;
-  --chart-2: #e0a458;
-  --chart-3: #4e977e;
-  --chart-4: #a66e29;
-  --chart-5: #a8d0bf;
+  /* Cohesive ocean cobalt + cyan + indigo chart palette */
+  --chart-1: #1d4ed8;
+  --chart-2: #2ad8ef;
+  --chart-3: #6366f1;
+  --chart-4: #1740ad;
+  --chart-5: #93b4fd;
   --radius: 0.625rem;
   --sidebar: oklch(0.986 0.002 67.8);
   --sidebar-foreground: oklch(0.147 0.004 49.3);
@@ -200,41 +200,41 @@
   /* The atmospheric canvas behind every dashboard page.
      Soft layered radial tints + a whisper-faint grid for depth. */
   .app-canvas {
-    background-color: #f4f1ea; /* bone */
+    background-color: #f8fafc; /* surface */
     background-image:
-      radial-gradient(115% 115% at 0% 0%, rgba(16, 61, 51, 0.045) 0%, transparent 42%),
-      radial-gradient(115% 115% at 100% 0%, rgba(224, 164, 88, 0.05) 0%, transparent 40%);
+      radial-gradient(115% 115% at 0% 0%, rgba(29, 78, 216, 0.05) 0%, transparent 42%),
+      radial-gradient(115% 115% at 100% 0%, rgba(42, 216, 239, 0.06) 0%, transparent 40%);
     background-attachment: fixed, fixed;
   }
 
-  /* Elevated card surface — bone border + soft, forest-tinted shadow. */
+  /* Elevated card surface — slate border + soft, navy-tinted shadow. */
   .surface {
     @apply rounded-2xl border bg-white;
-    border-color: #e6e0d4;
+    border-color: #e2e8f0;
     box-shadow:
-      0 1px 2px rgba(16, 61, 51, 0.04),
-      0 8px 24px -16px rgba(16, 61, 51, 0.10);
+      0 1px 2px rgba(14, 33, 71, 0.04),
+      0 8px 24px -16px rgba(14, 33, 71, 0.10);
   }
   .surface-hover {
     @apply transition-all duration-200;
   }
   .surface-hover:hover {
     box-shadow:
-      0 1px 2px rgba(16, 61, 51, 0.05),
-      0 16px 34px -18px rgba(16, 61, 51, 0.22);
-    border-color: #cfe0d6;
+      0 1px 2px rgba(14, 33, 71, 0.05),
+      0 16px 34px -18px rgba(29, 78, 216, 0.22);
+    border-color: #bfd3fe;
     transform: translateY(-2px);
   }
 
-  /* Primary action — deep forest pill with a soft, tinted glow. */
+  /* Primary action — cobalt pill with a soft, tinted glow. */
   .btn-primary {
     @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200;
-    background-color: #103d33;
-    box-shadow: 0 1px 2px rgba(16, 61, 51, 0.16), 0 10px 22px -12px rgba(16, 61, 51, 0.55);
+    background-color: #1d4ed8;
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.16), 0 10px 22px -12px rgba(29, 78, 216, 0.55);
   }
   .btn-primary:hover {
-    background-color: #16493b;
-    box-shadow: 0 1px 2px rgba(16, 61, 51, 0.2), 0 14px 26px -10px rgba(16, 61, 51, 0.6);
+    background-color: #1740ad;
+    box-shadow: 0 1px 2px rgba(29, 78, 216, 0.2), 0 14px 26px -10px rgba(29, 78, 216, 0.6);
     transform: translateY(-1px);
   }
   .btn-primary:active {
@@ -245,16 +245,16 @@
     transform: none;
   }
 
-  /* Accent action — amber pill on ink text, for marketing CTAs. One accent only. */
+  /* Accent action — cyan pill on deep-navy text, for marketing CTAs. One accent only. */
   .btn-accent {
     @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200;
-    background-color: #e0a458;
-    color: #1f2d27;
-    box-shadow: 0 1px 2px rgba(133, 86, 32, 0.22), 0 12px 24px -12px rgba(224, 164, 88, 0.7);
+    background-color: #2ad8ef;
+    color: #0a1730;
+    box-shadow: 0 1px 2px rgba(14, 156, 192, 0.22), 0 12px 24px -12px rgba(42, 216, 239, 0.7);
   }
   .btn-accent:hover {
-    background-color: #d4923f;
-    box-shadow: 0 1px 2px rgba(133, 86, 32, 0.28), 0 16px 30px -12px rgba(224, 164, 88, 0.8);
+    background-color: #14bfe0;
+    box-shadow: 0 1px 2px rgba(14, 156, 192, 0.28), 0 16px 30px -12px rgba(42, 216, 239, 0.8);
     transform: translateY(-1px);
   }
   .btn-accent:active {
@@ -264,12 +264,12 @@
   /* Neutral / secondary action — outlined pill in brand ink. */
   .btn-ghost {
     @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-full border bg-white px-5 py-2.5 text-sm font-semibold transition-all duration-200;
-    color: #103d33;
-    border-color: rgba(16, 61, 51, 0.22);
+    color: #1d4ed8;
+    border-color: rgba(29, 78, 216, 0.22);
   }
   .btn-ghost:hover {
-    background-color: #f1ede4;
-    border-color: rgba(16, 61, 51, 0.45);
+    background-color: #eff4ff;
+    border-color: rgba(29, 78, 216, 0.45);
   }
 
   /* Eyebrow label above page titles. */

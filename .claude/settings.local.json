@@ -20,7 +20,8 @@
       "Bash(echo \"TSC_EXIT=$?\")",
       "WebFetch(domain:www.zoho.com)",
       "WebFetch(domain:www.rippling.com)",
-      "WebFetch(domain:www.bamboohr.com)"
+      "WebFetch(domain:www.bamboohr.com)",
+      "WebFetch(domain:oceanbluecorp.com)"
     ]
   }
 }

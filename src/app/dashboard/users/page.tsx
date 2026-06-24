@@ -145,7 +145,7 @@ export default function UsersPage() {
         icon={UserCog}
         eyebrow="Administration"
         title="Users"
-        description="Invite team members to Cadre. They receive an email with a temporary password, then set their own on first sign-in."
+        description="Invite team members to Ocean Blue. They receive an email with a temporary password, then set their own on first sign-in."
         tone="brand"
         actions={
           <button onClick={() => setInviteOpen(true)} className="btn-primary">
@@ -329,7 +329,7 @@ export default function UsersPage() {
         title="Remove user access"
         description={deleteTarget ? (
           <>
-            Remove <span className="font-semibold text-slate-900">{deleteTarget.email}</span> from Cadre? They will no longer be able to sign in. This does not delete any employee records.
+            Remove <span className="font-semibold text-slate-900">{deleteTarget.email}</span> from Ocean Blue? They will no longer be able to sign in. This does not delete any employee records.
           </>
         ) : null}
         confirmLabel="Remove access"

@@ -1,24 +1,23 @@
 import Link from 'next/link';
-import { BrandMark } from '@/components/ui/brand-mark';
+import Image from 'next/image';
 import { BRAND } from '@/config/brand';
 
 export const metadata = { title: 'Page not found' };
 
 export default function NotFound() {
   return (
-    <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#f4f1ea] px-6 text-center text-[#2b2e2a]">
+    <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#f8fafc] px-6 text-center text-[#0f172a]">
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden
         style={{
           backgroundImage:
-            'radial-gradient(60% 50% at 50% 0%, rgba(16,61,51,0.07) 0%, transparent 55%), radial-gradient(50% 45% at 50% 100%, rgba(224,164,88,0.08) 0%, transparent 55%)',
+            'radial-gradient(60% 50% at 50% 0%, rgba(29,78,216,0.07) 0%, transparent 55%), radial-gradient(50% 45% at 50% 100%, rgba(42,216,239,0.08) 0%, transparent 55%)',
         }}
       />
 
       <Link href="/" className="flex items-center gap-2.5" aria-label={`${BRAND.name} home`}>
-        <BrandMark size={40} className="shadow-sm" />
-        <span className="font-display text-xl font-bold tracking-tight text-brand-900">{BRAND.name}</span>
+        <Image src="/logo.png" alt={BRAND.name} width={277} height={76} priority className="h-10 w-auto" />
       </Link>
 
       <p className="eyebrow mt-12">Error 404</p>

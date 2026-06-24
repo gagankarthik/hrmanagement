@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation';
 import {
   Users, Gauge, ShieldAlert, Percent, Filter, RefreshCw, X, Building2,
   CalendarClock, ChevronRight, Sparkles, TrendingUp, PieChart as PieIcon, BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useTimesheets } from '@/context/TimesheetContext';
+import { useSubcontractors } from '@/context/SubcontractorContext';
+import { coiStatus } from '@/lib/coi';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import {
   DonutChart, CompareBarChart, TrendAreaChart, HBarChart,
@@ -57,6 +60,7 @@ export default function DashboardPage() {
   const { employees, isLoading, fetchEmployees } = useEmployees();
   const { clients } = useClients();
   const { timesheets } = useTimesheets();
+  const { subcontractors } = useSubcontractors();
 
   const [classFilter, setClassFilter] = useState<Set<EmployeeType>>(new Set(CLASSES));
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -107,15 +111,35 @@ export default function DashboardPage() {
     const d = new Date(ed);
     return !Number.isNaN(d.getTime()) && d <= in30;
   }), [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
-  const expiryTimeline = useMemo(() => (
-    empsActive.map((e) => {
+  // Subcontractor COI policies expiring within 60 days (or already expired).
+  const coiExpiring = useMemo(() => (
+    subcontractors
+      .map((s) => ({ s, coi: coiStatus(s.coiExpiryDate) }))
+      .filter(({ coi }) => coi.state === 'expiring' || coi.state === 'expired')
+      .sort((a, b) => (a.coi.days ?? 0) - (b.coi.days ?? 0))
+  ), [subcontractors]);
+
+  // Unified compliance timeline — employee work-auth (90d) + subcontractor COI (60d).
+  const expiryTimeline = useMemo(() => {
+    const items: { id: string; name: string; days: number; sub: string; href: string }[] = [];
+    empsActive.forEach((e) => {
       const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
-      if (!ed) return null;
+      if (!ed) return;
       const d = new Date(ed);
-      if (Number.isNaN(d.getTime()) || d > in90) return null;
-      return { e, days: Math.round((d.getTime() - now.getTime()) / 86400000), auth: 'workAuthorization' in e ? (e as { workAuthorization?: string }).workAuthorization : undefined };
-    }).filter(Boolean).sort((a, b) => a!.days - b!.days) as { e: Employee; days: number; auth?: string }[]
-  ), [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
+      if (Number.isNaN(d.getTime()) || d > in90) return;
+      items.push({
+        id: e.id,
+        name: e.name || 'Unnamed',
+        days: Math.round((d.getTime() - now.getTime()) / 86400000),
+        sub: ('workAuthorization' in e ? (e as { workAuthorization?: string }).workAuthorization : undefined) || 'Work authorization',
+        href: `/dashboard/employees/${e.id}`,
+      });
+    });
+    coiExpiring.forEach(({ s, coi }) => {
+      items.push({ id: s.id, name: s.name, days: coi.days ?? 0, sub: 'COI policy', href: `/dashboard/subcontractors/${s.id}` });
+    });
+    return items.sort((a, b) => a.days - b.days);
+  }, [empsActive, coiExpiring]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hiring trend BY TYPE — monthly new hires, one stacked series per class
   const hiringByType = useMemo(() => {
@@ -215,6 +239,7 @@ export default function DashboardPage() {
   const insights = useMemo(() => {
     const out: string[] = [];
     if (complianceRisk.length) out.push(`${complianceRisk.length} work authorization${complianceRisk.length > 1 ? 's' : ''} expiring within 30 days.`);
+    if (coiExpiring.length) out.push(`${coiExpiring.length} subcontractor COI ${coiExpiring.length > 1 ? 'policies' : 'policy'} expiring within 60 days.`);
     out.push(utilization >= 75 ? `Billable utilization is healthy at ${utilization}%.` : `Billable utilization is ${utilization}% — below the 75% target.`);
     if (revenueMode) {
       const total = revenueByClient.reduce((s, c) => s + c.revenue, 0);
@@ -222,7 +247,7 @@ export default function DashboardPage() {
     } else if (weeklyGp === 0) out.push('Set bill & pay rates on the Margins page to unlock revenue and margin insights.');
     if (benchCount) out.push(`${benchCount} active ${benchCount === 1 ? 'worker is' : 'workers are'} on the bench.`);
     return out.slice(0, 3);
-  }, [complianceRisk.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
+  }, [complianceRisk.length, coiExpiring.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
 
   const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await fetchEmployees(); } finally { setRefreshing(false); } };
   const toggleClass = (c: EmployeeType) => setClassFilter((prev) => { const n = new Set(prev); if (n.has(c)) { if (n.size > 1) n.delete(c); } else n.add(c); return n; });
@@ -356,18 +381,18 @@ export default function DashboardPage() {
             <p className="py-12 text-center text-sm text-slate-400">Nothing expiring in 90 days.</p>
           ) : (
             <ul className="space-y-2.5">
-              {expiryTimeline.slice(0, 6).map(({ e, days, auth }) => {
+              {expiryTimeline.slice(0, 6).map(({ id, name, days, sub, href }) => {
                 const tone = days < 7 ? { bar: 'bg-red-500', chip: 'bg-red-50 text-red-600 ring-red-200' } : days < 30 ? { bar: 'bg-accent-400', chip: 'bg-accent-50 text-accent-700 ring-accent-200' } : { bar: 'bg-slate-300', chip: 'bg-slate-50 text-slate-500 ring-slate-200' };
                 const fill = Math.max(6, Math.min(100, 100 - (days / 90) * 100));
                 return (
-                  <li key={e.id}>
-                    <button onClick={() => router.push(`/dashboard/employees/${e.id}`)} className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50">
+                  <li key={`${href}-${id}`}>
+                    <button onClick={() => router.push(href)} className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
+                          <span className="truncate text-sm font-semibold text-slate-900">{name}</span>
                           <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
                         </div>
-                        <p className="truncate text-[11px] text-slate-400">{auth || 'Work authorization'}</p>
+                        <p className="truncate text-[11px] text-slate-400">{sub}</p>
                         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
                       </div>
                       <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
@@ -379,6 +404,50 @@ export default function DashboardPage() {
           )}
         </SectionCard>
       </div>
+
+      {/* Subcontractor COI expiry — dedicated card */}
+      <SectionCard
+        title="Subcontractor COI expiry"
+        subtitle="Insurance policies expiring within 60 days, per company"
+        icon={ShieldCheck}
+        action={<button onClick={() => router.push('/dashboard/subcontractors')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}
+      >
+        {coiExpiring.length === 0 ? (
+          <p className="py-10 text-center text-sm text-slate-400">All subcontractor COIs are current — nothing expiring in 60 days.</p>
+        ) : (
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+            {coiExpiring.map(({ s, coi }) => {
+              const expired = coi.state === 'expired';
+              const chip = expired
+                ? 'bg-red-50 text-red-600 ring-red-200'
+                : (coi.days ?? 99) < 30
+                  ? 'bg-accent-50 text-accent-700 ring-accent-200'
+                  : 'bg-amber-50 text-amber-700 ring-amber-200';
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => router.push(`/dashboard/subcontractors/${s.id}`)}
+                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                >
+                  <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', expired ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')}>
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-slate-900">{s.name}</span>
+                      <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', chip)}>
+                        {expired ? `${Math.abs(coi.days ?? 0)}d overdue` : `${coi.days}d`}
+                      </span>
+                    </div>
+                    <p className="truncate text-[11px] text-slate-400">{coi.label}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </SectionCard>
 
       {/* Top partners — tabbed table */}
       <PartnersPanel />

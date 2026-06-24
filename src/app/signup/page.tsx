@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Mail, ShieldCheck, UserCheck, Clock } from "lucide-react";
-import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function SignUpPage() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f4f1ea] px-4 py-12">
-      {/* Light-theme atmosphere: brand/brand radial tints + a whisper-faint grid */}
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f8fafc] px-4 py-12">
+      {/* Light-theme atmosphere: brand/accent radial tints + a whisper-faint grid */}
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
         style={{
           backgroundImage:
-            "radial-gradient(100% 70% at 50% -10%, rgba(16,61,51,0.12) 0%, transparent 55%), radial-gradient(70% 60% at 100% 100%, rgba(38,107,85,0.10) 0%, transparent 50%)",
+            "radial-gradient(100% 70% at 50% -10%, rgba(29,78,216,0.12) 0%, transparent 55%), radial-gradient(70% 60% at 100% 100%, rgba(42,216,239,0.10) 0%, transparent 50%)",
         }}
       />
       <div
@@ -42,15 +42,14 @@ export default function SignUpPage() {
         <div className="surface space-y-6 p-8">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <BrandMark size={36} className="shadow-sm" />
-            <span className="font-display text-lg font-bold text-slate-900">Cadre</span>
+            <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-9 w-auto" />
           </div>
 
           <div>
             <p className="eyebrow">Request access</p>
-            <h1 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Join your team on Cadre</h1>
+            <h1 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Join your team on Ocean Blue</h1>
             <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-              Cadre accounts are provisioned by HR administrators. Contact your admin to get started.
+              Ocean Blue accounts are provisioned by HR administrators. Contact your admin to get started.
             </p>
           </div>
 
@@ -59,7 +58,7 @@ export default function SignUpPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">How it works</p>
             {[
               { icon: Mail, step: "1", text: "Contact your HR administrator with your work email" },
-              { icon: UserCheck, step: "2", text: "Admin creates your account in Cadre" },
+              { icon: UserCheck, step: "2", text: "Admin creates your account in Ocean Blue" },
               { icon: ShieldCheck, step: "3", text: "You receive an invite and sign in via SSO" },
               { icon: Clock, step: "~", text: "Access is typically granted within 1 business day" },
             ].map(({ icon: Icon, step, text }) => (

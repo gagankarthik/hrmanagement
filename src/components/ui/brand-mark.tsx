@@ -18,10 +18,10 @@ export function BrandMark({
   variant?: 'dark' | 'light';
   className?: string;
 }) {
-  const tile = variant === 'light' ? '#ffffff' : '#103d33';
-  const bar = variant === 'light' ? '#103d33' : '#f4f1ea';
-  const accent = '#e0a458'; // amber — constant in both variants so it always pops
-  const sheen = variant === 'light' ? '#103d33' : '#ffffff';
+  const tile = variant === 'light' ? '#ffffff' : '#1d4ed8';
+  const bar = variant === 'light' ? '#1d4ed8' : '#dbe6fe';
+  const accent = variant === 'light' ? '#2ad8ef' : '#5ce0f7'; // cyan — always pops
+  const sheen = variant === 'light' ? '#1d4ed8' : '#ffffff';
 
   return (
     <svg

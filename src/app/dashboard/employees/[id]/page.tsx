@@ -332,14 +332,14 @@ function EmployeeDetailPageContent() {
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; padding: 32px; font-size: 13px; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #103d33; margin-bottom: 24px; }
-      .header-left h1 { font-size: 24px; font-weight: 700; color: #103d33; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #1d4ed8; margin-bottom: 24px; }
+      .header-left h1 { font-size: 24px; font-weight: 700; color: #1d4ed8; }
       .header-left p { color: #64748b; margin-top: 4px; }
       .header-right { text-align: right; color: #64748b; font-size: 12px; }
       .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
       .badge-active { background: #d1fae5; color: #065f46; }
       .badge-terminated { background: #fee2e2; color: #991b1b; }
-      .badge-type { background: #d2e8dd; color: #103d33; }
+      .badge-type { background: #dbe6fe; color: #1d4ed8; }
       .section { margin-bottom: 20px; }
       .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #266b55; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 12px; }
       .info-table { width: 100%; border-collapse: collapse; }
@@ -392,7 +392,7 @@ function EmployeeDetailPageContent() {
     ${workAuthSection}
     ${indiaTaxSection}
     <div class="footer">
-      <span>Cadre Workforce Management</span>
+      <span>Ocean Blue Workforce Management</span>
       <span>Confidential — Internal Use Only</span>
     </div>
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script>
@@ -540,6 +540,7 @@ function EmployeeDetailPageContent() {
               {railField('Employment Start', fmt(employee.hireDate))}
               {railField('Reporting Manager', reportingManager)}
               {railField('Client Name', currentProject?.name)}
+              {railField('End Client', endClientAssignmentNames[0]?.name)}
               {railField('Client Contact', primaryClient?.contactPerson || primaryClient?.email)}
             </div>
           </div>

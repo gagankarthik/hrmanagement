@@ -7,7 +7,7 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { Subcontractor, SubcontractorFormData } from '@/types/subcontractor';
 import { useToast } from '@/components/ui/toast';
 import { SectionCard } from '@/components/ui/section-card';
-import { UserCheck } from 'lucide-react';
+import { UserCheck, ShieldCheck } from 'lucide-react';
 
 const field =
   'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
@@ -27,8 +27,10 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
           phone: initial.phone || '',
           address: initial.address || '',
           status: initial.status,
+          coiEffectiveDate: initial.coiEffectiveDate || '',
+          coiExpiryDate: initial.coiExpiryDate || '',
         }
-      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active' }
+      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active', coiEffectiveDate: '', coiExpiryDate: '' }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -120,6 +122,23 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
           <div>
             <label className={label}>Address</label>
             <textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className={cn(field, 'resize-none')} />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        icon={ShieldCheck}
+        title="Certificate of Insurance (COI)"
+        description="Track the company's insurance policy dates. The dashboard flags policies expiring within 60 days."
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className={label}>Policy Effective Date</label>
+            <input type="date" value={form.coiEffectiveDate || ''} onChange={(e) => set('coiEffectiveDate', e.target.value)} className={field} />
+          </div>
+          <div>
+            <label className={label}>Policy Expiry Date</label>
+            <input type="date" value={form.coiExpiryDate || ''} onChange={(e) => set('coiExpiryDate', e.target.value)} className={field} />
           </div>
         </div>
       </SectionCard>

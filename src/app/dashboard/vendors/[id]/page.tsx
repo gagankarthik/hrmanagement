@@ -153,7 +153,7 @@ function VendorDetailPageContent() {
       <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No employees</td></tr>'}</tbody>
     </table>
     <div class="footer">
-      <span>Cadre Workforce Management</span>
+      <span>Ocean Blue Workforce Management</span>
       <span>Confidential — Internal Use Only</span>
     </div>
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script>

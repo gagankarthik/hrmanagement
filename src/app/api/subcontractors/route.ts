@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
       phone: body.phone || '',
       address: body.address || '',
       status: body.status || 'Active',
+      coiEffectiveDate: body.coiEffectiveDate || '',
+      coiExpiryDate: body.coiExpiryDate || '',
       PK: `SUBCON#${id}`,
       SK: `SUBCON#${id}`,
       GSI1PK: 'SUBCONTRACTORS',

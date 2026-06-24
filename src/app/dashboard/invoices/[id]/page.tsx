@@ -32,17 +32,17 @@ function printInvoice(inv: Invoice) {
     .join('');
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${inv.invoiceNumber}</title>
   <style>
-    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#2b2e2a;margin:0;padding:40px;}
+    *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;margin:0;padding:40px;}
     .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-    .brand{font-size:22px;font-weight:800;color:#103d33}
-    h1{font-size:28px;margin:0 0 4px;color:#103d33}
+    .brand{font-size:22px;font-weight:800;color:#1d4ed8}
+    h1{font-size:28px;margin:0 0 4px;color:#1d4ed8}
     .muted{color:#6b7280;font-size:13px}
     .meta{margin:24px 0;display:flex;gap:48px}
     table{width:100%;border-collapse:collapse;margin-top:16px}
-    th{background:#f4f1ea;text-align:left;padding:10px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
+    th{background:#f8fafc;text-align:left;padding:10px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
     td{padding:10px;border-bottom:1px solid #eee;font-size:14px}
     tfoot td{border:0;font-weight:700}
-    .total{font-size:20px;color:#103d33}
+    .total{font-size:20px;color:#1d4ed8}
   </style></head><body>
     <div class="top">
       <div><div class="brand">${BRAND.name}</div><div class="muted">Workforce &amp; staffing</div></div>

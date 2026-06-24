@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X, LayoutDashboard, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -20,15 +21,16 @@ const DEMO_HREF = `mailto:${BRAND.contactEmail}?subject=${encodeURIComponent(`${
 function Logo({ className, onDark = false }: { className?: string; onDark?: boolean }) {
   return (
     <Link href="/" className={cn('flex items-center gap-2.5', className)} aria-label={`${BRAND.name} home`}>
-      <BrandMark size={36} variant={onDark ? 'light' : 'dark'} className="shadow-sm" />
-      <span
-        className={cn(
-          'font-display text-lg font-bold tracking-tight',
-          onDark ? 'text-white' : 'text-brand-900',
-        )}
-      >
-        {BRAND.name}
-      </span>
+      {onDark ? (
+        <>
+          <BrandMark size={36} variant="light" className="shadow-sm" />
+          <span className="font-display text-lg font-bold tracking-tight text-white">
+            {BRAND.name}
+          </span>
+        </>
+      ) : (
+        <Image src="/logo.png" alt={BRAND.name} width={277} height={76} priority className="h-9 w-auto" />
+      )}
     </Link>
   );
 }
@@ -73,7 +75,7 @@ export function SiteNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e6e0d4] bg-[#f4f1ea]/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-[#e2e8f0] bg-[#f8fafc]/85 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Logo />
 
@@ -155,7 +157,7 @@ export function SiteNav() {
             className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-[#e6e0d4] bg-[#f4f1ea] p-5 shadow-2xl">
+          <div className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-[#e2e8f0] bg-[#f8fafc] p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <Logo />
               <button
@@ -180,7 +182,7 @@ export function SiteNav() {
               ))}
             </div>
 
-            <div className="mt-4 border-t border-[#e6e0d4] pt-4">
+            <div className="mt-4 border-t border-[#e2e8f0] pt-4">
               {isLoading ? (
                 <div className="space-y-3" aria-hidden>
                   <div className="h-9 w-full animate-pulse rounded-full bg-black/5" />

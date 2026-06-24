@@ -4,8 +4,8 @@ import { useState, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Eye, EyeOff, MailCheck } from "lucide-react";
-import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function ForgotPasswordPage() {
   const { resetPassword, confirmResetPassword } = useAuth();
@@ -60,19 +60,18 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f4f1ea] px-6 py-12">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#f8fafc] px-6 py-12">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
         style={{
           backgroundImage:
-            "radial-gradient(110% 80% at 50% -10%, rgba(16,61,51,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(38,107,85,0.08) 0%, transparent 50%)",
+            "radial-gradient(110% 80% at 50% -10%, rgba(29,78,216,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(42,216,239,0.08) 0%, transparent 50%)",
         }}
       />
 
       <div className="relative mb-8 flex items-center gap-2.5">
-        <BrandMark size={38} className="shadow-sm" />
-        <span className="font-display text-xl font-bold text-slate-900">Cadre</span>
+        <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-9 w-auto" />
       </div>
 
       <div className="surface relative w-full max-w-[400px] space-y-6 p-7 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">

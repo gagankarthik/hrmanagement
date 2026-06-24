@@ -37,7 +37,7 @@ function Photo({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-[1.4rem] border border-[#e6e0d4] bg-white shadow-[0_36px_70px_-40px_rgba(16,61,51,0.5)] ring-1 ring-black/[0.03]',
+        'relative overflow-hidden rounded-[1.4rem] border border-[#e2e8f0] bg-white shadow-[0_36px_70px_-40px_rgba(29,78,216,0.5)] ring-1 ring-black/[0.03]',
         className,
       )}
     >
@@ -47,7 +47,7 @@ function Photo({
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{ background: 'linear-gradient(180deg, rgba(16,61,51,0.05) 0%, transparent 38%, rgba(16,61,51,0.16) 100%)' }}
+        style={{ background: 'linear-gradient(180deg, rgba(29,78,216,0.05) 0%, transparent 38%, rgba(29,78,216,0.16) 100%)' }}
       />
     </div>
   );
@@ -175,27 +175,27 @@ function FooterLogo() {
 
 export default function LandingPage() {
   return (
-    <main id="main" className="relative min-h-screen bg-[#f4f1ea] text-[#2b2e2a]">
+    <main id="main" className="relative min-h-screen bg-[#f8fafc] text-[#0f172a]">
       <div
         className="pointer-events-none fixed inset-0 -z-10"
         aria-hidden
         style={{
           backgroundImage:
-            'radial-gradient(70% 55% at 100% 0%, rgba(16,61,51,0.06) 0%, transparent 50%), radial-gradient(60% 50% at 0% 4%, rgba(224,164,88,0.07) 0%, transparent 48%)',
+            'radial-gradient(70% 55% at 100% 0%, rgba(29,78,216,0.06) 0%, transparent 50%), radial-gradient(60% 50% at 0% 4%, rgba(42,216,239,0.07) 0%, transparent 48%)',
         }}
       />
 
       <SiteNav />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden border-b border-[#e6e0d4] grain">
+      <section className="relative overflow-hidden border-b border-[#e2e8f0] grain">
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
           <div className="absolute -right-44 -top-48 h-[44rem] w-[44rem] rounded-full bg-gradient-to-br from-brand-200/55 via-brand-300/25 to-transparent blur-3xl" />
           <div className="absolute -left-28 top-56 h-[24rem] w-[24rem] rounded-full bg-accent-100/45 blur-3xl" />
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'radial-gradient(rgba(16,61,51,0.08) 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(rgba(29,78,216,0.08) 1px, transparent 1px)',
               backgroundSize: '24px 24px',
               WebkitMaskImage: 'radial-gradient(125% 92% at 80% 6%, #000 0%, transparent 60%)',
               maskImage: 'radial-gradient(125% 92% at 80% 6%, #000 0%, transparent 60%)',
@@ -250,14 +250,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── Industries strip ── */}
-      <section className="border-b border-[#e6e0d4] bg-white/50">
+      <section className="border-b border-[#e2e8f0] bg-white/50">
         <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             Built for teams who run on contingent talent
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-3">
             {industries.map((name) => (
-              <span key={name} className="rounded-full border border-[#e6e0d4] bg-white px-4 py-1.5 text-sm font-semibold text-brand-800">
+              <span key={name} className="rounded-full border border-[#e2e8f0] bg-white px-4 py-1.5 text-sm font-semibold text-brand-800">
                 {name}
               </span>
             ))}
@@ -266,7 +266,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Unified platform ── */}
-      <section id="platform" className="border-b border-[#e6e0d4]">
+      <section id="platform" className="border-b border-[#e2e8f0]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">One platform</p>
@@ -280,7 +280,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-14 flex flex-col items-center">
-            <div className="flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-900 px-6 py-4 text-white shadow-[0_20px_40px_-22px_rgba(16,61,51,0.7)]">
+            <div className="flex items-center gap-3 rounded-2xl border border-brand-200 bg-brand-900 px-6 py-4 text-white shadow-[0_20px_40px_-22px_rgba(29,78,216,0.7)]">
               <BrandMark size={28} variant="light" />
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-accent-300">Source of truth</p>
@@ -304,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Feature rows (zig-zag, photo + text) ── */}
-      <section id="features" className="border-b border-[#e6e0d4] bg-white/50">
+      <section id="features" className="border-b border-[#e2e8f0] bg-white/50">
         <div className="mx-auto max-w-6xl space-y-20 px-5 py-20 sm:px-8 sm:py-28 sm:space-y-28">
           {featureRows.map((row) => (
             <div key={row.title} className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -333,7 +333,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Stats ── */}
-      <section className="border-b border-[#e6e0d4]">
+      <section className="border-b border-[#e2e8f0]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">Made to scale</p>
@@ -345,7 +345,7 @@ export default function LandingPage() {
               record — so reporting stays trustworthy as you grow.
             </p>
           </div>
-          <div className="mx-auto mt-12 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-[#e6e0d4] bg-[#e6e0d4] sm:grid-cols-3">
+          <div className="mx-auto mt-12 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-[#e2e8f0] bg-[#e2e8f0] sm:grid-cols-3">
             {facts.map((f) => (
               <div key={f.k} className="bg-white px-6 py-8 text-center">
                 <p className="tnum font-display text-4xl font-bold text-brand-900">{f.v}</p>
@@ -357,7 +357,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Quotes ── */}
-      <section className="border-b border-[#e6e0d4] bg-white/50">
+      <section className="border-b border-[#e2e8f0] bg-white/50">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <div className="max-w-2xl">
             <p className="eyebrow">Why teams switch</p>
@@ -386,7 +386,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Fits your workflow ── */}
-      <section className="border-b border-[#e6e0d4]">
+      <section className="border-b border-[#e2e8f0]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <div className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">Fits how you already work</p>
@@ -413,7 +413,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="border-b border-[#e6e0d4] bg-white/50">
+      <section id="pricing" className="border-b border-[#e2e8f0] bg-white/50">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">Pricing</p>
@@ -433,12 +433,12 @@ export default function LandingPage() {
                 className={cn(
                   'relative flex flex-col rounded-2xl border bg-white p-7',
                   t.highlight
-                    ? 'border-brand-900 shadow-[0_30px_60px_-34px_rgba(16,61,51,0.5)] ring-1 ring-brand-900/10'
-                    : 'border-[#e6e0d4] shadow-[0_1px_2px_rgba(16,61,51,0.04)]',
+                    ? 'border-brand-900 shadow-[0_30px_60px_-34px_rgba(29,78,216,0.5)] ring-1 ring-brand-900/10'
+                    : 'border-[#e2e8f0] shadow-[0_1px_2px_rgba(29,78,216,0.04)]',
                 )}
               >
                 {t.highlight && (
-                  <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-accent-300 px-3 py-1 text-[11px] font-bold text-[#1f2d27]">
+                  <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-accent-300 px-3 py-1 text-[11px] font-bold text-[#0a1730]">
                     <Sparkles className="h-3 w-3" strokeWidth={2} /> Most popular
                   </span>
                 )}
@@ -465,7 +465,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="border-b border-[#e6e0d4]">
+      <section className="border-b border-[#e2e8f0]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
             <div>

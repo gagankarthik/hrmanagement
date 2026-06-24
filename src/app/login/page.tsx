@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
 import { BrandMark } from "@/components/ui/brand-mark";
 
@@ -27,7 +28,7 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f1ea]">
+      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
         <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-brand-600" />
       </div>
     );
@@ -112,7 +113,7 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-2.5">
           <BrandMark size={38} variant="light" className="shadow-sm" />
-          <span className="font-display text-xl font-bold tracking-tight text-white">Cadre</span>
+          <span className="font-display text-xl font-bold tracking-tight text-white">Ocean Blue</span>
         </div>
 
         <div className="relative space-y-10">
@@ -148,18 +149,18 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="relative text-xs text-brand-200/80">© {new Date().getFullYear()} Cadre · Secure workforce platform</p>
+        <p className="relative text-xs text-brand-200/80">© {new Date().getFullYear()} Ocean Blue Corporation · Secure workforce platform</p>
       </div>
 
       {/* Right sign-in panel */}
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f4f1ea] px-6 py-12 sm:px-8">
+      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-[#f8fafc] px-6 py-12 sm:px-8">
         {/* Subtle light-theme atmosphere behind the card */}
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
           style={{
             backgroundImage:
-              "radial-gradient(110% 80% at 50% -10%, rgba(16,61,51,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(38,107,85,0.08) 0%, transparent 50%)",
+              "radial-gradient(110% 80% at 50% -10%, rgba(29,78,216,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(42,216,239,0.08) 0%, transparent 50%)",
           }}
         />
         <div
@@ -176,8 +177,7 @@ export default function LoginPage() {
 
         {/* Mobile logo */}
         <div className="relative mb-8 flex items-center gap-2.5 lg:hidden">
-          <BrandMark size={38} className="shadow-sm" />
-          <span className="font-display text-xl font-bold text-slate-900">Cadre</span>
+          <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-9 w-auto" />
         </div>
 
         <div className="surface relative w-full max-w-[400px] space-y-6 p-7 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -263,7 +263,7 @@ export default function LoginPage() {
           <>
           <div>
             <p className="eyebrow">Welcome back</p>
-            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to Cadre</h2>
+            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to Ocean Blue</h2>
             <p className="mt-1.5 text-sm text-slate-500">Access your HR dashboard and live workforce insights.</p>
           </div>
 

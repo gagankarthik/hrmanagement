@@ -7,6 +7,10 @@ export interface Subcontractor {
   phone?: string;
   address?: string;
   status: 'Active' | 'Inactive';
+  /** Certificate of Insurance — policy effective date (ISO yyyy-mm-dd) */
+  coiEffectiveDate?: string;
+  /** Certificate of Insurance — policy expiry date (ISO yyyy-mm-dd) */
+  coiExpiryDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -19,6 +23,8 @@ export interface SubcontractorFormData {
   phone?: string;
   address?: string;
   status: 'Active' | 'Inactive';
+  coiEffectiveDate?: string;
+  coiExpiryDate?: string;
 }
 
 // Subcontractor with employee count (for dashboard display)

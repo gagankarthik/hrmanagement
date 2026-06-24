@@ -22,7 +22,9 @@ import {
   FileText,
   AlertTriangle,
   UserPlus,
+  ShieldCheck,
 } from 'lucide-react';
+import { coiStatus } from '@/lib/coi';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -152,7 +154,7 @@ function SubcontractorDetailPageContent() {
       <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No employees</td></tr>'}</tbody>
     </table>
     <div class="footer">
-      <span>Cadre Workforce Management</span>
+      <span>Ocean Blue Workforce Management</span>
       <span>Confidential — Internal Use Only</span>
     </div>
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}<\/script>
@@ -386,6 +388,48 @@ function SubcontractorDetailPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Certificate of Insurance */}
+      {(() => {
+        const coi = coiStatus(subcontractor.coiExpiryDate);
+        const toneCls: Record<string, string> = {
+          emerald: 'bg-emerald-100 text-emerald-700',
+          amber: 'bg-amber-100 text-amber-700',
+          red: 'bg-red-100 text-red-700',
+          slate: 'bg-slate-100 text-slate-500',
+        };
+        return (
+          <div className="surface p-6">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
+                  <ShieldCheck className="h-4 w-4 text-teal-600" />
+                </div>
+                <h2 className="font-display text-base font-bold text-slate-900">Certificate of Insurance (COI)</h2>
+              </div>
+              <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold', toneCls[coi.tone])}>
+                {coi.state === 'valid' && <CheckCircle2 className="h-3 w-3" />}
+                {(coi.state === 'expiring' || coi.state === 'expired') && <AlertTriangle className="h-3 w-3" />}
+                {coi.label}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium text-slate-500">Policy Effective</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                  {subcontractor.coiEffectiveDate ? format(new Date(subcontractor.coiEffectiveDate), 'MMM d, yyyy') : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Policy Expiry</p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                  {subcontractor.coiExpiryDate ? format(new Date(subcontractor.coiExpiryDate), 'MMM d, yyyy') : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Employees table */}
       <div className="surface">
