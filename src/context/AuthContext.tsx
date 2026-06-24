@@ -24,12 +24,16 @@ interface User {
   email?: string;
   userId: string;
   name?: string;
+  /** Roles from Cognito groups (and a `custom:role` attribute), lowercased. */
+  roles: string[];
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** Roles for the signed-in user (empty when signed out). */
+  roles: string[];
   /** True when sign-in returned the FORCE_CHANGE_PASSWORD challenge (admin-created users). */
   newPasswordRequired: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -55,11 +59,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await getCurrentUser();
       const attributes = await fetchUserAttributes();
 
+      // Roles come from Cognito groups (`cognito:groups` in the ID token) and,
+      // as a fallback, a `custom:role` attribute. Normalize to a lowercased list.
+      const session = await fetchAuthSession();
+      const groupsClaim = session.tokens?.idToken?.payload?.['cognito:groups'];
+      const groups = Array.isArray(groupsClaim) ? groupsClaim.map(String) : [];
+      const roleAttr = (attributes as Record<string, string | undefined>)['custom:role'];
+      const roles = Array.from(
+        new Set([...groups, ...(roleAttr ? [roleAttr] : [])].map((r) => r.toLowerCase().trim()).filter(Boolean)),
+      );
+
       setUser({
         username: currentUser.username,
         email: attributes.email || currentUser.signInDetails?.loginId,
         userId: currentUser.userId,
         name: attributes.name,
+        roles,
       });
     } catch {
       setUser(null);
@@ -162,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    roles: user?.roles ?? [],
     newPasswordRequired,
     signIn: handleSignIn,
     confirmNewPassword: handleConfirmNewPassword,

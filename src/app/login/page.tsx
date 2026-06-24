@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Users, ShieldCheck, BarChart3, Eye, EyeOff } from "lucide-react";
-import { BrandMark } from "@/components/ui/brand-mark";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword } = useAuth();
@@ -89,8 +88,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[46%]">
-        {/* Brand atmosphere — deep brand→brand wash with radial bloom + faint grid */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-600 to-brand-700" aria-hidden />
+        {/* Brand atmosphere — deep ocean wash with radial bloom + faint grid */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950" aria-hidden />
         <div
           className="absolute inset-0"
           aria-hidden
@@ -111,19 +110,20 @@ export default function LoginPage() {
           }}
         />
 
-        <div className="relative flex items-center gap-2.5">
-          <BrandMark size={38} variant="light" className="shadow-sm" />
-          <span className="font-display text-xl font-bold tracking-tight text-white">Ocean Blue</span>
+        <div className="relative">
+          <span className="inline-flex items-center rounded-xl bg-white px-3.5 py-2.5 shadow-lg shadow-brand-950/30">
+            <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-8 w-auto" />
+          </span>
         </div>
 
         <div className="relative space-y-10">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-200">Workforce Platform</p>
-            <h1 className="font-display mt-3 text-[2.75rem] font-bold leading-[1.04] text-white">
-              HR management<br />for modern teams
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-200">Workforce platform</p>
+            <h1 className="font-display mt-3 text-[2.6rem] font-bold leading-[1.05] text-white">
+              The Ocean Blue<br />workforce platform
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-brand-100/90">
-              One platform to manage employees, vendors, clients, and compliance — all in one place.
+              One secure place for your people, clients, compliance, billing, and reporting.
             </p>
           </div>
 
