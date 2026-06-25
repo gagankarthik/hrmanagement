@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CalendarDays, Plus, Pencil, Trash2, Search, Check, X, Eye,
-  Clock, CheckCircle2, XCircle, Layers, Inbox, Scale, CalendarRange,
+  Clock, CheckCircle2, XCircle, Layers, Inbox, Scale, CalendarRange, CalendarCheck,
   ChevronLeft, ChevronRight, Download,
 } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
+import AttendancePage from '@/app/dashboard/attendance/page';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { useLeaves } from '@/context/LeaveContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -22,61 +24,17 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { exportToCsv } from '@/lib/export';
+import { STATUS_FILTERS, TYPE_FILTERS, statusBadge, typeBadge, formatDate, leaveCoversDay } from './_components/shared';
+import { BalancesPanel } from './_components/BalancesPanel';
+import { CalendarPanel } from './_components/CalendarPanel';
 
-const STATUS_FILTERS: ('all' | LeaveStatus)[] = ['all', 'Pending', 'Approved', 'Rejected'];
-const TYPE_FILTERS: ('all' | LeaveType)[] = ['all', 'Sick', 'Casual', 'PTO', 'Long Leave', 'Unpaid'];
-
-const statusBadge: Record<LeaveStatus, { cls: string; icon: React.ElementType }> = {
-  Pending: { cls: 'bg-amber-50 text-amber-700 ring-amber-200', icon: Clock },
-  Approved: { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', icon: CheckCircle2 },
-  Rejected: { cls: 'bg-red-50 text-red-600 ring-red-200', icon: XCircle },
-};
-
-const typeBadge: Record<LeaveType, string> = {
-  Sick: 'bg-rose-50 text-rose-600',
-  Casual: 'bg-sky-50 text-sky-600',
-  PTO: 'bg-violet-50 text-violet-600',
-  'Long Leave': 'bg-amber-50 text-amber-700',
-  Unpaid: 'bg-slate-100 text-slate-600',
-};
-
-function formatDate(value?: string) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-// ── Date helpers for the calendar (work in local time, day-granular) ──────────
-function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-function parseDay(value?: string): Date | null {
-  if (!value) return null;
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return null;
-  return startOfDay(d);
-}
-/** True if [startDate,endDate] of the leave overlaps the given calendar day. */
-function leaveCoversDay(leave: Leave, day: Date): boolean {
-  const start = parseDay(leave.startDate);
-  const end = parseDay(leave.endDate) ?? start;
-  if (!start) return false;
-  const t = startOfDay(day).getTime();
-  return t >= start.getTime() && t <= (end ?? start).getTime();
-}
-function firstName(name: string): string {
-  return name.trim().split(/\s+/)[0] || name;
-}
-
-type TabKey = 'requested' | 'balances' | 'calendar';
+type TabKey = 'requested' | 'balances' | 'calendar' | 'attendance';
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'requested', label: 'Requested', icon: Inbox },
   { key: 'balances', label: 'Balances', icon: Scale },
   { key: 'calendar', label: 'Calendar', icon: CalendarRange },
+  { key: 'attendance', label: 'Attendance', icon: CalendarCheck },
 ];
 
 export default function LeavesPage() {
@@ -235,7 +193,7 @@ export default function LeavesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       {/* Header */}
       <PageHeader
         icon={CalendarDays}
@@ -525,6 +483,9 @@ export default function LeavesPage() {
         />
       )}
 
+      {/* ── ATTENDANCE TAB ── */}
+      {activeTab === 'attendance' && <AttendancePage embedded />}
+
       <ConfirmDialog
         isOpen={deleteState.leave !== null}
         onClose={() => setDeleteState({ leave: null, isDeleting: false })}
@@ -561,344 +522,6 @@ export default function LeavesPage() {
         confirmLabel={decision?.status === 'Approved' ? 'Approve' : 'Reject'}
         isLoading={deciding}
       />
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  BALANCES PANEL
-// ════════════════════════════════════════════════════════════════════════════
-
-interface BalanceRow {
-  emp: { id: string; name: string; type: import('@/types/employee').EmployeeType };
-  allowance: number;
-  used: number;
-  remaining: number;
-  byType: Partial<Record<LeaveType, number>>;
-}
-
-function BalancesPanel({
-  rows,
-  searchQuery,
-  onSearch,
-}: {
-  rows: BalanceRow[];
-  searchQuery: string;
-  onSearch: (v: string) => void;
-}) {
-  return (
-    <div className="surface">
-      {/* Toolbar — reuse the employee search */}
-      <div className="border-b border-slate-100 px-5 py-4">
-        <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search employees..."
-            value={searchQuery}
-            onChange={(e) => onSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
-          />
-        </div>
-      </div>
-
-      {rows.length === 0 ? (
-        <div className="p-5">
-          <EmptyState
-            icon={Scale}
-            tone="brand"
-            title={searchQuery ? 'No employees match your search' : 'No employees yet'}
-            description={searchQuery ? 'Try a different name.' : 'Add employees to see their leave balances.'}
-          />
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px]">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/60">
-                {['Employee', 'Type', 'Allowance', 'Used', 'Remaining', 'Utilization', 'Breakdown'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ emp, allowance, used, remaining, byType }) => {
-                const ratio = allowance > 0 ? used / allowance : 0;
-                const pct = Math.min(100, Math.round(ratio * 100));
-                const barColor =
-                  ratio > 1
-                    ? 'bg-red-500'
-                    : ratio >= 0.8
-                    ? 'bg-amber-500'
-                    : 'bg-brand-500';
-                const breakdown = (Object.entries(byType) as [LeaveType, number][])
-                  .filter(([, d]) => d > 0)
-                  .sort((a, b) => b[1] - a[1]);
-                return (
-                  <tr key={emp.id} className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                          {emp.name?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                        <p className="text-sm font-semibold text-slate-900">{emp.name || 'Unknown'}</p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                        {emp.type}
-                      </span>
-                    </td>
-                    {allowance === 0 ? (
-                      <td className="px-5 py-3.5" colSpan={4}>
-                        <span className="text-sm text-slate-400">
-                          No policy ·{' '}
-                          <Link
-                            href="/dashboard/policies"
-                            className="font-semibold text-brand-600 hover:text-brand-700 hover:underline"
-                          >
-                            Set allowance
-                          </Link>
-                        </span>
-                      </td>
-                    ) : (
-                      <>
-                        <td className="px-5 py-3.5 text-sm font-semibold text-slate-700">{allowance}</td>
-                        <td className="px-5 py-3.5 text-sm text-slate-600">{used}</td>
-                        <td className="px-5 py-3.5">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
-                              remaining === 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'
-                            )}
-                          >
-                            {remaining} left
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-100">
-                              <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-[11px] font-medium tabular-nums text-slate-400">{used}/{allowance}</span>
-                          </div>
-                        </td>
-                      </>
-                    )}
-                    <td className="px-5 py-3.5">
-                      {breakdown.length === 0 ? (
-                        <span className="text-xs text-slate-300">—</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {breakdown.map(([t, d]) => (
-                            <span
-                              key={t}
-                              className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold', typeBadge[t])}
-                            >
-                              {t} · {d}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="border-t border-slate-100 px-5 py-3">
-        <p className="text-xs text-slate-400">
-          {rows.length} employee{rows.length !== 1 ? 's' : ''} · Used = sum of approved leave days
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  CALENDAR PANEL
-// ════════════════════════════════════════════════════════════════════════════
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MAX_CHIPS_PER_DAY = 3;
-
-function CalendarPanel({
-  month,
-  onMonthChange,
-  cells,
-  mobileGroups,
-  nameOf,
-  onChipClick,
-}: {
-  month: Date;
-  onMonthChange: (d: Date) => void;
-  cells: { date: Date | null; leaves: Leave[] }[];
-  mobileGroups: { date: Date | null; leaves: Leave[] }[];
-  nameOf: (id: string) => string;
-  onChipClick: (id: string) => void;
-}) {
-  const today = startOfDay(new Date());
-  const monthLabel = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const goPrev = () => onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1));
-  const goNext = () => onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1));
-  const goToday = () => {
-    const now = new Date();
-    onMonthChange(new Date(now.getFullYear(), now.getMonth(), 1));
-  };
-
-  const Chip = ({ leave }: { leave: Leave }) => (
-    <button
-      onClick={() => onChipClick(leave.id)}
-      title={`${nameOf(leave.employeeId)} · ${leave.type}`}
-      className={cn(
-        'block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight transition-opacity hover:opacity-80',
-        typeBadge[leave.type]
-      )}
-    >
-      {firstName(nameOf(leave.employeeId))}
-    </button>
-  );
-
-  return (
-    <div className="surface overflow-hidden">
-      {/* Calendar toolbar */}
-      <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="font-display text-lg font-bold text-slate-900">{monthLabel}</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goToday}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            Today
-          </button>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={goPrev}
-              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-              aria-label="Previous month"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={goNext}
-              className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-              aria-label="Next month"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop / tablet: 7-column grid */}
-      <div className="hidden sm:block">
-        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/60">
-          {WEEKDAYS.map((d) => (
-            <div key={d} className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              {d}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {cells.map((cell, idx) => {
-            const isToday = cell.date && startOfDay(cell.date).getTime() === today.getTime();
-            const visible = cell.leaves.slice(0, MAX_CHIPS_PER_DAY);
-            const extra = cell.leaves.length - visible.length;
-            return (
-              <div
-                key={idx}
-                className={cn(
-                  'min-h-[92px] border-b border-r border-slate-100 p-1.5 last-of-type:border-r-0',
-                  !cell.date && 'bg-slate-50/40',
-                  (idx + 1) % 7 === 0 && 'border-r-0'
-                )}
-              >
-                {cell.date && (
-                  <>
-                    <div className="mb-1 flex justify-end">
-                      <span
-                        className={cn(
-                          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold',
-                          isToday ? 'bg-brand-600 text-white' : 'text-slate-500'
-                        )}
-                      >
-                        {cell.date.getDate()}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      {visible.map((leave) => (
-                        <Chip key={leave.id} leave={leave} />
-                      ))}
-                      {extra > 0 && (
-                        <p className="px-1 text-[10px] font-medium text-slate-400">+{extra} more</p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Mobile: vertical list grouped by day */}
-      <div className="sm:hidden">
-        {mobileGroups.length === 0 ? (
-          <div className="p-5">
-            <EmptyState
-              icon={CalendarRange}
-              tone="brand"
-              title="No approved leave this month"
-              description="Approved leaves for this month will appear here."
-            />
-          </div>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {mobileGroups.map((cell, idx) => {
-              const d = cell.date!;
-              const isToday = startOfDay(d).getTime() === today.getTime();
-              return (
-                <li key={idx} className="px-5 py-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-bold',
-                        isToday ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
-                      )}
-                    >
-                      {d.getDate()}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-700">
-                      {d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cell.leaves.map((leave) => (
-                      <button
-                        key={leave.id}
-                        onClick={() => onChipClick(leave.id)}
-                        className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold transition-opacity hover:opacity-80', typeBadge[leave.type])}
-                      >
-                        {firstName(nameOf(leave.employeeId))} · {leave.type}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      <div className="border-t border-slate-100 px-5 py-3">
-        <p className="text-xs text-slate-400">Showing approved leaves · click a chip to open the request</p>
-      </div>
-    </div>
+    </PageContainer>
   );
 }

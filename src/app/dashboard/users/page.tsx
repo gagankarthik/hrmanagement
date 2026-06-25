@@ -7,11 +7,12 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ActionMenu } from '@/components/ui/action-menu';
-import { EmptyState } from '@/components/ui/empty-state';
-import { SkeletonTable } from '@/components/ui/skeleton';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
@@ -25,17 +26,17 @@ interface AppUser {
   createdAt?: string;
 }
 
-function statusInfo(u: AppUser): { label: string; cls: string; Icon: React.ElementType } {
-  if (!u.enabled) return { label: 'Disabled', cls: 'bg-slate-100 text-slate-500 ring-slate-200', Icon: ShieldAlert };
+function statusInfo(u: AppUser): { label: string; tone: StatusTone; Icon: React.ElementType } {
+  if (!u.enabled) return { label: 'Disabled', tone: 'neutral', Icon: ShieldAlert };
   switch (u.status) {
     case 'CONFIRMED':
-      return { label: 'Active', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', Icon: CheckCircle2 };
+      return { label: 'Active', tone: 'success', Icon: CheckCircle2 };
     case 'FORCE_CHANGE_PASSWORD':
-      return { label: 'Invited · pending', cls: 'bg-amber-50 text-amber-700 ring-amber-200', Icon: Clock };
+      return { label: 'Invited · pending', tone: 'warning', Icon: Clock };
     case 'RESET_REQUIRED':
-      return { label: 'Reset required', cls: 'bg-amber-50 text-amber-700 ring-amber-200', Icon: ShieldAlert };
+      return { label: 'Reset required', tone: 'warning', Icon: ShieldAlert };
     default:
-      return { label: u.status || 'Unknown', cls: 'bg-slate-100 text-slate-600 ring-slate-200', Icon: Clock };
+      return { label: u.status || 'Unknown', tone: 'neutral', Icon: Clock };
   }
 }
 
@@ -139,8 +140,46 @@ export default function UsersPage() {
     }
   };
 
+  const columns: DataTableColumn<AppUser>[] = [
+    {
+      id: 'user',
+      header: 'User',
+      sortValue: (u) => (u.name || u.email || '').toLowerCase(),
+      cell: (u) => (
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
+            {(u.name || u.email || '?').charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-900">{u.name || u.email?.split('@')[0] || 'User'}</p>
+            <p className="flex items-center gap-1.5 truncate text-xs text-slate-400">
+              <Mail className="h-3 w-3 shrink-0" />{u.email}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      sortValue: (u) => statusInfo(u).label,
+      cell: (u) => {
+        const s = statusInfo(u);
+        return <StatusBadge label={s.label} tone={s.tone} icon={s.Icon} />;
+      },
+    },
+    {
+      id: 'invited',
+      header: 'Invited',
+      hideBelow: 'sm',
+      sortValue: (u) => u.createdAt ?? '',
+      cell: (u) =>
+        u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : <span className="text-slate-300">—</span>,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         icon={UserCog}
         eyebrow="Administration"
@@ -177,90 +216,55 @@ export default function UsersPage() {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="p-5"><SkeletonTable rows={5} cols={4} /></div>
-        ) : filtered.length === 0 ? (
-          <div className="p-5">
-            <EmptyState
-              icon={UserCog}
-              tone="default"
-              title={search ? 'No users match your search' : 'No users yet'}
-              description={search ? 'Try a different search.' : 'Invite your first team member to give them access.'}
-              action={!search ? (
-                <button onClick={() => setInviteOpen(true)} className="btn-primary">
-                  <UserPlus className="h-4 w-4" /> Invite user
-                </button>
-              ) : undefined}
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  {['User', 'Status', 'Invited', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((u) => {
-                  const s = statusInfo(u);
-                  const pending = u.status === 'FORCE_CHANGE_PASSWORD';
-                  return (
-                    <tr key={u.username} className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                            {(u.name || u.email || '?').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">{u.name || u.email?.split('@')[0] || 'User'}</p>
-                            <p className="flex items-center gap-1.5 truncate text-xs text-slate-400">
-                              <Mail className="h-3 w-3" />{u.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1', s.cls)}>
-                          <s.Icon className="h-3 w-3" /> {s.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">
-                        {u.createdAt ? format(new Date(u.createdAt), 'MMM d, yyyy') : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center justify-end gap-1">
-                          {pending && (
-                            <button
-                              onClick={() => handleResend(u)}
-                              disabled={resendingFor === u.username}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
-                            >
-                              {resendingFor === u.username ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
-                              Resend
-                            </button>
-                          )}
-                          <ActionMenu
-                            items={[
-                              ...(pending ? [{ label: 'Resend invite', icon: RotateCw, onClick: () => handleResend(u) }] : []),
-                              { label: 'Remove access', icon: Trash2, danger: true, separatorBefore: pending, onClick: () => setDeleteTarget(u) },
-                            ]}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <DataTable<AppUser>
+          columns={columns}
+          data={filtered}
+          getRowId={(u) => u.username}
+          caption="Users with sign-in access"
+          tableId="users"
+          isLoading={isLoading}
+          minWidth="min-w-[560px]"
+          rowActions={(u) => {
+            const pending = u.status === 'FORCE_CHANGE_PASSWORD';
+            return (
+              <div className="flex items-center justify-end gap-1">
+                {pending && (
+                  <button
+                    onClick={() => handleResend(u)}
+                    disabled={resendingFor === u.username}
+                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
+                  >
+                    {resendingFor === u.username ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
+                    Resend
+                  </button>
+                )}
+                <ActionMenu
+                  items={[
+                    ...(pending ? [{ label: 'Resend invite', icon: RotateCw, onClick: () => handleResend(u) }] : []),
+                    { label: 'Remove access', icon: Trash2, danger: true, separatorBefore: pending, onClick: () => setDeleteTarget(u) },
+                  ]}
+                />
+              </div>
+            );
+          }}
+          empty={{
+            icon: UserCog,
+            tone: 'default',
+            title: search ? 'No users match your search' : 'No users yet',
+            description: search ? 'Try a different search.' : 'Invite your first team member to give them access.',
+            action: !search ? (
+              <button onClick={() => setInviteOpen(true)} className="btn-primary">
+                <UserPlus className="h-4 w-4" /> Invite user
+              </button>
+            ) : undefined,
+          }}
+        />
+
+        {!isLoading && filtered.length > 0 && (
+          <div className="border-t border-slate-100 px-5 py-3">
+            <p className="text-xs text-slate-400">{filtered.length} of {users.length} user{users.length !== 1 ? 's' : ''}</p>
           </div>
         )}
-
-        <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">{filtered.length} of {users.length} user{users.length !== 1 ? 's' : ''}</p>
-        </div>
       </div>
 
       {/* Invite modal */}
@@ -335,6 +339,6 @@ export default function UsersPage() {
         confirmLabel="Remove access"
         isLoading={isDeleting}
       />
-    </div>
+    </PageContainer>
   );
 }

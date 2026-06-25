@@ -17,7 +17,6 @@ export interface Toast {
 type ToastInput = Omit<Toast, 'id'> & { id?: string };
 
 interface ToastContextValue {
-  toasts: Toast[];
   toast: (t: ToastInput) => string;
   dismiss: (id: string) => void;
   success: (title: string, description?: string) => string;
@@ -94,9 +93,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Stable across toast additions — only the `toasts` list (passed directly to
+  // <Toaster/>) changes. Keeping the consumer value stable prevents render loops
+  // in callers that depend on the toast functions (e.g. fetch-on-mount effects).
   const value = React.useMemo(
-    () => ({ toasts, toast, dismiss, success, error, warning, info }),
-    [toasts, toast, dismiss, success, error, warning, info]
+    () => ({ toast, dismiss, success, error, warning, info }),
+    [toast, dismiss, success, error, warning, info]
   );
 
   return (

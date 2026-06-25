@@ -32,7 +32,7 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function AttendancePage() {
+export default function AttendancePage({ embedded = false }: { embedded?: boolean }) {
   const { records, isLoading, deleteAttendance } = useAttendance();
   const { employees } = useEmployees();
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,7 +108,7 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {!embedded && (
       <PageHeader
         icon={CalendarCheck}
         eyebrow="Time & Leave"
@@ -124,6 +124,15 @@ export default function AttendancePage() {
           </button>
         }
       />
+      )}
+
+      {embedded && (
+        <div className="flex justify-end">
+          <button onClick={() => setModalState({ isOpen: true, mode: 'create' })} className="btn-primary">
+            <Plus className="h-4 w-4" /> Mark Attendance
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <StatGrid cols={4}>

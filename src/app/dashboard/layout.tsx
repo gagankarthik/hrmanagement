@@ -16,6 +16,7 @@ import { I9Provider } from '@/context/I9Context';
 import { I983Provider } from '@/context/I983Context';
 import { EmployeeDocsProvider } from '@/context/EmployeeDocsContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { PreferencesProvider } from '@/context/PreferencesContext';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
 
@@ -28,6 +29,7 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
+      <PreferencesProvider>
       <ClientProvider>
         <EndClientProvider>
         <VendorProvider>
@@ -65,6 +67,7 @@ export default function DashboardLayout({
         </VendorProvider>
         </EndClientProvider>
       </ClientProvider>
+      </PreferencesProvider>
     </ProtectedRoute>
   );
 }

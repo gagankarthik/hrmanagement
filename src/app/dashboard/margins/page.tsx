@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { TrendingUp, Search, DollarSign, Percent, Check, Download } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
@@ -99,7 +100,7 @@ export default function MarginsPage() {
     'w-24 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-6 pr-2 text-sm text-slate-900 outline-none transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100';
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         icon={TrendingUp}
         eyebrow="Billing"
@@ -227,6 +228,6 @@ export default function MarginsPage() {
           <p className="text-xs text-slate-400">Margin % = (bill − pay) ÷ bill. Weekly gross profit assumes {hoursPerWeek} billable hrs/week.</p>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

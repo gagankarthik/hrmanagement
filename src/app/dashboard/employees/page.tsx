@@ -6,6 +6,7 @@ import EmployeeDataTable from '@/components/dashboard/EmployeeDataTable';
 import DeleteConfirmModal from '@/components/dashboard/DeleteConfirmModal';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -54,7 +55,7 @@ export default function EmployeesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       {/* Page Header */}
       <PageHeader
         icon={Users}
@@ -141,6 +142,6 @@ export default function EmployeesPage() {
           toast.success('Employees imported', `${n} employee${n !== 1 ? 's' : ''} added.`);
         }}
       />
-    </div>
+    </PageContainer>
   );
 }

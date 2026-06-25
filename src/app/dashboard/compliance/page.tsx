@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,20 +11,21 @@ import {
   CheckCircle2,
   UserX,
   FileText,
-  ArrowRight,
   ChevronRight,
   ShieldX,
   PieChart as PieChartIcon,
-  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
-import { DonutChart, CompareBarChart, VIZ } from '@/components/dashboard/Charts';
+import { DonutChart, VIZ } from '@/components/dashboard/Charts';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useHandbook } from '@/context/HandbookContext';
+import { useSubcontractors } from '@/context/SubcontractorContext';
+import { coiStatus } from '@/lib/coi';
 import { Employee, EmployeeType } from '@/types/employee';
 import { cn } from '@/lib/utils';
 
@@ -89,6 +90,8 @@ export default function CompliancePage() {
   const router = useRouter();
   const { employees, isLoading } = useEmployees();
   const { getPolicy } = useHandbook();
+  const { subcontractors } = useSubcontractors();
+  const [riskFilter, setRiskFilter] = useState<'all' | 'expired' | '30' | '60' | '90'>('all');
 
   // 1 — Work-authorization compliance buckets (active, non-Offshore, with expiry)
   const authStats = useMemo(() => {
@@ -149,49 +152,23 @@ export default function CompliancePage() {
       else key = e.workAuthorization?.trim() || 'Unspecified';
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
-    const palette = [
-      VIZ.brand, VIZ.blue, VIZ.violet, VIZ.teal, VIZ.amber,
-      VIZ.sky, VIZ.rose, VIZ.emerald, VIZ.pink,
-    ];
-    const data = Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value], i) => ({
-        name,
-        value,
-        color:
-          name === 'Not applicable (Offshore)' || name === 'Unspecified'
-            ? VIZ.slate
-            : palette[i % palette.length],
-      }));
+    const palette = [VIZ.brand, VIZ.blue, VIZ.violet, VIZ.teal, VIZ.amber, VIZ.sky, VIZ.rose];
+    const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    // Cap the legend at the top categories + a grouped "Other" so it never
+    // overflows the card when there are many work-authorization types.
+    const TOP = 7;
+    const isMuted = (name: string) => name === 'Not applicable (Offshore)' || name === 'Unspecified';
+    const data = sorted.slice(0, TOP).map(([name, value], i) => ({
+      name,
+      value,
+      color: isMuted(name) ? VIZ.slate : palette[i % palette.length],
+    }));
+    const rest = sorted.slice(TOP);
+    if (rest.length) {
+      data.push({ name: `Other (${rest.length})`, value: rest.reduce((s, [, v]) => s + v, 0), color: VIZ.slate });
+    }
     return data;
   }, [employees]);
-
-  // 1b — Authorizations expiring within 30 / 60 / 90 days (cumulative windows)
-  const expiringWindows = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    let within30 = 0;
-    let within60 = 0;
-    let within90 = 0;
-    employees.forEach((e) => {
-      if (!hasExpiry(e) || !isActive(e) || !e.expiryDate) return;
-      const expiry = new Date(e.expiryDate);
-      if (Number.isNaN(expiry.getTime())) return;
-      expiry.setHours(0, 0, 0, 0);
-      const days = Math.round((expiry.getTime() - now.getTime()) / MS_PER_DAY);
-      if (days < 0) return; // already expired — surfaced separately
-      if (days <= 30) within30 += 1;
-      if (days <= 60) within60 += 1;
-      if (days <= 90) within90 += 1;
-    });
-    return [
-      { window: '≤ 30 days', count: within30 },
-      { window: '≤ 60 days', count: within60 },
-      { window: '≤ 90 days', count: within90 },
-    ];
-  }, [employees]);
-
-  const hasExpiringData = expiringWindows.some((w) => w.count > 0);
 
   // 2 — Profile completeness (key compliance data present)
   const profileGaps = useMemo(() => {
@@ -248,6 +225,25 @@ export default function CompliancePage() {
     [health.compliant, health.total]
   );
 
+  // At-risk rows filtered by the chosen window (cumulative; expired shown separately).
+  const visibleRisk = useMemo(() => {
+    return authStats.atRisk.filter((r) => {
+      if (riskFilter === 'all') return true;
+      if (riskFilter === 'expired') return r.daysRemaining < 0;
+      return r.daysRemaining >= 0 && r.daysRemaining <= Number(riskFilter);
+    });
+  }, [authStats.atRisk, riskFilter]);
+
+  // Subcontractor COI policies expiring within 60 days (or already expired).
+  const coiExpiring = useMemo(
+    () =>
+      subcontractors
+        .map((s) => ({ s, coi: coiStatus(s.coiExpiryDate) }))
+        .filter(({ coi }) => coi.state === 'expiring' || coi.state === 'expired')
+        .sort((a, b) => (a.coi.days ?? 0) - (b.coi.days ?? 0)),
+    [subcontractors],
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -267,7 +263,7 @@ export default function CompliancePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <PageHeader
         icon={ShieldCheck}
         eyebrow="Company"
@@ -308,13 +304,32 @@ export default function CompliancePage() {
         />
       </StatGrid>
 
-      {/* ── Infographics: work-auth breakdown + expiry windows ── */}
-      <section className="grid gap-6 lg:grid-cols-5">
-        {/* Work-authorization breakdown donut */}
-        <div
-          className="surface lg:col-span-2 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
-          style={{ animationDelay: '20ms' }}
-        >
+      {/* Overview — health · work-auth mix · policy coverage */}
+      <section className="grid gap-5 lg:grid-cols-3">
+        {/* Compliance health */}
+        <div className="surface flex flex-col items-center justify-center p-6 text-center">
+          <p className="eyebrow mb-3">Compliance health</p>
+          {health.total > 0 ? (
+            <>
+              <div className="relative">
+                <DonutChart data={healthDonut} height={180} />
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-8">
+                  <span className={cn('font-display text-4xl font-bold tabular-nums', healthTone === 'emerald' && 'text-emerald-600', healthTone === 'amber' && 'text-amber-600', healthTone === 'red' && 'text-red-600')}>{health.pct}%</span>
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">compliant</span>
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                <span className="font-bold tabular-nums text-slate-900">{health.compliant}</span> of{' '}
+                <span className="font-bold tabular-nums text-slate-900">{health.total}</span> checks passing
+              </p>
+            </>
+          ) : (
+            <EmptyState icon={ShieldCheck} tone="amber" title="Nothing to check yet" description="Add active employees and policies to see your score." />
+          )}
+        </div>
+
+        {/* Work authorization mix */}
+        <div className="surface">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
               <PieChartIcon className="h-4 w-4 text-sky-600" strokeWidth={1.75} />
@@ -326,179 +341,72 @@ export default function CompliancePage() {
           </div>
           <div className="p-5">
             {authBreakdown.length > 0 ? (
-              <DonutChart data={authBreakdown} height={240} />
+              <DonutChart data={authBreakdown} height={200} />
             ) : (
-              <EmptyState
-                icon={PieChartIcon}
-                tone="sky"
-                title="No employees yet"
-                description="Add employees to see the work-authorization breakdown."
-              />
+              <EmptyState icon={PieChartIcon} tone="sky" title="No employees yet" description="Add employees to see the breakdown." />
             )}
           </div>
         </div>
 
-        {/* Expiring within 30 / 60 / 90 days bar chart */}
-        <div
-          className="surface lg:col-span-3 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
-          style={{ animationDelay: '80ms' }}
-        >
+        {/* Policy coverage */}
+        <div className="surface flex flex-col">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-              <BarChart3 className="h-4 w-4 text-amber-600" strokeWidth={1.75} />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
+              <FileText className="h-4 w-4 text-brand-700" />
             </div>
-            <div>
-              <h2 className="font-display text-base font-bold text-slate-900">Upcoming expirations</h2>
-              <p className="text-xs text-slate-400">Active authorizations expiring within each window</p>
-            </div>
+            <h2 className="font-display text-base font-bold text-slate-900">Policy coverage</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">{coveredCount}/{EMPLOYEE_TYPES.length}</span>
           </div>
-          <div className="p-5">
-            {hasExpiringData ? (
-              <CompareBarChart
-                data={expiringWindows as unknown as Record<string, unknown>[]}
-                xKey="window"
-                bars={[{ key: 'count', name: 'Authorizations', color: VIZ.amber }]}
-                height={240}
-              />
-            ) : (
-              <EmptyState
-                icon={CheckCircle2}
-                tone="emerald"
-                title="Nothing expiring soon"
-                description="No active authorizations are due to expire within the next 90 days."
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Compliance health + policy coverage */}
-      <section className="grid gap-6 lg:grid-cols-3">
-        {/* Health headline */}
-        <div
-          className="surface flex flex-col items-center justify-center p-6 text-center animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
-          style={{ animationDelay: '40ms' }}
-        >
-          <p className="eyebrow mb-3">Compliance health</p>
-          {health.total > 0 ? (
-            <>
-              <div className="relative">
-                <DonutChart data={healthDonut} height={180} />
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-8">
-                  <span
-                    className={cn(
-                      'font-display text-4xl font-bold tabular-nums',
-                      healthTone === 'emerald' && 'text-emerald-600',
-                      healthTone === 'amber' && 'text-amber-600',
-                      healthTone === 'red' && 'text-red-600'
-                    )}
-                  >
-                    {health.pct}%
-                  </span>
-                  <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
-                    compliant
-                  </span>
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                <span className="font-bold tabular-nums text-slate-900">{health.compliant}</span> of{' '}
-                <span className="font-bold tabular-nums text-slate-900">{health.total}</span> checks passing
-              </p>
-            </>
-          ) : (
-            <EmptyState
-              icon={ShieldCheck}
-              tone="amber"
-              title="Nothing to check yet"
-              description="Add active employees and policies to see your compliance score."
-            />
-          )}
-        </div>
-
-        {/* Policy coverage checklist */}
-        <div
-          className="surface lg:col-span-2 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
-          style={{ animationDelay: '100ms' }}
-        >
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100">
-                <FileText className="h-4 w-4 text-brand-700" />
-              </div>
-              <h2 className="font-display text-base font-bold text-slate-900">Policy coverage</h2>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
-                {coveredCount}/{EMPLOYEE_TYPES.length}
-              </span>
-            </div>
-            <Link
-              href="/dashboard/policies"
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-            >
-              Manage policies
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <ul className="divide-y divide-slate-100">
+          <ul className="flex-1 divide-y divide-slate-100">
             {policyCoverage.map((p) => (
-              <li key={p.type} className="flex items-center justify-between gap-3 px-5 py-3.5">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset',
-                      typeChip[p.type]
-                    )}
-                  >
-                    {p.type}
-                  </span>
-                  <span className="text-sm text-slate-600">
-                    {p.covered
-                      ? p.allowance > 0
-                        ? `${p.allowance} annual leave days set`
-                        : 'Rules defined'
-                      : 'No leave policy or rules set'}
-                  </span>
-                </div>
+              <li key={p.type} className="flex items-center justify-between gap-3 px-5 py-3">
+                <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', typeChip[p.type])}>{p.type}</span>
                 {p.covered ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Configured
-                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Configured</span>
                 ) : (
-                  <Link
-                    href="/dashboard/policies"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-700"
-                  >
-                    <ShieldAlert className="h-4 w-4" />
-                    Set up
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  <Link href="/dashboard/policies" className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"><ShieldAlert className="h-4 w-4" /> Set up</Link>
                 )}
               </li>
             ))}
           </ul>
+          <div className="border-t border-slate-100 px-5 py-2.5">
+            <Link href="/dashboard/policies" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700">Manage policies <ChevronRight className="h-3.5 w-3.5" /></Link>
+          </div>
         </div>
       </section>
 
       {/* Work-authorization at-risk table */}
-      <section
-        className="surface animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
-        style={{ animationDelay: '160ms' }}
-      >
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <section className="surface">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
               <ShieldAlert className="h-4 w-4 text-amber-600" />
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-slate-900">Work authorization at risk</h2>
-              <p className="text-xs text-slate-400">Expired or expiring within 90 days · soonest first</p>
+              <p className="text-xs text-slate-400">Active employees, expired or expiring soon · soonest first</p>
             </div>
           </div>
-          {authStats.atRisk.length > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
-              {authStats.atRisk.length}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {([
+              { id: 'all', label: 'All' },
+              { id: 'expired', label: 'Expired' },
+              { id: '30', label: '≤ 30 days' },
+              { id: '60', label: '≤ 60 days' },
+              { id: '90', label: '≤ 90 days' },
+            ] as const).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setRiskFilter(f.id)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors',
+                  riskFilter === f.id ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {authStats.atRisk.length === 0 ? (
@@ -508,6 +416,15 @@ export default function CompliancePage() {
               tone="emerald"
               title="No authorizations at risk"
               description="Every active employee's work authorization is valid for more than 90 days."
+            />
+          </div>
+        ) : visibleRisk.length === 0 ? (
+          <div className="p-5">
+            <EmptyState
+              icon={CheckCircle2}
+              tone="emerald"
+              title="Nothing in this window"
+              description="No authorizations match the selected window — try a wider range."
             />
           </div>
         ) : (
@@ -524,7 +441,7 @@ export default function CompliancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {authStats.atRisk.map((row) => {
+                {visibleRisk.map((row) => {
                   const pill = bucketPill[row.bucket];
                   let expiryLabel = row.expiryDate;
                   const d = new Date(row.expiryDate);
@@ -580,6 +497,66 @@ export default function CompliancePage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+      </section>
+
+      {/* Subcontractor COI expiry */}
+      <section className="surface">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+              <ShieldCheck className="h-4 w-4 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-bold text-slate-900">Subcontractor COI expiry</h2>
+              <p className="text-xs text-slate-400">Insurance policies expiring within 60 days, per company</p>
+            </div>
+          </div>
+          {coiExpiring.length > 0 && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">{coiExpiring.length}</span>
+          )}
+        </div>
+        {coiExpiring.length === 0 ? (
+          <div className="p-5">
+            <EmptyState
+              icon={ShieldCheck}
+              tone="emerald"
+              title="All COIs current"
+              description="No subcontractor insurance policies are expiring within 60 days."
+            />
+          </div>
+        ) : (
+          <div className="grid gap-2.5 p-5 sm:grid-cols-2 xl:grid-cols-3">
+            {coiExpiring.map(({ s, coi }) => {
+              const expired = coi.state === 'expired';
+              const chip = expired
+                ? 'bg-red-50 text-red-600 ring-red-200'
+                : (coi.days ?? 99) < 30
+                  ? 'bg-accent-50 text-accent-700 ring-accent-200'
+                  : 'bg-amber-50 text-amber-700 ring-amber-200';
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => router.push(`/dashboard/subcontractors/${s.id}`)}
+                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                >
+                  <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', expired ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')}>
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-slate-900">{s.name}</span>
+                      <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', chip)}>
+                        {expired ? `${Math.abs(coi.days ?? 0)}d overdue` : `${coi.days}d`}
+                      </span>
+                    </div>
+                    <p className="truncate text-[11px] text-slate-400">{coi.label}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
+                </button>
+              );
+            })}
           </div>
         )}
       </section>
@@ -667,6 +644,6 @@ export default function CompliancePage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageContainer>
   );
 }

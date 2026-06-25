@@ -5,22 +5,19 @@ import { useRouter } from 'next/navigation';
 import {
   Users, Gauge, ShieldAlert, Percent, Filter, RefreshCw, X, Building2,
   CalendarClock, ChevronRight, Sparkles, TrendingUp, PieChart as PieIcon, BarChart3,
-  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useTimesheets } from '@/context/TimesheetContext';
-import { useSubcontractors } from '@/context/SubcontractorContext';
-import { coiStatus } from '@/lib/coi';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import {
   DonutChart, CompareBarChart, TrendAreaChart, HBarChart,
   TYPE_COLOR, VIZ, type DonutDatum,
 } from '@/components/dashboard/Charts';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
 import { KpiCard, ProgressRing, Sparkline, CountUp, SectionCard } from '@/components/dashboard/dashboard-ui';
-import PartnersPanel from '@/components/dashboard/PartnersPanel';
 import type { Employee, EmployeeType } from '@/types/employee';
 
 const CLASSES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
@@ -60,7 +57,6 @@ export default function DashboardPage() {
   const { employees, isLoading, fetchEmployees } = useEmployees();
   const { clients } = useClients();
   const { timesheets } = useTimesheets();
-  const { subcontractors } = useSubcontractors();
 
   const [classFilter, setClassFilter] = useState<Set<EmployeeType>>(new Set(CLASSES));
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -111,15 +107,7 @@ export default function DashboardPage() {
     const d = new Date(ed);
     return !Number.isNaN(d.getTime()) && d <= in30;
   }), [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Subcontractor COI policies expiring within 60 days (or already expired).
-  const coiExpiring = useMemo(() => (
-    subcontractors
-      .map((s) => ({ s, coi: coiStatus(s.coiExpiryDate) }))
-      .filter(({ coi }) => coi.state === 'expiring' || coi.state === 'expired')
-      .sort((a, b) => (a.coi.days ?? 0) - (b.coi.days ?? 0))
-  ), [subcontractors]);
-
-  // Unified compliance timeline — employee work-auth (90d) + subcontractor COI (60d).
+  // Work-authorization expiry timeline (active employees, within 90 days).
   const expiryTimeline = useMemo(() => {
     const items: { id: string; name: string; days: number; sub: string; href: string }[] = [];
     empsActive.forEach((e) => {
@@ -135,11 +123,8 @@ export default function DashboardPage() {
         href: `/dashboard/employees/${e.id}`,
       });
     });
-    coiExpiring.forEach(({ s, coi }) => {
-      items.push({ id: s.id, name: s.name, days: coi.days ?? 0, sub: 'COI policy', href: `/dashboard/subcontractors/${s.id}` });
-    });
     return items.sort((a, b) => a.days - b.days);
-  }, [empsActive, coiExpiring]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [empsActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hiring trend BY TYPE — monthly new hires, one stacked series per class
   const hiringByType = useMemo(() => {
@@ -239,7 +224,6 @@ export default function DashboardPage() {
   const insights = useMemo(() => {
     const out: string[] = [];
     if (complianceRisk.length) out.push(`${complianceRisk.length} work authorization${complianceRisk.length > 1 ? 's' : ''} expiring within 30 days.`);
-    if (coiExpiring.length) out.push(`${coiExpiring.length} subcontractor COI ${coiExpiring.length > 1 ? 'policies' : 'policy'} expiring within 60 days.`);
     out.push(utilization >= 75 ? `Billable utilization is healthy at ${utilization}%.` : `Billable utilization is ${utilization}% — below the 75% target.`);
     if (revenueMode) {
       const total = revenueByClient.reduce((s, c) => s + c.revenue, 0);
@@ -247,7 +231,7 @@ export default function DashboardPage() {
     } else if (weeklyGp === 0) out.push('Set bill & pay rates on the Margins page to unlock revenue and margin insights.');
     if (benchCount) out.push(`${benchCount} active ${benchCount === 1 ? 'worker is' : 'workers are'} on the bench.`);
     return out.slice(0, 3);
-  }, [complianceRisk.length, coiExpiring.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
+  }, [complianceRisk.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
 
   const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await fetchEmployees(); } finally { setRefreshing(false); } };
   const toggleClass = (c: EmployeeType) => setClassFilter((prev) => { const n = new Set(prev); if (n.has(c)) { if (n.size > 1) n.delete(c); } else n.add(c); return n; });
@@ -276,7 +260,7 @@ export default function DashboardPage() {
   const drillClient = revenueByClient.find((c) => c.id === clientModal);
 
   return (
-    <div className="space-y-5">
+    <PageContainer>
       <PageHeader
         icon={Gauge}
         eyebrow="Overview"
@@ -346,35 +330,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Row A — hiring trend by type + workforce by type */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <SectionCard title="Hiring trend by type" subtitle="New hires per month · last 8 months" icon={TrendingUp} className="lg:col-span-2">
-          {emps.length ? (
-            <CompareBarChart data={hiringByType} xKey="month" stacked height={280} bars={CLASSES.map((c) => ({ key: CLASS_LABEL[c], name: CLASS_LABEL[c], color: TYPE_COLOR[c] }))} />
-          ) : <p className="py-16 text-center text-sm text-slate-400">No employees match the filters.</p>}
-        </SectionCard>
-        <SectionCard title="Workforce by type" subtitle={`${emps.length} in view`} icon={PieIcon}>
-          {typeDonut.length ? <DonutChart data={typeDonut} height={280} /> : <p className="py-16 text-center text-sm text-slate-400">No employees.</p>}
-        </SectionCard>
-      </div>
-
-      {/* Row B — status + billable mix + utilization (comparisons) */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <SectionCard title="Active vs terminated" subtitle="Workforce status" icon={Users}>
-          {statusDonut.length ? <DonutChart data={statusDonut} height={240} /> : <p className="py-14 text-center text-sm text-slate-400">No status data.</p>}
-        </SectionCard>
-        <SectionCard title="Billable vs non-billable" subtitle="By employment class" icon={BarChart3}>
-          {billableData.length ? <CompareBarChart data={billableData} xKey="type" stacked height={240} bars={[{ key: 'Billable', name: 'Billable', color: VIZ.emerald }, { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
-        </SectionCard>
-        <SectionCard title="Utilization by class" subtitle="Billable share %" icon={Gauge}>
-          {utilData.length ? <CompareBarChart data={utilData} xKey="type" height={240} bars={[{ key: 'Utilization', name: 'Utilization %', color: VIZ.brand }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
-        </SectionCard>
-      </div>
-
-      {/* Row C — revenue + compliance */}
+      {/* ── PRIMARY (≈60%) — the money + the risk ── */}
       <div className="grid gap-5 lg:grid-cols-3">
         <SectionCard title={revenueMode ? 'Revenue by client' : 'Top clients'} subtitle={revenueMode ? 'Billed from timesheets · click a bar to drill in' : 'By people placed'} icon={Building2} className="lg:col-span-2">
-          {clientChart.length ? <HBarChart data={clientChart as Record<string, unknown>[]} categoryKey="name" valueKey="value" money={revenueMode} color={revenueMode ? VIZ.brand : VIZ.teal} height={280} onBarClick={onClientBar} /> : <p className="py-16 text-center text-sm text-slate-400">No client placements yet.</p>}
+          {clientChart.length ? <HBarChart data={clientChart as Record<string, unknown>[]} categoryKey="name" valueKey="value" money={revenueMode} color={revenueMode ? VIZ.brand : VIZ.teal} height={300} onBarClick={onClientBar} /> : <p className="py-16 text-center text-sm text-slate-400">No client placements yet.</p>}
         </SectionCard>
         <SectionCard title="Compliance expiry" subtitle="Next 90 days" icon={CalendarClock} action={<button onClick={() => router.push('/dashboard/compliance')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}>
           {expiryTimeline.length === 0 ? (
@@ -405,52 +364,30 @@ export default function DashboardPage() {
         </SectionCard>
       </div>
 
-      {/* Subcontractor COI expiry — dedicated card */}
-      <SectionCard
-        title="Subcontractor COI expiry"
-        subtitle="Insurance policies expiring within 60 days, per company"
-        icon={ShieldCheck}
-        action={<button onClick={() => router.push('/dashboard/subcontractors')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}
-      >
-        {coiExpiring.length === 0 ? (
-          <p className="py-10 text-center text-sm text-slate-400">All subcontractor COIs are current — nothing expiring in 60 days.</p>
-        ) : (
-          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-            {coiExpiring.map(({ s, coi }) => {
-              const expired = coi.state === 'expired';
-              const chip = expired
-                ? 'bg-red-50 text-red-600 ring-red-200'
-                : (coi.days ?? 99) < 30
-                  ? 'bg-accent-50 text-accent-700 ring-accent-200'
-                  : 'bg-amber-50 text-amber-700 ring-amber-200';
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => router.push(`/dashboard/subcontractors/${s.id}`)}
-                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
-                >
-                  <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', expired ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')}>
-                    <ShieldCheck className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-semibold text-slate-900">{s.name}</span>
-                      <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', chip)}>
-                        {expired ? `${Math.abs(coi.days ?? 0)}d overdue` : `${coi.days}d`}
-                      </span>
-                    </div>
-                    <p className="truncate text-[11px] text-slate-400">{coi.label}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </SectionCard>
+      {/* ── TREND (≈30%) — hiring momentum + workforce mix ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <SectionCard title="Hiring trend by type" subtitle="New hires per month · last 8 months" icon={TrendingUp} className="lg:col-span-2">
+          {emps.length ? (
+            <CompareBarChart data={hiringByType} xKey="month" stacked height={280} bars={CLASSES.map((c) => ({ key: CLASS_LABEL[c], name: CLASS_LABEL[c], color: TYPE_COLOR[c] }))} />
+          ) : <p className="py-16 text-center text-sm text-slate-400">No employees match the filters.</p>}
+        </SectionCard>
+        <SectionCard title="Workforce by type" subtitle={`${emps.length} in view`} icon={PieIcon}>
+          {typeDonut.length ? <DonutChart data={typeDonut} height={280} /> : <p className="py-16 text-center text-sm text-slate-400">No employees.</p>}
+        </SectionCard>
+      </div>
 
-      {/* Top partners — tabbed table */}
-      <PartnersPanel />
+      {/* ── COMPARISONS (≈20%) — status · billable mix · utilization ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <SectionCard title="Active vs terminated" subtitle="Workforce status" icon={Users}>
+          {statusDonut.length ? <DonutChart data={statusDonut} height={240} /> : <p className="py-14 text-center text-sm text-slate-400">No status data.</p>}
+        </SectionCard>
+        <SectionCard title="Billable vs non-billable" subtitle="By employment class" icon={BarChart3}>
+          {billableData.length ? <CompareBarChart data={billableData} xKey="type" stacked height={240} bars={[{ key: 'Billable', name: 'Billable', color: VIZ.emerald }, { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
+        </SectionCard>
+        <SectionCard title="Utilization by class" subtitle="Billable share %" icon={Gauge}>
+          {utilData.length ? <CompareBarChart data={utilData} xKey="type" height={240} bars={[{ key: 'Utilization', name: 'Utilization %', color: VIZ.brand }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
+        </SectionCard>
+      </div>
 
       {isLoading && employees.length === 0 && (
         <p className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Loading workforce…</p>
@@ -506,6 +443,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

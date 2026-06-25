@@ -29,7 +29,7 @@ export interface RepositoryConfig<T extends Entity> {
   /** How `list()` reads the collection. */
   list:
     | { mode: 'query'; indexName: string; partitionValue: string; partitionAttr?: string }
-    | { mode: 'scan' };
+    | { mode: 'scan'; pkPrefix?: string };
   /**
    * Extra attributes (typically GSI keys) written on every create/update,
    * derived from the persisted item. Runs after id/timestamps are set.
@@ -49,7 +49,18 @@ export class BaseRepository<T extends Entity> {
 
   async list(): Promise<T[]> {
     if (this.cfg.list.mode === 'scan') {
-      const res = await docClient.send(new ScanCommand({ TableName: TABLE_NAME }));
+      const { pkPrefix } = this.cfg.list;
+      const res = await docClient.send(
+        new ScanCommand({
+          TableName: TABLE_NAME,
+          ...(pkPrefix
+            ? {
+                FilterExpression: 'begins_with(PK, :pk)',
+                ExpressionAttributeValues: { ':pk': pkPrefix },
+              }
+            : {}),
+        }),
+      );
       return (res.Items || []) as T[];
     }
     const { indexName, partitionValue, partitionAttr = 'GSI1PK' } = this.cfg.list;

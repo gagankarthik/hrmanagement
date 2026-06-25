@@ -1,117 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import {
-  GetCommand,
-  PutCommand,
-  DeleteCommand,
-} from '@aws-sdk/lib-dynamodb';
-import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { NextRequest } from 'next/server';
+import { clientService } from '@/features/clients/server/client.service';
+import { ok, fail } from '@/shared/server/http/responses';
 
 // GET - Fetch single client by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-
-    const command = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        PK: `CLIENT#${id}`,
-        SK: `CLIENT#${id}`,
-      },
-    });
-
-    const response = await docClient.send(command);
-
-    if (!response.Item) {
-      return NextResponse.json(
-        { success: false, error: 'Client not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: response.Item,
-    });
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error fetching client:', err.message);
-    return NextResponse.json(
-      { success: false, error: err.message || 'Failed to fetch client' },
-      { status: 500 }
-    );
+    return ok(await clientService.get(id));
+  } catch (error) {
+    return fail(error);
   }
 }
 
 // PUT - Update client
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const now = new Date().toISOString();
-
-    const item = {
-      ...body,
-      id,
-      PK: `CLIENT#${id}`,
-      SK: `CLIENT#${id}`,
-      GSI1PK: 'CLIENTS',
-      GSI1SK: body.GSI1SK || `CLIENT#${body.createdAt || now}`,
-      updatedAt: now,
-    };
-
-    const command = new PutCommand({
-      TableName: TABLE_NAME,
-      Item: item,
-    });
-
-    await docClient.send(command);
-
-    return NextResponse.json({
-      success: true,
-      data: item,
-    });
+    return ok(await clientService.update(id, await request.json()));
   } catch (error) {
-    console.error('Error updating client:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update client' },
-      { status: 500 }
-    );
+    return fail(error);
   }
 }
 
 // DELETE - Delete client
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-
-    const command = new DeleteCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        PK: `CLIENT#${id}`,
-        SK: `CLIENT#${id}`,
-      },
-    });
-
-    await docClient.send(command);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Client deleted successfully',
-    });
+    await clientService.remove(id);
+    return ok({ message: 'Client deleted successfully' });
   } catch (error) {
-    console.error('Error deleting client:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete client' },
-      { status: 500 }
-    );
+    return fail(error);
   }
 }

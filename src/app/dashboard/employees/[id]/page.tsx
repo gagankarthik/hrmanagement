@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -21,7 +21,7 @@ import {
   ArrowLeft, Mail, Phone, Building2, Package, UserCheck,
   FileText, Shield, Trash2, XCircle, Printer,
   CheckCircle2, AlertTriangle, CalendarCheck, Hourglass, Pencil, HeartPulse,
-  BadgeCheck, GraduationCap, FolderArchive, ChevronRight, Download, ExternalLink,
+  BadgeCheck, GraduationCap, FolderArchive, ChevronRight, ChevronDown, Download, ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
@@ -504,10 +504,10 @@ function EmployeeDetailPageContent() {
         </button>
         <div className="flex items-center gap-2.5">
           <button onClick={handlePrint} className="btn-ghost"><Printer className="h-4 w-4" /> Print / PDF</button>
-          <Link href={`/dashboard/employees/${employeeId}/edit`} className="btn-primary"><Pencil className="h-4 w-4" /> Update</Link>
+          <FormsMenu employeeId={employeeId} />
+          <Link href={`/dashboard/employees/${employeeId}/edit`} className="btn-primary"><Pencil className="h-4 w-4" /> Edit</Link>
           <ActionMenu items={[
-            { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/employees/${employeeId}/edit`) },
-            { label: 'Delete', icon: Trash2, onClick: handleDelete, danger: true, separatorBefore: true },
+            { label: 'Delete', icon: Trash2, onClick: handleDelete, danger: true },
           ]} />
         </div>
       </div>
@@ -804,5 +804,58 @@ export default function EmployeeDetailPage() {
     <ErrorBoundary>
       <EmployeeDetailPageContent />
     </ErrorBoundary>
+  );
+}
+
+/** "New form" dropdown — opens I-9 / I-983 for this employee (pre-selected via route). */
+function FormsMenu({ employeeId }: { employeeId: string }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const forms = [
+    { label: 'Form I-9', icon: BadgeCheck, href: `/dashboard/i9/${employeeId}` },
+    { label: 'Form I-983', icon: GraduationCap, href: `/dashboard/i983/${employeeId}` },
+  ];
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="btn-ghost"
+      >
+        <FileText className="h-4 w-4" /> New form
+        <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} strokeWidth={1.75} />
+      </button>
+      {open && (
+        <div role="menu" className="surface absolute right-0 z-30 mt-2 w-56 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100">
+          <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Create for this employee</p>
+          {forms.map((f) => (
+            <button
+              key={f.href}
+              type="button"
+              role="menuitem"
+              onClick={() => { setOpen(false); router.push(f.href); }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <f.icon className="h-4 w-4 text-slate-400" strokeWidth={1.75} />
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

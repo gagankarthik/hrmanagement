@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, FileText, Globe, Users, UserCheck, Upload, Info } from 'lucide-react';
+import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, Users, UserCheck, Upload, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Stepper } from '@/components/ui/stepper';
@@ -27,66 +27,8 @@ import { useToast } from '@/components/ui/toast';
 import { Confetti } from '@/components/ui/confetti';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { EMPLOYEE_IMPORTS } from '@/lib/bulk-import/configs';
-
-const employeeTypes: {
-  value: EmployeeType;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  ring: string;
-  selectedBorder: string;
-}[] = [
-  {
-    value: 'W2',
-    label: 'W2 Employee',
-    description: 'Full-time employees with benefits and standard payroll',
-    icon: Briefcase,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    ring: 'hover:border-blue-300',
-    selectedBorder: 'border-blue-500 ring-2 ring-blue-200',
-  },
-  {
-    value: 'Contract',
-    label: 'Contract',
-    description: 'Temporary contract workers on a project basis',
-    icon: FileText,
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600',
-    ring: 'hover:border-purple-300',
-    selectedBorder: 'border-purple-500 ring-2 ring-purple-200',
-  },
-  {
-    value: '1099',
-    label: '1099',
-    description: 'Independent contractors filing 1099 forms',
-    icon: FileText,
-    iconBg: 'bg-teal-100',
-    iconColor: 'text-teal-600',
-    ring: 'hover:border-teal-300',
-    selectedBorder: 'border-teal-500 ring-2 ring-teal-200',
-  },
-  {
-    value: 'Offshore',
-    label: 'Offshore',
-    description: 'International remote employees working offshore',
-    icon: Globe,
-    iconBg: 'bg-pink-100',
-    iconColor: 'text-pink-600',
-    ring: 'hover:border-pink-300',
-    selectedBorder: 'border-pink-500 ring-2 ring-pink-200',
-  },
-];
-
-const WIZARD_STEPS = [
-  { label: 'Select type', description: 'Employee category' },
-  { label: 'Details', description: 'Fill in the fields' },
-  { label: 'Review', description: 'Confirm and add' },
-];
-
-type WizardStep = 0 | 1 | 2;
+import { employeeTypes, WIZARD_STEPS, WizardStep } from './_components/constants';
+import { ReviewAssignmentList } from './_components/ReviewAssignmentList';
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -872,26 +814,6 @@ export default function OnboardPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/** Read-only list of resolved assignment rows (name + date range) for the review step. */
-function ReviewAssignmentList({ label, rows }: { label: string; rows: { name: string; range: string }[] }) {
-  return (
-    <div>
-      <h4 className="mb-2 font-display text-sm font-bold text-slate-900">{label}</h4>
-      <ul className="space-y-2">
-        {rows.map((row, idx) => (
-          <li
-            key={idx}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5"
-          >
-            <span className="text-sm font-medium text-slate-800">{row.name}</span>
-            <span className="text-xs text-slate-500">{row.range}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

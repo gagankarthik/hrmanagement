@@ -1,20 +1,39 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Search, Menu, Bell, ChevronDown, LogOut,
   UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft, UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { ActivityDrawer } from '@/components/dashboard/ActivityDrawer';
+import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/breadcrumb';
 
 type Result = { key: string; label: string; sub?: string; group: string; href: string; icon: React.ElementType };
+
+/** Human labels for route segments, for the top-bar breadcrumb. */
+const SEGMENT_LABELS: Record<string, string> = {
+  employees: 'Employees', onboard: 'Onboard', documents: 'Documents',
+  leaves: 'Leaves', attendance: 'Attendance', margins: 'Margins', timesheets: 'Timesheets',
+  invoices: 'Invoices', payroll: 'Payroll', clients: 'Clients', endclients: 'End Clients',
+  vendors: 'Vendors', subcontractors: 'Subcontractors', handbook: 'Handbook', procedures: 'Procedures',
+  policies: 'Policies', benefits: 'Benefits', compliance: 'Compliance', i9: 'Form I-9', i983: 'Form I-983',
+  users: 'Users', reports: 'Reports', profile: 'Profile', new: 'New', edit: 'Edit',
+};
+
+/** A path segment that isn't a known page is treated as a record id → "Details". */
+function segmentLabel(seg: string): string {
+  if (SEGMENT_LABELS[seg]) return SEGMENT_LABELS[seg];
+  if (/\d/.test(seg) || seg.length > 16) return 'Details';
+  return seg.charAt(0).toUpperCase() + seg.slice(1);
+}
 
 /**
  * Dismiss a popover by listening for pointer events outside `ref`.
@@ -37,7 +56,22 @@ function useClickOutside<T extends HTMLElement>(enabled: boolean, onOutside: () 
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { density, setDensity } = usePreferences();
+
+  // Auto breadcrumb from the path (the Home icon stands in for /dashboard).
+  const crumbs = useMemo<BreadcrumbItem[]>(() => {
+    const parts = (pathname || '').split('/').filter(Boolean);
+    const items: BreadcrumbItem[] = [];
+    let href = '';
+    parts.forEach((seg) => {
+      href += `/${seg}`;
+      if (seg === 'dashboard') return;
+      items.push({ label: segmentLabel(seg), href });
+    });
+    return items;
+  }, [pathname]);
   const { employees } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
@@ -102,8 +136,8 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/90 px-3 backdrop-blur sm:gap-3 sm:px-5 lg:grid lg:grid-cols-[1fr_minmax(0,28rem)_1fr]">
-      {/* Left — mobile menu trigger */}
-      <div className="flex items-center">
+      {/* Left — mobile menu trigger + breadcrumb location context */}
+      <div className="flex min-w-0 items-center gap-2">
         <button
           onClick={onMenuClick}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
@@ -111,6 +145,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         >
           <Menu className="h-4 w-4" strokeWidth={1.75} />
         </button>
+        <Breadcrumb items={crumbs} className="hidden min-w-0 lg:flex" />
       </div>
 
       {/* Center — global search */}
@@ -222,6 +257,26 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   </div>
                 </div>
                 <div className="p-1.5">
+                  {/* Display density preference */}
+                  <div className="px-2 pb-2 pt-1">
+                    <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Display density</p>
+                    <div className="flex gap-1 rounded-lg bg-slate-100 p-0.5">
+                      {(['comfortable', 'compact'] as const).map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setDensity(d)}
+                          aria-pressed={density === d}
+                          className={cn(
+                            'flex-1 rounded-md px-2 py-1 text-xs font-semibold capitalize transition-colors',
+                            density === d ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700',
+                          )}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="my-1 border-t border-slate-100" />
                   <button
                     onClick={() => { setMenuOpen(false); router.push('/dashboard/profile'); }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"

@@ -4,71 +4,40 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, UsersRound, Building2, Package, UserRoundCheck,
-  UserRoundPlus, BarChart3, X,
-  PanelLeftClose, PanelLeftOpen, CalendarOff, CalendarCheck, BookOpen, ScrollText,
-  HeartPulse, ShieldCheck, Target, ClipboardList, UserCog,
-  TrendingUp, Clock, Receipt, Banknote, BadgeCheck, GraduationCap, FolderArchive,
-  LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings,
+  LayoutDashboard, UsersRound,
+  BarChart3, X,
+  PanelLeftClose, PanelLeftOpen, BookOpen, ScrollText,
+  HeartPulse, ShieldCheck, ClipboardList, UserCog,
+  LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings, ChevronDown,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { BrandMark } from '@/components/ui/brand-mark';
 
 type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean };
-type NavSection = { heading: string; items: NavItem[] };
+/** `flat` sections render their items as standalone links — no collapsible header. */
+type NavSection = { heading: string; items: NavItem[]; flat?: boolean };
 
 const sections: NavSection[] = [
   {
-    heading: 'Overview',
+    heading: 'Main',
+    flat: true,
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-      { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-    ],
-  },
-  {
-    heading: 'People',
-    items: [
       { label: 'Employees', href: '/dashboard/employees', icon: UsersRound },
-      { label: 'Onboard', href: '/dashboard/onboard', icon: UserRoundPlus },
-      { label: 'Documents', href: '/dashboard/documents', icon: FolderArchive },
-    ],
-  },
-  {
-    heading: 'Time & Leave',
-    items: [
-      { label: 'Leaves', href: '/dashboard/leaves', icon: CalendarOff },
-      { label: 'Attendance', href: '/dashboard/attendance', icon: CalendarCheck },
-    ],
-  },
-  {
-    heading: 'Billing',
-    items: [
-      { label: 'Margins', href: '/dashboard/margins', icon: TrendingUp },
-      { label: 'Timesheets', href: '/dashboard/timesheets', icon: Clock },
-      { label: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
-      { label: 'Payroll', href: '/dashboard/payroll', icon: Banknote },
-    ],
-  },
-  {
-    heading: 'Partners',
-    items: [
-      { label: 'Clients', href: '/dashboard/clients', icon: Building2 },
-      { label: 'End Clients', href: '/dashboard/endclients', icon: Target },
-      { label: 'Vendors', href: '/dashboard/vendors', icon: Package },
-      { label: 'Subcontractors', href: '/dashboard/subcontractors', icon: UserRoundCheck },
+      { label: 'Partners', href: '/dashboard/partners', icon: Network },
+      { label: 'Leave Management', href: '/dashboard/leaves', icon: CalendarDays },
+      { label: 'Billing', href: '/dashboard/billing', icon: Wallet },
     ],
   },
   {
     heading: 'Company',
     items: [
+      { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
       { label: 'Handbook', href: '/dashboard/handbook', icon: BookOpen },
       { label: 'Company Procedures', href: '/dashboard/procedures', icon: ClipboardList },
       { label: 'Policies', href: '/dashboard/policies', icon: ScrollText },
       { label: 'Benefits', href: '/dashboard/benefits', icon: HeartPulse },
       { label: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
-      { label: 'Form I-9', href: '/dashboard/i9', icon: BadgeCheck },
-      { label: 'Form I-983', href: '/dashboard/i983', icon: GraduationCap },
     ],
   },
   {
@@ -80,7 +49,7 @@ const sections: NavSection[] = [
 ];
 
 const HEADING_ICONS: Record<string, React.ElementType> = {
-  Overview: LayoutGrid,
+  Dashboard: LayoutGrid,
   People: Users,
   'Time & Leave': CalendarDays,
   Billing: Wallet,
@@ -90,6 +59,7 @@ const HEADING_ICONS: Record<string, React.ElementType> = {
 };
 
 const STORAGE_KEY = 'zenhr:sidebar-collapsed';
+const NAV_SECTIONS_KEY = 'ob:nav-sections';
 
 function SidebarContent({
   onClose, collapsed = false, onToggleCollapse,
@@ -103,41 +73,100 @@ function SidebarContent({
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
+  // Collapsible sections (progressive disclosure): on first visit only the
+  // active section is open; user toggles are persisted. The active section is
+  // always kept open so you never lose your current location.
+  const activeHeading = sections.find((s) => s.items.some(isActive))?.heading;
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let stored: Record<string, boolean> | null = null;
+    try { const r = localStorage.getItem(NAV_SECTIONS_KEY); if (r) stored = JSON.parse(r); } catch { /* noop */ }
+    const next: Record<string, boolean> = {};
+    sections.forEach((s) => { next[s.heading] = stored ? !!stored[s.heading] : s.heading === activeHeading; });
+    if (activeHeading) next[activeHeading] = true;
+    setOpenMap(next);
+  }, [activeHeading]);
+
+  const toggleSection = (heading: string) => {
+    setOpenMap((prev) => {
+      const next = { ...prev, [heading]: !prev[heading] };
+      try { localStorage.setItem(NAV_SECTIONS_KEY, JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  };
+
   return (
     <div className="flex h-full flex-col border-r border-slate-200/70 bg-white/95 backdrop-blur-sm">
-      {/* Logo */}
-      <div className={cn('flex h-14 items-center border-b border-slate-100', collapsed ? 'justify-center px-2' : 'gap-2.5 px-4')}>
+      {/* Logo + collapse toggle */}
+      <div className={cn('flex h-14 items-center border-b border-slate-100', collapsed ? 'justify-center px-2' : 'justify-between gap-2 px-4')}>
         {collapsed ? (
-          <BrandMark size={32} className="shadow-sm shadow-brand-900/15" />
-        ) : (
-          <Image
-            src="/logo.png"
-            alt="Ocean Blue"
-            width={277}
-            height={76}
-            priority
-            className="h-8 w-auto"
-          />
-        )}
-        {onClose && (
-          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden">
-            <X className="h-4 w-4" />
+          <button
+            onClick={onToggleCollapse}
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
           </button>
+        ) : (
+          <>
+            <Image
+              src="/logo.png"
+              alt="Ocean Blue"
+              width={277}
+              height={76}
+              priority
+              className="h-8 w-auto"
+            />
+            <div className="flex items-center gap-0.5">
+              {onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  title="Collapse sidebar"
+                  aria-label="Collapse sidebar"
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 lg:hidden"
+                  aria-label="Close menu"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
 
       {/* Nav */}
       <nav className={cn('flex-1 overflow-y-auto py-3', collapsed ? 'px-2' : 'px-3')}>
-        {sections.map((section, si) => (
-          <div key={section.heading} className={cn(si > 0 && (collapsed ? 'mt-3' : 'mt-3.5'))}>
-            {!collapsed ? (
-              <p className="mb-1 flex items-center gap-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                {HEADING_ICONS[section.heading] && React.createElement(HEADING_ICONS[section.heading], { className: 'h-3 w-3', strokeWidth: 2 })}
+        {sections.map((section, si) => {
+          const sectionOpen = collapsed || section.flat || openMap[section.heading];
+          const HeadingIcon = HEADING_ICONS[section.heading];
+          return (
+          <div key={section.heading} className={cn(si > 0 && (collapsed ? 'mt-3' : 'mt-2'))}>
+            {!collapsed && !section.flat && (
+              <button
+                type="button"
+                onClick={() => toggleSection(section.heading)}
+                aria-expanded={sectionOpen}
+                className="mb-1 mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200"
+              >
+                {HeadingIcon && <HeadingIcon className="h-3.5 w-3.5 shrink-0 text-slate-400" strokeWidth={2} />}
                 {section.heading}
-              </p>
-            ) : (
-              si > 0 && <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
+                <ChevronDown className={cn('ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform', !openMap[section.heading] && '-rotate-90')} strokeWidth={2} />
+              </button>
             )}
+            {collapsed && si > 0 && (
+              <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
+            )}
+            {sectionOpen && (
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const active = isActive(item);
@@ -166,33 +195,11 @@ function SidebarContent({
                 );
               })}
             </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </nav>
-
-      {/* Collapse toggle (desktop) */}
-      {onToggleCollapse && (
-        <div className={cn('border-t border-slate-100', collapsed ? 'p-2' : 'p-3')}>
-          {collapsed ? (
-            <button
-              onClick={onToggleCollapse}
-              title="Expand sidebar"
-              className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              onClick={onToggleCollapse}
-              title="Collapse sidebar"
-              className="flex w-full items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-            >
-              <PanelLeftClose className="h-3.5 w-3.5" />
-              Collapse
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
