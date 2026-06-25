@@ -250,7 +250,7 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
         contextGetter={openCategory?.contextGetter}
         icon={openCategory?.icon}
         tone={openCategory?.tone}
-        footerLink={openCategory ? { href: '/dashboard/employees', label: 'Open the full employee list' } : undefined}
+        footerLink={openCategory ? { href: '/employees', label: 'Open the full employee list' } : undefined}
       />
     </>
   );

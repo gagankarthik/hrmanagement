@@ -58,7 +58,7 @@ export function ArAgingWidget() {
       onRetry={fetchInvoices}
       emptyLabel="No outstanding receivables"
       emptyHint="Invoices marked “Sent” and not yet paid will be aged here."
-      emptyCta={{ label: 'Go to Invoices', href: '/dashboard/invoices' }}
+      emptyCta={{ label: 'Go to Invoices', href: '/invoices' }}
     >
       <HBarChart data={rows as Record<string, unknown>[]} categoryKey="name" valueKey="value" money height={240} />
     </ChartFrame>

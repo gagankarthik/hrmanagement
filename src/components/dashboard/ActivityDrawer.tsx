@@ -70,7 +70,7 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
       id: `emp-${e.id}`,
       title: e.name || 'Employee',
       meta: isNew(e) ? `${e.type} employee added` : `${e.type} employee updated`,
-      href: `/dashboard/employees/${e.id}`,
+      href: `/employees/${e.id}`,
       icon: UsersRound, tone: 'brand', time: stamp(e),
     }));
 
@@ -80,7 +80,7 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
         id: `lv-${l.id}`,
         title: who,
         meta: `Leave ${String(l.status || 'request').toLowerCase()} · ${l.type}`,
-        href: `/dashboard/leaves/${l.id}`,
+        href: `/leaves/${l.id}`,
         icon: CalendarOff, tone: 'amber', time: stamp(l),
       });
     });
@@ -88,25 +88,25 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
     clients.forEach((c) => c?.id && out.push({
       id: `cl-${c.id}`, title: c.name || 'Client',
       meta: isNew(c) ? 'Client added' : 'Client updated',
-      href: `/dashboard/clients/${c.id}`, icon: Building2, tone: 'emerald', time: stamp(c),
+      href: `/clients/${c.id}`, icon: Building2, tone: 'emerald', time: stamp(c),
     }));
 
     vendors.forEach((v) => v?.id && out.push({
       id: `vn-${v.id}`, title: v.name || 'Vendor',
       meta: isNew(v) ? 'Vendor added' : 'Vendor updated',
-      href: `/dashboard/vendors/${v.id}`, icon: Package, tone: 'purple', time: stamp(v),
+      href: `/vendors/${v.id}`, icon: Package, tone: 'purple', time: stamp(v),
     }));
 
     subcontractors.forEach((s) => s?.id && out.push({
       id: `sc-${s.id}`, title: s.name || 'Subcontractor',
       meta: isNew(s) ? 'Subcontractor added' : 'Subcontractor updated',
-      href: `/dashboard/subcontractors/${s.id}`, icon: UserRoundCheck, tone: 'teal', time: stamp(s),
+      href: `/subcontractors/${s.id}`, icon: UserRoundCheck, tone: 'teal', time: stamp(s),
     }));
 
     plans.forEach((p) => p?.id && out.push({
       id: `bn-${p.id}`, title: p.name || 'Benefit plan',
       meta: isNew(p) ? 'Benefit plan added' : 'Benefit plan updated',
-      href: `/dashboard/benefits/${p.id}`, icon: HeartPulse, tone: 'pink', time: stamp(p),
+      href: `/benefits/${p.id}`, icon: HeartPulse, tone: 'pink', time: stamp(p),
     }));
 
     return out.filter((a) => !Number.isNaN(a.time) && a.time > 0).sort((a, b) => b.time - a.time).slice(0, 30);

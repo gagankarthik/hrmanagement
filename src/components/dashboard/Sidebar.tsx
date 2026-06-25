@@ -23,27 +23,27 @@ const sections: NavSection[] = [
     flat: true,
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-      { label: 'Employees', href: '/dashboard/employees', icon: UsersRound },
-      { label: 'Partners', href: '/dashboard/partners', icon: Network },
-      { label: 'Leave Management', href: '/dashboard/leaves', icon: CalendarDays },
-      { label: 'Billing', href: '/dashboard/billing', icon: Wallet },
+      { label: 'Employees', href: '/employees', icon: UsersRound },
+      { label: 'Partners', href: '/partners', icon: Network },
+      { label: 'Leave Management', href: '/leaves', icon: CalendarDays },
+      { label: 'Billing', href: '/billing', icon: Wallet },
     ],
   },
   {
     heading: 'Company',
     items: [
-      { label: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
-      { label: 'Handbook', href: '/dashboard/handbook', icon: BookOpen },
-      { label: 'Company Procedures', href: '/dashboard/procedures', icon: ClipboardList },
-      { label: 'Policies', href: '/dashboard/policies', icon: ScrollText },
-      { label: 'Benefits', href: '/dashboard/benefits', icon: HeartPulse },
-      { label: 'Compliance', href: '/dashboard/compliance', icon: ShieldCheck },
+      { label: 'Reports', href: '/reports', icon: BarChart3 },
+      { label: 'Handbook', href: '/handbook', icon: BookOpen },
+      { label: 'Company Procedures', href: '/procedures', icon: ClipboardList },
+      { label: 'Policies', href: '/policies', icon: ScrollText },
+      { label: 'Benefits', href: '/benefits', icon: HeartPulse },
+      { label: 'Compliance', href: '/compliance', icon: ShieldCheck },
     ],
   },
   {
     heading: 'Administration',
     items: [
-      { label: 'Users', href: '/dashboard/users', icon: UserCog },
+      { label: 'Users', href: '/users', icon: UserCog },
     ],
   },
 ];

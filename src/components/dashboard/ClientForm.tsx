@@ -37,8 +37,8 @@ export default function ClientForm({ mode, initial }: { mode: 'create' | 'edit';
   };
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/clients/${initial.id}`);
-    else router.push('/dashboard/clients');
+    if (mode === 'edit' && initial) router.push(`/clients/${initial.id}`);
+    else router.push('/clients');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -49,11 +49,11 @@ export default function ClientForm({ mode, initial }: { mode: 'create' | 'edit';
       if (mode === 'create') {
         await createClient(form);
         toast.success('Client created', `${form.name} has been added.`);
-        router.push('/dashboard/clients');
+        router.push('/clients');
       } else {
         await updateClient(initial!.id, form);
         toast.success('Client updated', `${form.name} has been saved.`);
-        router.push(`/dashboard/clients/${initial!.id}`);
+        router.push(`/clients/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

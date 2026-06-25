@@ -59,7 +59,7 @@ export function ComplianceFunnelWidget() {
       isEmpty={isEmpty}
       onRetry={fetchRecords}
       emptyLabel="No I-9 or I-983 records yet"
-      emptyCta={{ label: 'Go to I-9', href: '/dashboard/i9' }}
+      emptyCta={{ label: 'Go to I-9', href: '/i9' }}
     >
       <div className="flex flex-col gap-4">
         <FunnelChart stages={stages} showStepConversion={false} />

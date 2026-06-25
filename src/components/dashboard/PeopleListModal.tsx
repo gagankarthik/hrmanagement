@@ -122,7 +122,7 @@ export function PeopleListModal({
                 return (
                   <li key={emp.id}>
                     <Link
-                      href={`/dashboard/employees/${emp.id}`}
+                      href={`/employees/${emp.id}`}
                       onClick={onClose}
                       className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 sm:px-6"
                     >

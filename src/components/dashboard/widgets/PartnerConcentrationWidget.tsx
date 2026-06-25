@@ -63,7 +63,7 @@ export function PartnerConcentrationWidget() {
       isEmpty={totalPlaced === 0}
       emptyLabel="No active placements yet"
       emptyHint="Assign employees to clients to see concentration risk."
-      emptyCta={{ label: 'Go to Partners', href: '/dashboard/partners' }}
+      emptyCta={{ label: 'Go to Partners', href: '/partners' }}
     >
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
@@ -81,7 +81,7 @@ export function PartnerConcentrationWidget() {
           {top.map((c) => (
             <li key={c.id}>
               <button
-                onClick={() => router.push(`/dashboard/clients/${c.id}`)}
+                onClick={() => router.push(`/clients/${c.id}`)}
                 className="group flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50"
               >
                 <span className="truncate text-sm text-slate-700">{c.name}</span>

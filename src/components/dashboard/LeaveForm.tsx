@@ -48,8 +48,8 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
   };
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/leaves/${initial.id}`);
-    else router.push('/dashboard/leaves');
+    if (mode === 'edit' && initial) router.push(`/leaves/${initial.id}`);
+    else router.push('/leaves');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -67,11 +67,11 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
       if (mode === 'create') {
         await createLeave(form);
         toast.success('Leave request created', `Request for ${employeeName} has been added.`);
-        router.push('/dashboard/leaves');
+        router.push('/leaves');
       } else {
         await updateLeave(initial!.id, form);
         toast.success('Leave request updated', `Request for ${employeeName} has been saved.`);
-        router.push(`/dashboard/leaves/${initial!.id}`);
+        router.push(`/leaves/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

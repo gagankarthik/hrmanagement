@@ -191,7 +191,7 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
             <button onClick={() => setImportOpen(true)} className="btn-ghost">
               <Upload className="h-4 w-4" /> Import
             </button>
-            <button onClick={() => router.push('/dashboard/endclients/new')} className="btn-primary">
+            <button onClick={() => router.push('/endclients/new')} className="btn-primary">
               <Plus className="h-4 w-4" /> Add End Client
             </button>
           </>
@@ -243,15 +243,15 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
           getRowId={(c) => c.id}
           caption="End clients"
           isLoading={isLoading}
-          onRowClick={(c) => router.push(`/dashboard/endclients/${c.id}`)}
+          onRowClick={(c) => router.push(`/endclients/${c.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
           rowActions={(endClient) => (
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/endclients/${endClient.id}`) },
-                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/endclients/${endClient.id}/edit`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/endclients/${endClient.id}`) },
+                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/endclients/${endClient.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ endClient, isDeleting: false }) },
                 ]}
               />
@@ -268,7 +268,7 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
                 : 'Add your first end client to start tracking relationships.',
             action:
               !searchQuery && statusFilter === 'all' ? (
-                <button onClick={() => router.push('/dashboard/endclients/new')} className="btn-primary">
+                <button onClick={() => router.push('/endclients/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add End Client
                 </button>
               ) : undefined,

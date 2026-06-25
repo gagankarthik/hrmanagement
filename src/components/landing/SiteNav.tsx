@@ -116,7 +116,7 @@ function UserMenu({ name, email, onSignOut }: { name?: string; email?: string; o
               <LayoutDashboard className="h-4 w-4" strokeWidth={1.75} /> Dashboard
             </Link>
             <Link
-              href="/dashboard/profile"
+              href="/profile"
               role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"

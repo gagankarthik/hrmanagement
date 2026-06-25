@@ -87,7 +87,7 @@ export function LeaveAttendanceWidget() {
       isEmpty={isEmpty}
       onRetry={fetchLeaves}
       emptyLabel="No leave or attendance records yet"
-      emptyCta={{ label: 'Go to Leave', href: '/dashboard/leaves' }}
+      emptyCta={{ label: 'Go to Leave', href: '/leaves' }}
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid grid-cols-1 gap-2.5">

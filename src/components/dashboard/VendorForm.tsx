@@ -37,8 +37,8 @@ export default function VendorForm({ mode, initial }: { mode: 'create' | 'edit';
   };
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/vendors/${initial.id}`);
-    else router.push('/dashboard/vendors');
+    if (mode === 'edit' && initial) router.push(`/vendors/${initial.id}`);
+    else router.push('/vendors');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -49,11 +49,11 @@ export default function VendorForm({ mode, initial }: { mode: 'create' | 'edit';
       if (mode === 'create') {
         await createVendor(form);
         toast.success('Vendor created', `${form.name} has been added.`);
-        router.push('/dashboard/vendors');
+        router.push('/vendors');
       } else {
         await updateVendor(initial!.id, form);
         toast.success('Vendor updated', `${form.name} has been saved.`);
-        router.push(`/dashboard/vendors/${initial!.id}`);
+        router.push(`/vendors/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

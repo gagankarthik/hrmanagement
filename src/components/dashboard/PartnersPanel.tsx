@@ -16,10 +16,10 @@ type PartnerRow = { id: string; name: string; contact?: string; status?: string;
 type TabKey = 'clients' | 'vendors' | 'endclients' | 'subcontractors';
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType; base: string }[] = [
-  { key: 'clients', label: 'Clients', icon: Building2, base: '/dashboard/clients' },
-  { key: 'vendors', label: 'Vendors', icon: Package, base: '/dashboard/vendors' },
-  { key: 'endclients', label: 'End Clients', icon: Target, base: '/dashboard/endclients' },
-  { key: 'subcontractors', label: 'Subcontractors', icon: UserRoundCheck, base: '/dashboard/subcontractors' },
+  { key: 'clients', label: 'Clients', icon: Building2, base: '/clients' },
+  { key: 'vendors', label: 'Vendors', icon: Package, base: '/vendors' },
+  { key: 'endclients', label: 'End Clients', icon: Target, base: '/endclients' },
+  { key: 'subcontractors', label: 'Subcontractors', icon: UserRoundCheck, base: '/subcontractors' },
 ];
 
 const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });

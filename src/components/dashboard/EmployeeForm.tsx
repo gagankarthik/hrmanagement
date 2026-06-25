@@ -180,9 +180,9 @@ export default function EmployeeForm({ mode, initial, defaultType = 'W2' }: Empl
 
   const handleCancel = () => {
     if (mode === 'edit' && initial) {
-      router.push(`/dashboard/employees/${initial.id}`);
+      router.push(`/employees/${initial.id}`);
     } else {
-      router.push('/dashboard/employees');
+      router.push('/employees');
     }
   };
 
@@ -236,11 +236,11 @@ export default function EmployeeForm({ mode, initial, defaultType = 'W2' }: Empl
       if (mode === 'create') {
         await createEmployee(employeeData as Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>);
         toast.success('Employee created', `${name} has been added.`);
-        router.push('/dashboard/employees');
+        router.push('/employees');
       } else if (initial) {
         await updateEmployee(initial.id, employeeData as Partial<Employee>);
         toast.success('Employee updated', `${name} has been saved.`);
-        router.push(`/dashboard/employees/${initial.id}`);
+        router.push(`/employees/${initial.id}`);
       }
     } catch (error) {
       console.error('Failed to save employee:', error);

@@ -201,7 +201,7 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
             <button onClick={() => setImportOpen(true)} className="btn-ghost">
               <Upload className="h-4 w-4" /> Import
             </button>
-            <button onClick={() => router.push('/dashboard/clients/new')} className="btn-primary">
+            <button onClick={() => router.push('/clients/new')} className="btn-primary">
               <Plus className="h-4 w-4" /> Add Client
             </button>
           </>
@@ -253,15 +253,15 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
           getRowId={(c) => c.id}
           caption="Clients"
           isLoading={isLoading}
-          onRowClick={(c) => router.push(`/dashboard/clients/${c.id}`)}
+          onRowClick={(c) => router.push(`/clients/${c.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
           rowActions={(client) => (
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/clients/${client.id}`) },
-                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/clients/${client.id}/edit`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/clients/${client.id}`) },
+                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/clients/${client.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ client, isDeleting: false }) },
                 ]}
               />
@@ -278,7 +278,7 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
                 : 'Add your first client to start tracking relationships.',
             action:
               !searchQuery && statusFilter === 'all' ? (
-                <button onClick={() => router.push('/dashboard/clients/new')} className="btn-primary">
+                <button onClick={() => router.push('/clients/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add Client
                 </button>
               ) : undefined,

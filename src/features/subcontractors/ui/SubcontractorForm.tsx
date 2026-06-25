@@ -39,8 +39,8 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
   };
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/subcontractors/${initial.id}`);
-    else router.push('/dashboard/subcontractors');
+    if (mode === 'edit' && initial) router.push(`/subcontractors/${initial.id}`);
+    else router.push('/subcontractors');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -57,11 +57,11 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
         const created =
           subcontractors.find((s) => !before.has(s.id)) ||
           subcontractors.find((s) => s.name === form.name.trim());
-        router.push(created ? `/dashboard/subcontractors/${created.id}` : '/dashboard/subcontractors');
+        router.push(created ? `/subcontractors/${created.id}` : '/subcontractors');
       } else {
         await updateSubcontractor(initial!.id, form);
         toast.success('Subcontractor updated', `${form.name} has been saved.`);
-        router.push(`/dashboard/subcontractors/${initial!.id}`);
+        router.push(`/subcontractors/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

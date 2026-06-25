@@ -72,7 +72,7 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
           <h2 className="font-display text-lg font-bold text-slate-900">Recent activity</h2>
         </div>
         <Link
-          href="/dashboard/employees"
+          href="/employees"
           className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700"
         >
           View all
@@ -99,7 +99,7 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
             return (
               <li key={entry.id}>
                 <Link
-                  href={`/dashboard/employees/${entry.employee.id}`}
+                  href={`/employees/${entry.employee.id}`}
                   className="group flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-slate-50"
                 >
                   <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl', tone.iconBg)}>

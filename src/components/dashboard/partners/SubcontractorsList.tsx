@@ -210,7 +210,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
             <button onClick={() => setImportOpen(true)} className="btn-ghost">
               <Upload className="h-4 w-4" /> Import
             </button>
-            <button onClick={() => router.push('/dashboard/subcontractors/new')} className="btn-primary">
+            <button onClick={() => router.push('/subcontractors/new')} className="btn-primary">
               <Plus className="h-4 w-4" /> Add Subcontractor
             </button>
           </div>
@@ -262,15 +262,15 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           getRowId={(s) => s.id}
           caption="Subcontractors"
           isLoading={isLoading}
-          onRowClick={(s) => router.push(`/dashboard/subcontractors/${s.id}`)}
+          onRowClick={(s) => router.push(`/subcontractors/${s.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
           rowActions={(subcontractor) => (
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/dashboard/subcontractors/${subcontractor.id}`) },
-                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/dashboard/subcontractors/${subcontractor.id}/edit`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/subcontractors/${subcontractor.id}`) },
+                  { label: 'Edit', icon: Pencil, onClick: () => router.push(`/subcontractors/${subcontractor.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ subcontractor, isDeleting: false }) },
                 ] satisfies ActionMenuItem[]}
               />
@@ -287,7 +287,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
                 : 'Add your first subcontractor to start assigning employees.',
             action:
               !searchQuery && statusFilter === 'all' ? (
-                <button onClick={() => router.push('/dashboard/subcontractors/new')} className="btn-primary">
+                <button onClick={() => router.push('/subcontractors/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add Subcontractor
                 </button>
               ) : undefined,

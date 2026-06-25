@@ -77,8 +77,8 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
   const setDocs = (docs: UploadedDoc[]) => set('documents', docs);
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/benefits/${initial.id}`);
-    else router.push('/dashboard/benefits');
+    if (mode === 'edit' && initial) router.push(`/benefits/${initial.id}`);
+    else router.push('/benefits');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -95,11 +95,11 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
         const created =
           plans.find((p) => !before.has(p.id)) ||
           plans.find((p) => p.name === form.name.trim());
-        router.push(created ? `/dashboard/benefits/${created.id}` : '/dashboard/benefits');
+        router.push(created ? `/benefits/${created.id}` : '/benefits');
       } else {
         await updateBenefit(initial!.id, form);
         toast.success('Benefit updated', `${form.name} has been saved.`);
-        router.push(`/dashboard/benefits/${initial!.id}`);
+        router.push(`/benefits/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

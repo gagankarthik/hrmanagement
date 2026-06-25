@@ -37,8 +37,8 @@ export default function EndClientForm({ mode, initial }: { mode: 'create' | 'edi
   };
 
   const cancel = () => {
-    if (mode === 'edit' && initial) router.push(`/dashboard/endclients/${initial.id}`);
-    else router.push('/dashboard/endclients');
+    if (mode === 'edit' && initial) router.push(`/endclients/${initial.id}`);
+    else router.push('/endclients');
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -49,11 +49,11 @@ export default function EndClientForm({ mode, initial }: { mode: 'create' | 'edi
       if (mode === 'create') {
         await createEndClient(form);
         toast.success('End client created', `${form.name} has been added.`);
-        router.push('/dashboard/endclients');
+        router.push('/endclients');
       } else {
         await updateEndClient(initial!.id, form);
         toast.success('End client updated', `${form.name} has been saved.`);
-        router.push(`/dashboard/endclients/${initial!.id}`);
+        router.push(`/endclients/${initial!.id}`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save. Please try again.';

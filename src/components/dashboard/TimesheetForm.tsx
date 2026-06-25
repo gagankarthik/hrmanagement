@@ -84,7 +84,7 @@ export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'e
         await updateTimesheet(timesheet.id, payload);
         toast.success('Timesheet updated', `${employeeName || 'Worker'} · ${hrs}h`);
       }
-      router.push('/dashboard/timesheets');
+      router.push('/timesheets');
     } catch (err) {
       toast.error('Could not save timesheet', err instanceof Error ? err.message : 'Please try again.');
       setSaving(false);
@@ -153,7 +153,7 @@ export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'e
       </div>
 
       <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-        <Button variant="ghost" onClick={() => router.push('/dashboard/timesheets')}>Cancel</Button>
+        <Button variant="ghost" onClick={() => router.push('/timesheets')}>Cancel</Button>
         <Button type="submit" loading={saving}>
           {!saving && <Save className="h-4 w-4" strokeWidth={1.75} />}
           {mode === 'create' ? 'Add timesheet' : 'Save changes'}

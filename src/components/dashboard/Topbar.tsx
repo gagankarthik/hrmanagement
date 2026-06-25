@@ -99,19 +99,19 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     employees
       .filter((e) => [e.name, e.position, e.personalEmail].some((f) => f?.toLowerCase().includes(q)))
       .slice(0, 5)
-      .forEach((e) => out.push({ key: `e-${e.id}`, label: e.name, sub: e.position || e.type, group: 'People', href: `/dashboard/employees/${e.id}`, icon: UsersRound }));
+      .forEach((e) => out.push({ key: `e-${e.id}`, label: e.name, sub: e.position || e.type, group: 'People', href: `/employees/${e.id}`, icon: UsersRound }));
     clients
       .filter((c) => c?.name?.toLowerCase().includes(q))
       .slice(0, 4)
-      .forEach((c) => out.push({ key: `c-${c.id}`, label: c.name, sub: 'Client', group: 'Clients', href: `/dashboard/clients/${c.id}`, icon: Building2 }));
+      .forEach((c) => out.push({ key: `c-${c.id}`, label: c.name, sub: 'Client', group: 'Clients', href: `/clients/${c.id}`, icon: Building2 }));
     vendors
       .filter((v) => v?.name?.toLowerCase().includes(q))
       .slice(0, 4)
-      .forEach((v) => out.push({ key: `v-${v.id}`, label: v.name, sub: 'Vendor', group: 'Vendors', href: `/dashboard/vendors/${v.id}`, icon: Package }));
+      .forEach((v) => out.push({ key: `v-${v.id}`, label: v.name, sub: 'Vendor', group: 'Vendors', href: `/vendors/${v.id}`, icon: Package }));
     subcontractors
       .filter((s) => s?.name?.toLowerCase().includes(q))
       .slice(0, 4)
-      .forEach((s) => out.push({ key: `s-${s.id}`, label: s.name, sub: 'Subcontractor', group: 'Subcontractors', href: `/dashboard/subcontractors/${s.id}`, icon: UserRoundCheck }));
+      .forEach((s) => out.push({ key: `s-${s.id}`, label: s.name, sub: 'Subcontractor', group: 'Subcontractors', href: `/subcontractors/${s.id}`, icon: UserRoundCheck }));
     return out;
   }, [q, employees, clients, vendors, subcontractors]);
 
@@ -124,7 +124,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const searchAll = () => {
     const term = query.trim();
     setOpen(false);
-    router.push(term ? `/dashboard/employees?q=${encodeURIComponent(term)}` : '/dashboard/employees');
+    router.push(term ? `/employees?q=${encodeURIComponent(term)}` : '/employees');
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -278,7 +278,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   </div>
                   <div className="my-1 border-t border-slate-100" />
                   <button
-                    onClick={() => { setMenuOpen(false); router.push('/dashboard/profile'); }}
+                    onClick={() => { setMenuOpen(false); router.push('/profile'); }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                   >
                     <UserRound className="h-4 w-4" strokeWidth={1.75} />

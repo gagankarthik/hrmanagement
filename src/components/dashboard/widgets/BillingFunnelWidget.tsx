@@ -64,7 +64,7 @@ export function BillingFunnelWidget() {
       onRetry={fetchTimesheets}
       emptyLabel="No billing activity in this period"
       emptyHint="Log timesheets with bill rates and raise invoices to see the cash funnel."
-      emptyCta={{ label: 'Go to Timesheets', href: '/dashboard/timesheets' }}
+      emptyCta={{ label: 'Go to Timesheets', href: '/timesheets' }}
     >
       <FunnelChart stages={stages} format={compactUsd} />
     </ChartFrame>
