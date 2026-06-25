@@ -11,11 +11,10 @@ import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import { EmployeeMultiSelect } from '@/components/dashboard/EmployeeMultiSelect';
 import { useToast } from '@/components/ui/toast';
 import { SectionCard } from '@/components/ui/section-card';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 import { HeartPulse } from 'lucide-react';
-
-const field =
-  'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
-const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
 
 const BENEFIT_TYPES: BenefitType[] = ['Medical', 'Dental', 'Vision', '401k', 'Life', 'Disability', 'Other'];
 const EMPLOYEE_TYPES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
@@ -122,43 +121,37 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
         )}
 
         <div className="space-y-4">
-          <div>
-            <label className={label}>Plan Name <span className="text-red-500">*</span></label>
-            <input
+          <FormField label="Plan Name" required error={errors.name}>
+            <Input
               type="text"
+              invalid={!!errors.name}
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. PPO Health Plan"
-              className={cn(field, errors.name && 'border-red-300 focus:border-red-400 focus:ring-red-50')}
             />
-            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={label}>Type</label>
-              <select value={form.type} onChange={(e) => set('type', e.target.value as BenefitType)} className={field}>
+            <FormField label="Type">
+              <NativeSelect value={form.type} onChange={(e) => set('type', e.target.value as BenefitType)}>
                 {BENEFIT_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className={label}>Status</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value as 'Active' | 'Inactive')} className={field}>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Status">
+              <NativeSelect value={form.status} onChange={(e) => set('status', e.target.value as 'Active' | 'Inactive')}>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
-              </select>
-            </div>
+              </NativeSelect>
+            </FormField>
           </div>
 
-          <div>
-            <label className={label}>Provider</label>
-            <input type="text" value={form.provider} onChange={(e) => set('provider', e.target.value)} placeholder="e.g. Blue Cross Blue Shield" className={field} />
-          </div>
+          <FormField label="Provider">
+            <Input type="text" value={form.provider} onChange={(e) => set('provider', e.target.value)} placeholder="e.g. Blue Cross Blue Shield" />
+          </FormField>
 
-          <div>
-            <label className={label}>Eligibility</label>
+          <FormField label="Eligibility">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {EMPLOYEE_TYPES.map((t) => {
                 const checked = form.eligibility.includes(t);
@@ -181,7 +174,7 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
                 );
               })}
             </div>
-          </div>
+          </FormField>
         </div>
       </SectionCard>
 
@@ -203,36 +196,31 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={label}>Cost / Month ($)</label>
-              <input
+            <FormField label="Cost / Month ($)">
+              <Input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.costPerMonth ?? ''}
                 onChange={(e) => setNumber('costPerMonth', e.target.value)}
                 placeholder="0.00"
-                className={field}
               />
-            </div>
-            <div>
-              <label className={label}>Employer Contribution ($)</label>
-              <input
+            </FormField>
+            <FormField label="Employer Contribution ($)">
+              <Input
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.employerContribution ?? ''}
                 onChange={(e) => setNumber('employerContribution', e.target.value)}
                 placeholder="0.00"
-                className={field}
               />
-            </div>
+            </FormField>
           </div>
 
-          <div>
-            <label className={label}>Description</label>
-            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="Summary of coverage, network, deductibles…" className={cn(field, 'resize-none')} />
-          </div>
+          <FormField label="Description">
+            <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="Summary of coverage, network, deductibles…" className="resize-none" />
+          </FormField>
 
           <DocumentUploader
             value={form.documents}
@@ -244,12 +232,12 @@ export default function BenefitForm({ mode, initial }: { mode: 'create' | 'edit'
       </SectionCard>
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={cancel} disabled={submitting} className="btn-ghost disabled:opacity-50">
+        <Button variant="ghost" onClick={cancel} disabled={submitting}>
           Cancel
-        </button>
-        <button type="submit" disabled={submitting} className="btn-primary">
-          {submitting ? 'Saving…' : mode === 'create' ? 'Create Plan' : 'Save Changes'}
-        </button>
+        </Button>
+        <Button type="submit" loading={submitting}>
+          {mode === 'create' ? 'Create Plan' : 'Save Changes'}
+        </Button>
       </div>
     </form>
   );

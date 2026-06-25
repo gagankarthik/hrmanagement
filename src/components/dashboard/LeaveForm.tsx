@@ -10,10 +10,9 @@ import { UploadedDoc } from '@/types/uploads';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import { useToast } from '@/components/ui/toast';
 import { Combobox } from '@/components/ui/combobox';
-
-const field =
-  'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
-const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 
 function initialForm(mode: 'create' | 'edit', initial?: Leave): LeaveFormData {
   if (mode === 'edit' && initial) {
@@ -86,8 +85,7 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
     <form onSubmit={submit} className="surface space-y-5 p-5 sm:p-6">
       {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
 
-      <div>
-        <label className={label}>Employee <span className="text-red-500">*</span></label>
+      <FormField label="Employee" required error={errors.employeeId}>
         <Combobox
           value={form.employeeId}
           onChange={(v) => set('employeeId', v)}
@@ -95,37 +93,28 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
           placeholder="Select an employee…"
           className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
         />
-        {errors.employeeId && <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>}
-      </div>
+      </FormField>
 
-      <div>
-        <label className={label}>Leave Type <span className="text-red-500">*</span></label>
-        <select value={form.type} onChange={(e) => set('type', e.target.value as LeaveType)} className={field}>
+      <FormField label="Leave Type" required>
+        <NativeSelect value={form.type} onChange={(e) => set('type', e.target.value as LeaveType)}>
           {LEAVE_TYPES.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
-        </select>
-      </div>
+        </NativeSelect>
+      </FormField>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={label}>Start Date <span className="text-red-500">*</span></label>
-          <input type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)}
-            className={cn(field, errors.startDate && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
-          {errors.startDate && <p className="mt-1 text-xs text-red-600">{errors.startDate}</p>}
-        </div>
-        <div>
-          <label className={label}>End Date <span className="text-red-500">*</span></label>
-          <input type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)}
-            className={cn(field, errors.endDate && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
-          {errors.endDate && <p className="mt-1 text-xs text-red-600">{errors.endDate}</p>}
-        </div>
+        <FormField label="Start Date" required error={errors.startDate}>
+          <Input type="date" invalid={!!errors.startDate} value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
+        </FormField>
+        <FormField label="End Date" required error={errors.endDate}>
+          <Input type="date" invalid={!!errors.endDate} value={form.endDate} onChange={(e) => set('endDate', e.target.value)} />
+        </FormField>
       </div>
 
-      <div>
-        <label className={label}>Reason</label>
-        <textarea value={form.reason} onChange={(e) => set('reason', e.target.value)} rows={3} placeholder="Optional note for this request" className={cn(field, 'resize-none')} />
-      </div>
+      <FormField label="Reason">
+        <Textarea value={form.reason} onChange={(e) => set('reason', e.target.value)} rows={3} placeholder="Optional note for this request" className="resize-none" />
+      </FormField>
 
       <DocumentUploader
         label="Supporting documents"
@@ -135,12 +124,12 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
       />
 
       <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-        <button type="button" onClick={cancel} disabled={submitting} className="btn-ghost disabled:opacity-50">
+        <Button variant="ghost" onClick={cancel} disabled={submitting}>
           Cancel
-        </button>
-        <button type="submit" disabled={submitting} className="btn-primary">
-          {submitting ? 'Saving…' : mode === 'create' ? 'Submit Request' : 'Save Changes'}
-        </button>
+        </Button>
+        <Button type="submit" loading={submitting}>
+          {mode === 'create' ? 'Submit Request' : 'Save Changes'}
+        </Button>
       </div>
     </form>
   );

@@ -2,15 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useHandbook } from '@/context/HandbookContext';
 import { HandbookForm, HandbookFormData, HANDBOOK_FORM_CATEGORIES } from '@/types/handbook';
 import { UploadedDoc } from '@/types/uploads';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import { useToast } from '@/components/ui/toast';
-
-const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
-const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 
 export default function HandbookFormModal({ isOpen, onClose, mode, form: formDoc }: {
   isOpen: boolean; onClose: () => void; mode: 'create' | 'edit'; form?: HandbookForm;
@@ -82,37 +81,32 @@ export default function HandbookFormModal({ isOpen, onClose, mode, form: formDoc
         <form onSubmit={submit} className="px-6 py-5 space-y-4">
           {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
 
-          <div>
-            <label className={label}>Title <span className="text-red-500">*</span></label>
-            <input type="text" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Employment Application Form"
-              className={cn(field, errors.title && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
-            {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
-          </div>
+          <FormField label="Title" required error={errors.title}>
+            <Input type="text" invalid={!!errors.title} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Employment Application Form" />
+          </FormField>
 
-          <div>
-            <label className={label}>Category</label>
-            <select value={form.category} onChange={(e) => set('category', e.target.value)} className={field}>
+          <FormField label="Category">
+            <NativeSelect value={form.category} onChange={(e) => set('category', e.target.value)}>
               <option value="">Select a category</option>
               {HANDBOOK_FORM_CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
-            </select>
-          </div>
+            </NativeSelect>
+          </FormField>
 
-          <div>
-            <label className={label}>Description</label>
-            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="Short summary of what this form is used for" className={cn(field, 'resize-none')} />
-          </div>
+          <FormField label="Description">
+            <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="Short summary of what this form is used for" className="resize-none" />
+          </FormField>
 
           <DocumentUploader value={form.documents} onChange={setDocs} folder="handbook-forms" label="Attached documents" />
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={onClose} disabled={submitting} className="btn-ghost disabled:opacity-50">
+            <Button variant="ghost" onClick={onClose} disabled={submitting}>
               Cancel
-            </button>
-            <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Saving…' : mode === 'create' ? 'Add form' : 'Save Changes'}
-            </button>
+            </Button>
+            <Button type="submit" loading={submitting}>
+              {mode === 'create' ? 'Add form' : 'Save Changes'}
+            </Button>
           </div>
         </form>
       </div>

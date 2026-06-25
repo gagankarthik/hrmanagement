@@ -8,9 +8,9 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { Attendance, AttendanceFormData, AttendanceStatus } from '@/types/attendance';
 import { useToast } from '@/components/ui/toast';
 import { Combobox } from '@/components/ui/combobox';
-
-const field = 'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
-const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 
 const STATUS_OPTIONS: AttendanceStatus[] = ['Present', 'Remote', 'Half-day', 'Absent', 'Leave'];
 
@@ -92,8 +92,7 @@ export default function AttendanceModal({ isOpen, onClose, mode, attendance }: {
         <form onSubmit={submit} className="px-6 py-5 space-y-4">
           {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
 
-          <div>
-            <label className={label}>Employee <span className="text-red-500">*</span></label>
+          <FormField label="Employee" required error={errors.employeeId}>
             <Combobox
               value={form.employeeId}
               onChange={(v) => set('employeeId', v)}
@@ -101,46 +100,38 @@ export default function AttendanceModal({ isOpen, onClose, mode, attendance }: {
               placeholder="Select an employee…"
               className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
             />
-            {errors.employeeId && <p className="mt-1 text-xs text-red-600">{errors.employeeId}</p>}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={label}>Date <span className="text-red-500">*</span></label>
-              <input type="date" value={form.date} onChange={(e) => set('date', e.target.value)}
-                className={cn(field, errors.date && 'border-red-300 focus:border-red-400 focus:ring-red-50')} />
-              {errors.date && <p className="mt-1 text-xs text-red-600">{errors.date}</p>}
-            </div>
-            <div>
-              <label className={label}>Status</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value as AttendanceStatus)} className={field}>
+            <FormField label="Date" required error={errors.date}>
+              <Input type="date" invalid={!!errors.date} value={form.date} onChange={(e) => set('date', e.target.value)} />
+            </FormField>
+            <FormField label="Status">
+              <NativeSelect value={form.status} onChange={(e) => set('status', e.target.value as AttendanceStatus)}>
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className={label}>Check-in</label>
-              <input type="time" value={form.checkIn} onChange={(e) => set('checkIn', e.target.value)} className={field} />
-            </div>
-            <div>
-              <label className={label}>Check-out</label>
-              <input type="time" value={form.checkOut} onChange={(e) => set('checkOut', e.target.value)} className={field} />
-            </div>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Check-in">
+              <Input type="time" value={form.checkIn} onChange={(e) => set('checkIn', e.target.value)} />
+            </FormField>
+            <FormField label="Check-out">
+              <Input type="time" value={form.checkOut} onChange={(e) => set('checkOut', e.target.value)} />
+            </FormField>
           </div>
 
-          <div>
-            <label className={label}>Note</label>
-            <textarea value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} placeholder="Optional note" className={cn(field, 'resize-none')} />
-          </div>
+          <FormField label="Note">
+            <Textarea value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} placeholder="Optional note" className="resize-none" />
+          </FormField>
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={onClose} disabled={submitting} className="btn-ghost disabled:opacity-50">
+            <Button variant="ghost" onClick={onClose} disabled={submitting}>
               Cancel
-            </button>
-            <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Saving…' : mode === 'create' ? 'Mark Attendance' : 'Save Changes'}
-            </button>
+            </Button>
+            <Button type="submit" loading={submitting}>
+              {mode === 'create' ? 'Mark Attendance' : 'Save Changes'}
+            </Button>
           </div>
         </form>
       </div>

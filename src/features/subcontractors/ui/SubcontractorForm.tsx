@@ -2,16 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { useSubcontractors } from '../state/subcontractor.context';
 import { Subcontractor, SubcontractorFormData } from '../domain/subcontractor.types';
 import { useToast } from '@/components/ui/toast';
 import { SectionCard } from '@/components/ui/section-card';
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 import { UserCheck, ShieldCheck } from 'lucide-react';
-
-const field =
-  'w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50';
-const label = 'block text-xs font-semibold text-slate-600 mb-1.5';
 
 export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 'edit'; initial?: Subcontractor }) {
   const router = useRouter();
@@ -85,44 +83,37 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
         )}
 
         <div className="space-y-4">
-          <div>
-            <label className={label}>Subcontractor Name <span className="text-red-500">*</span></label>
-            <input
+          <FormField label="Subcontractor Name" required error={errors.name}>
+            <Input
               type="text"
+              invalid={!!errors.name}
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. Bright Tech Solutions LLC"
-              className={cn(field, errors.name && 'border-red-300 focus:border-red-400 focus:ring-red-50')}
             />
-            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={label}>Contact Person</label>
-              <input type="text" value={form.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} placeholder="Full name" className={field} />
-            </div>
-            <div>
-              <label className={label}>Status</label>
-              <select value={form.status} onChange={(e) => set('status', e.target.value as 'Active' | 'Inactive')} className={field}>
+            <FormField label="Contact Person">
+              <Input type="text" value={form.contactPerson} onChange={(e) => set('contactPerson', e.target.value)} placeholder="Full name" />
+            </FormField>
+            <FormField label="Status">
+              <NativeSelect value={form.status} onChange={(e) => set('status', e.target.value as 'Active' | 'Inactive')}>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <div>
-              <label className={label}>Email</label>
-              <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="contact@subcontractor.com" className={field} />
-            </div>
-            <div>
-              <label className={label}>Phone</label>
-              <input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className={field} />
-            </div>
+              </NativeSelect>
+            </FormField>
+            <FormField label="Email">
+              <Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="contact@subcontractor.com" />
+            </FormField>
+            <FormField label="Phone">
+              <Input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" />
+            </FormField>
           </div>
 
-          <div>
-            <label className={label}>Address</label>
-            <textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className={cn(field, 'resize-none')} />
-          </div>
+          <FormField label="Address">
+            <Textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className="resize-none" />
+          </FormField>
         </div>
       </SectionCard>
 
@@ -132,24 +123,22 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
         description="Track the company's insurance policy dates. The dashboard flags policies expiring within 60 days."
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className={label}>Policy Effective Date</label>
-            <input type="date" value={form.coiEffectiveDate || ''} onChange={(e) => set('coiEffectiveDate', e.target.value)} className={field} />
-          </div>
-          <div>
-            <label className={label}>Policy Expiry Date</label>
-            <input type="date" value={form.coiExpiryDate || ''} onChange={(e) => set('coiExpiryDate', e.target.value)} className={field} />
-          </div>
+          <FormField label="Policy Effective Date">
+            <Input type="date" value={form.coiEffectiveDate || ''} onChange={(e) => set('coiEffectiveDate', e.target.value)} />
+          </FormField>
+          <FormField label="Policy Expiry Date">
+            <Input type="date" value={form.coiExpiryDate || ''} onChange={(e) => set('coiExpiryDate', e.target.value)} />
+          </FormField>
         </div>
       </SectionCard>
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={cancel} disabled={submitting} className="btn-ghost disabled:opacity-50">
+        <Button variant="ghost" onClick={cancel} disabled={submitting}>
           Cancel
-        </button>
-        <button type="submit" disabled={submitting} className="btn-primary">
-          {submitting ? 'Saving…' : mode === 'create' ? 'Create Subcontractor' : 'Save Changes'}
-        </button>
+        </Button>
+        <Button type="submit" loading={submitting}>
+          {mode === 'create' ? 'Create Subcontractor' : 'Save Changes'}
+        </Button>
       </div>
     </form>
   );
