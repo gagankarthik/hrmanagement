@@ -211,36 +211,41 @@ export default function LeavesPage() {
         }
       />
 
-      {/* Stats */}
-      <StatGrid cols={4}>
-        <StatCard label="Pending" value={totalPending} icon={Clock} tone="amber" hint="awaiting review" />
-        <StatCard label="Approved" value={totalApproved} icon={CheckCircle2} tone="emerald" />
-        <StatCard label="Rejected" value={totalRejected} icon={XCircle} tone="red" />
-        <StatCard label="Total requests" value={validLeaves.length} icon={Layers} tone="slate" hint="all on record" />
-      </StatGrid>
+      {/* Leave-request stats — hidden on the Attendance tab, which shows its own. */}
+      {activeTab !== 'attendance' && (
+        <StatGrid cols={4}>
+          <StatCard label="Pending" value={totalPending} icon={Clock} tone="amber" hint="awaiting review" />
+          <StatCard label="Approved" value={totalApproved} icon={CheckCircle2} tone="emerald" />
+          <StatCard label="Rejected" value={totalRejected} icon={XCircle} tone="red" />
+          <StatCard label="Total requests" value={validLeaves.length} icon={Layers} tone="slate" hint="all on record" />
+        </StatGrid>
+      )}
 
-      {/* Tab switcher (segmented control) */}
-      <div className="inline-flex w-full max-w-md items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1 sm:w-auto">
-        {TABS.map((tab) => {
-          const TabIcon = tab.icon;
-          const active = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-sm font-semibold transition-all sm:flex-none sm:px-4',
-                active
-                  ? 'bg-white text-brand-700 shadow-sm ring-1 ring-black/[0.04]'
-                  : 'text-slate-500 hover:text-slate-700'
-              )}
-              aria-pressed={active}
-            >
-              <TabIcon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Tab switcher (segmented control) — scrolls horizontally instead of
+          squeezing labels when all four tabs don't fit. */}
+      <div className="-mx-1 overflow-x-auto px-1">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
+          {TABS.map((tab) => {
+            const TabIcon = tab.icon;
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  'flex flex-none items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-display text-sm font-semibold transition-all sm:px-4',
+                  active
+                    ? 'bg-white text-brand-700 shadow-sm ring-1 ring-black/[0.04]'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+                aria-pressed={active}
+              >
+                <TabIcon className="h-4 w-4 shrink-0" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── REQUESTED TAB ── */}
