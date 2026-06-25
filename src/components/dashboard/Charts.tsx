@@ -185,3 +185,55 @@ export function TrendAreaChart({
     </div>
   );
 }
+
+/**
+ * FunnelChart — dependency-free progression funnel rendered as horizontal
+ * stage bars. Each stage's width is proportional to the first (top) stage, and
+ * each row shows the value plus its conversion vs the top stage. Ideal for
+ * Timesheet→Invoice→Paid billing flow and the I-9 verification pipeline.
+ */
+export interface FunnelStage { label: string; value: number; color?: string }
+
+export function FunnelChart({
+  stages, format, showStepConversion = true,
+}: {
+  stages: FunnelStage[];
+  format?: (v: number) => string;
+  showStepConversion?: boolean;
+}) {
+  const fmt = format ?? ((v: number) => v.toLocaleString());
+  const top = stages.length ? Math.max(stages[0].value, 1) : 1;
+  const palette = [VIZ.brand, VIZ.teal, VIZ.sky, VIZ.violet, VIZ.slate];
+  return (
+    <div className="flex flex-col gap-3">
+      {stages.map((s, i) => {
+        const widthPct = Math.max(2, Math.min(100, (s.value / top) * 100));
+        const ofTop = stages[0]?.value ? (s.value / stages[0].value) * 100 : 0;
+        const ofPrev = i === 0 || !stages[i - 1].value ? 100 : (s.value / stages[i - 1].value) * 100;
+        const color = s.color || palette[i % palette.length];
+        return (
+          <div key={s.label}>
+            <div className="mb-1 flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-600">{s.label}</span>
+              <span className="tnum font-semibold text-slate-900">
+                {fmt(s.value)}
+                {i > 0 && <span className="ml-1.5 font-normal text-slate-400">{ofTop.toFixed(0)}%</span>}
+              </span>
+            </div>
+            <div className="relative h-7 overflow-hidden rounded-lg bg-slate-100">
+              <div
+                className="flex h-full items-center rounded-lg transition-all"
+                style={{ width: `${widthPct}%`, background: color, minWidth: '2%' }}
+              />
+              {showStepConversion && i > 0 && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
+                  ↓ {ofPrev.toFixed(0)}% of prev
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

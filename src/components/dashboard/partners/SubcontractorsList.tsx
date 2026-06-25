@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { exportToCsv } from '@/lib/export';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
@@ -37,6 +38,13 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const toggleCol = (id: string) =>
+    setHiddenCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   const getSubconEmps = (subcontractorId: string) =>
     employees.filter((emp) =>
@@ -182,6 +190,9 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
     },
   ];
 
+  const columnItems = columns.map((c) => ({ id: c.id, label: typeof c.header === 'string' ? c.header : c.id }));
+  const visibleColumns = columns.filter((c) => !hiddenCols.has(c.id));
+
   return (
     <PageContainer>
       {!embedded && (
@@ -216,9 +227,9 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       <PartnerBulkBar source="subcontractors" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
 
       <div className="surface">
-        {/* Toolbar */}
-        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-xs flex-1">
+        {/* Toolbar — Search · All/Active/Inactive · Columns (single row) */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -242,14 +253,14 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
               </button>
             ))}
           </div>
+          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
         </div>
 
         <DataTable<SubcontractorRow>
-          columns={columns}
+          columns={visibleColumns}
           data={rows}
           getRowId={(s) => s.id}
           caption="Subcontractors"
-          tableId="subcontractors"
           isLoading={isLoading}
           onRowClick={(s) => router.push(`/dashboard/subcontractors/${s.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}

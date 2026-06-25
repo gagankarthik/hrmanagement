@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Info } from 'lucide-react';
+import { Info, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /* ── Count-up animation ───────────────────────────────────────────────────── */
@@ -70,9 +70,36 @@ export function Sparkline({ data, color = '#266b55', width = 96, height = 32 }: 
   );
 }
 
+/* ── Period-over-period delta indicator ───────────────────────────────────── */
+export interface KpiDelta {
+  /** Magnitude of change vs the comparison period, in percent (sign ignored — `direction` decides). */
+  value: number;
+  direction: 'up' | 'down';
+  /** Which direction is "good" — colours the arrow green when direction matches, red otherwise. */
+  goodWhen?: 'up' | 'down';
+}
+
+export function DeltaIndicator({ delta, period }: { delta: KpiDelta; period?: string }) {
+  const good = (delta.goodWhen ?? 'up') === delta.direction;
+  const Arrow = delta.direction === 'up' ? ArrowUpRight : ArrowDownRight;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ring-1',
+        good ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-red-50 text-red-600 ring-red-100',
+      )}
+      title={period ? `${delta.direction === 'up' ? '+' : '−'}${Math.abs(delta.value).toFixed(1)}% ${period}` : undefined}
+    >
+      <Arrow className="h-3 w-3" strokeWidth={2.5} />
+      {Math.abs(delta.value).toFixed(1)}%
+    </span>
+  );
+}
+
 /* ── KPI card (with "why this matters" tooltip + optional alert pulse) ─────── */
 export function KpiCard({
   icon: Icon, label, value, sub, why, accessory, tone = 'brand', alert = false, onClick,
+  delta, spark, period,
 }: {
   icon: React.ElementType;
   label: string;
@@ -83,6 +110,12 @@ export function KpiCard({
   tone?: 'brand' | 'emerald' | 'amber' | 'red';
   alert?: boolean;
   onClick?: () => void;
+  /** Period-over-period change — renders an arrow + % pill under the value. */
+  delta?: KpiDelta;
+  /** Mini trend series for the bottom-right sparkline. */
+  spark?: number[];
+  /** Human label for the comparison window, e.g. "vs last 30 days". */
+  period?: string;
 }) {
   const toneStyles = {
     brand: 'bg-brand-50 text-brand-700 ring-brand-100',
@@ -90,6 +123,8 @@ export function KpiCard({
     amber: 'bg-accent-50 text-accent-700 ring-accent-100',
     red: 'bg-red-50 text-red-600 ring-red-100',
   }[tone];
+
+  const sparkColor = { brand: '#15847a', emerald: '#059669', amber: '#d97706', red: '#dc2626' }[tone];
 
   return (
     <div
@@ -109,7 +144,10 @@ export function KpiCard({
       </div>
       <div className="mt-4 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="tnum font-display text-3xl font-bold leading-none text-slate-900">{value}</p>
+          <div className="flex items-center gap-2">
+            <p className="tnum font-display text-3xl font-bold leading-none text-slate-900">{value}</p>
+            {delta && <DeltaIndicator delta={delta} period={period} />}
+          </div>
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-slate-500">
             {label}
             <span className="group/tip relative inline-flex" tabIndex={0} aria-label={why}>
@@ -119,8 +157,10 @@ export function KpiCard({
               </span>
             </span>
           </p>
+          {period && !delta && <p className="mt-0.5 text-[11px] text-slate-400">{period}</p>}
         </div>
         {sub}
+        {spark && spark.length > 0 && !sub && <Sparkline data={spark} color={sparkColor} />}
       </div>
     </div>
   );

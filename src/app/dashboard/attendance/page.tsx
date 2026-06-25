@@ -134,13 +134,15 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
         </div>
       )}
 
-      {/* Stats */}
-      <StatGrid cols={4}>
-        <StatCard label="Present" value={presentCount} icon={CheckCircle2} tone="emerald" hint={dateFilter ? 'on selected date' : 'all records'} />
-        <StatCard label="Remote" value={remoteCount} icon={Home} tone="sky" hint={dateFilter ? 'on selected date' : 'all records'} />
-        <StatCard label="Absent" value={absentCount} icon={XCircle} tone="red" hint={dateFilter ? 'on selected date' : 'all records'} />
-        <StatCard label="Attendance rate" value={`${attendanceRate}%`} icon={Percent} tone="brand" hint={`${statScope.length} record${statScope.length !== 1 ? 's' : ''}`} />
-      </StatGrid>
+      {/* Stats — hidden in embedded mode so the host page's common KPI strip is the single source */}
+      {!embedded && (
+        <StatGrid cols={4}>
+          <StatCard label="Present" value={presentCount} icon={CheckCircle2} tone="emerald" hint={dateFilter ? 'on selected date' : 'all records'} />
+          <StatCard label="Remote" value={remoteCount} icon={Home} tone="sky" hint={dateFilter ? 'on selected date' : 'all records'} />
+          <StatCard label="Absent" value={absentCount} icon={XCircle} tone="red" hint={dateFilter ? 'on selected date' : 'all records'} />
+          <StatCard label="Attendance rate" value={`${attendanceRate}%`} icon={Percent} tone="brand" hint={`${statScope.length} record${statScope.length !== 1 ? 's' : ''}`} />
+        </StatGrid>
+      )}
 
       {/* Table card */}
       <div className="surface">
