@@ -17,8 +17,22 @@ import {
   TYPE_COLOR, VIZ, type DonutDatum,
 } from '@/components/dashboard/Charts';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
-import { KpiCard, ProgressRing, Sparkline, CountUp, SectionCard } from '@/components/dashboard/dashboard-ui';
+import { KpiCard, ProgressRing, Sparkline, CountUp, type KpiDelta } from '@/components/dashboard/dashboard-ui';
+import { ChartFrame } from '@/components/dashboard/ChartFrame';
+import { DateRangePicker } from '@/components/dashboard/DateRangePicker';
+import { BillingFunnelWidget } from '@/components/dashboard/widgets/BillingFunnelWidget';
+import { ArAgingWidget } from '@/components/dashboard/widgets/ArAgingWidget';
+import { LeaveAttendanceWidget } from '@/components/dashboard/widgets/LeaveAttendanceWidget';
+import { ComplianceFunnelWidget } from '@/components/dashboard/widgets/ComplianceFunnelWidget';
+import { PartnerConcentrationWidget } from '@/components/dashboard/widgets/PartnerConcentrationWidget';
+import { DashboardDetailTable } from '@/components/dashboard/widgets/DetailTable';
+import type { DataTableColumn } from '@/components/ui/data-table';
+import { fullUsd } from '@/lib/format';
+import { DashboardFilterProvider, useDashboardFilters } from '@/context/DashboardFilterContext';
+import { useAuth } from '@/context/AuthContext';
+import { visibleViews, isAdminRole, type DashboardView } from '@/lib/dashboard/views';
 import type { Employee, EmployeeType } from '@/types/employee';
+import type { Timesheet } from '@/types/timesheet';
 
 const CLASSES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
 const CLASS_LABEL: Record<EmployeeType, string> = { W2: 'W-2', Contract: 'Contract', '1099': '1099', Offshore: 'Offshore' };
@@ -34,14 +48,6 @@ const hasClient = (e: Employee) => {
   return e.clientAssignments?.some((a) => a.clientId && (!a.endDate || new Date(a.endDate) >= now)) || Boolean(e.clientId || e.client);
 };
 
-type StatusFilter = 'all' | 'Active' | 'Terminated';
-type RevenueFilter = 'all' | 'B' | 'NB';
-type RangePreset = 'all' | 'ytd' | '12m' | '90d';
-const RANGES: { value: RangePreset; label: string }[] = [
-  { value: 'all', label: 'All time' }, { value: 'ytd', label: 'Year to date' },
-  { value: '12m', label: 'Last 12 months' }, { value: '90d', label: 'Last 90 days' },
-];
-
 function Segmented<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -52,16 +58,32 @@ function Segmented<T extends string>({ value, onChange, options }: { value: T; o
   );
 }
 
-export default function DashboardPage() {
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <h2 className="font-display text-sm font-bold uppercase tracking-wider text-slate-400">{label}</h2>
+      <div className="h-px flex-1 bg-slate-100" />
+    </div>
+  );
+}
+
+function DashboardOverview() {
   const router = useRouter();
   const { employees, isLoading, fetchEmployees } = useEmployees();
   const { clients } = useClients();
-  const { timesheets } = useTimesheets();
+  const { timesheets, isLoading: tsLoading, fetchTimesheets } = useTimesheets();
 
-  const [classFilter, setClassFilter] = useState<Set<EmployeeType>>(new Set(CLASSES));
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [revenueFilter, setRevenueFilter] = useState<RevenueFilter>('all');
-  const [range, setRange] = useState<RangePreset>('all');
+  const {
+    classFilter, statusFilter, revenueFilter, rangeStart, rangeEnd,
+    toggleClass, setStatusFilter, setRevenueFilter, resetFilters, filtersOn,
+  } = useDashboardFilters();
+
+  const { roles } = useAuth();
+  const isAdmin = isAdminRole(roles);
+  const userViews = visibleViews(roles);
+  const [view, setView] = useState<DashboardView>('overview');
+  const activeView: DashboardView = userViews.some((v) => v.key === view) ? view : 'overview';
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [peopleModal, setPeopleModal] = useState<{ title: string; description?: string; people: Employee[]; tone: 'red' | 'sky' | 'purple' | 'emerald' | 'pink' | 'amber'; ctx?: (e: Employee) => { primary?: string; secondary?: string } } | null>(null);
@@ -71,13 +93,9 @@ export default function DashboardPage() {
   const in30 = new Date(now.getTime() + 30 * 86400000);
   const in90 = new Date(now.getTime() + 90 * 86400000);
 
-  const rangeCutoff = useMemo(() => {
-    if (range === 'ytd') return new Date(now.getFullYear(), 0, 1);
-    if (range === '12m') return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    if (range === '90d') return new Date(now.getTime() - 90 * 86400000);
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  // Loading flags for ChartFrame skeletons (only show skeleton before first data lands).
+  const empLoadingInitial = isLoading && employees.length === 0;
+  const revLoadingInitial = (isLoading || tsLoading) && timesheets.length === 0 && employees.length === 0;
 
   // class-only set (for the status donut) and the fully-filtered set
   const byClass = useMemo(() => employees.filter((e) => e && e.id && classFilter.has(e.type)), [employees, classFilter]);
@@ -174,8 +192,17 @@ export default function DashboardPage() {
 
   // Revenue by client (timesheets) → fallback to headcount-by-client
   const tsInRange = useMemo(
-    () => timesheets.filter((t) => t && t.id && (!rangeCutoff || (t.periodStart && new Date(t.periodStart) >= rangeCutoff))),
-    [timesheets, rangeCutoff],
+    () => timesheets.filter((t) => {
+      if (!t || !t.id) return false;
+      if (!rangeStart && !rangeEnd) return true;
+      if (!t.periodStart) return false;
+      const d = new Date(t.periodStart);
+      if (Number.isNaN(d.getTime())) return false;
+      if (rangeStart && d < rangeStart) return false;
+      if (rangeEnd && d > rangeEnd) return false;
+      return true;
+    }),
+    [timesheets, rangeStart, rangeEnd],
   );
   const revenueByClient = useMemo(() => {
     const m: Record<string, { id: string; name: string; revenue: number; cost: number; hours: number }> = {};
@@ -221,6 +248,35 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timesheets]);
 
+  // Active-headcount trajectory — cumulative active workers at each month-end (last 6 months).
+  const headcountSpark = useMemo(() => {
+    const s: number[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      let c = 0;
+      byClass.forEach((e) => {
+        if (!e.hireDate) return;
+        const h = new Date(e.hireDate);
+        if (Number.isNaN(h.getTime()) || h >= monthEnd) return; // not yet hired by month-end
+        if (e.dor) { const d = new Date(e.dor); if (!Number.isNaN(d.getTime()) && d < monthEnd) return; } // already left
+        c += 1;
+      });
+      s.push(c);
+    }
+    return s.some((v) => v !== 0) ? s : [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byClass]);
+
+  // Period-over-period delta from a trend series (last point vs the prior point).
+  const deltaFrom = (s: number[], goodWhen: 'up' | 'down' = 'up'): KpiDelta | undefined => {
+    if (s.length < 2) return undefined;
+    const cur = s[s.length - 1], prev = s[s.length - 2];
+    if (prev === 0) return undefined;
+    const pct = ((cur - prev) / Math.abs(prev)) * 100;
+    if (!Number.isFinite(pct) || Math.abs(pct) < 0.05) return undefined;
+    return { value: pct, direction: pct >= 0 ? 'up' : 'down', goodWhen };
+  };
+
   const insights = useMemo(() => {
     const out: string[] = [];
     if (complianceRisk.length) out.push(`${complianceRisk.length} work authorization${complianceRisk.length > 1 ? 's' : ''} expiring within 30 days.`);
@@ -233,10 +289,9 @@ export default function DashboardPage() {
     return out.slice(0, 3);
   }, [complianceRisk.length, utilization, revenueMode, revenueByClient, weeklyGp, benchCount]);
 
-  const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await fetchEmployees(); } finally { setRefreshing(false); } };
-  const toggleClass = (c: EmployeeType) => setClassFilter((prev) => { const n = new Set(prev); if (n.has(c)) { if (n.size > 1) n.delete(c); } else n.add(c); return n; });
-  const resetFilters = () => { setClassFilter(new Set(CLASSES)); setStatusFilter('all'); setRevenueFilter('all'); setRange('all'); };
-  const filtersOn = classFilter.size < 4 || statusFilter !== 'all' || revenueFilter !== 'all' || range !== 'all';
+  const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await Promise.all([fetchEmployees(), fetchTimesheets()]); } finally { setRefreshing(false); } };
+  const fmtDate = (s?: string) => { if (!s) return '—'; const d = new Date(s); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
+  const tsMargin = (t: Timesheet) => { const bill = (t.billRate || 0) * (t.hours || 0); const pay = (t.payRate || 0) * (t.hours || 0); return bill > 0 ? ((bill - pay) / bill) * 100 : 0; };
 
   const ctxExpiry = (e: Employee) => {
     const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
@@ -259,6 +314,199 @@ export default function DashboardPage() {
   }, [clientModal, tsInRange]);
   const drillClient = revenueByClient.find((c) => c.id === clientModal);
 
+  /* ── Composable view blocks (only the active view's blocks mount) ───────── */
+  const financialBlock = (
+    <React.Fragment>
+      <SectionDivider label="Revenue & receivables" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <ChartFrame
+          title={revenueMode ? 'Revenue by client' : 'Top clients'}
+          subtitle={revenueMode ? 'Billed from timesheets · click a bar to drill in' : 'By people placed'}
+          icon={Building2}
+          className="lg:col-span-2"
+          height={300}
+          skeleton="hbar"
+          isLoading={revLoadingInitial}
+          isEmpty={!clientChart.length}
+          onRetry={handleRefresh}
+          emptyLabel="No client placements yet"
+          emptyHint="Log timesheets with bill & pay rates to see billed revenue by client."
+          emptyCta={{ label: 'Go to Margins', href: '/dashboard/margins' }}
+        >
+          <HBarChart data={clientChart as Record<string, unknown>[]} categoryKey="name" valueKey="value" money={revenueMode} color={revenueMode ? VIZ.brand : VIZ.teal} height={300} onBarClick={onClientBar} />
+        </ChartFrame>
+        <PartnerConcentrationWidget />
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <BillingFunnelWidget />
+        <ArAgingWidget />
+      </div>
+    </React.Fragment>
+  );
+
+  const workforceBlock = (
+    <React.Fragment>
+      <SectionDivider label="Headcount & utilization" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <ChartFrame
+          title="Hiring trend by type"
+          subtitle="New hires per month · last 8 months"
+          icon={TrendingUp}
+          className="lg:col-span-2"
+          height={280}
+          skeleton="bars"
+          isLoading={empLoadingInitial}
+          isEmpty={!emps.length}
+          emptyLabel="No employees match the filters"
+          emptyHint="Adjust the filters or date range to see hiring momentum."
+        >
+          <CompareBarChart data={hiringByType} xKey="month" stacked height={280} bars={CLASSES.map((c) => ({ key: CLASS_LABEL[c], name: CLASS_LABEL[c], color: TYPE_COLOR[c] }))} />
+        </ChartFrame>
+        <ChartFrame
+          title="Workforce by type"
+          subtitle={`${emps.length} in view`}
+          icon={PieIcon}
+          height={280}
+          skeleton="donut"
+          isLoading={empLoadingInitial}
+          isEmpty={!typeDonut.length}
+          emptyLabel="No employees"
+        >
+          <DonutChart data={typeDonut} height={280} />
+        </ChartFrame>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <ChartFrame title="Active vs terminated" subtitle="Workforce status" icon={Users} height={240} skeleton="donut" isLoading={empLoadingInitial} isEmpty={!statusDonut.length} emptyLabel="No status data">
+          <DonutChart data={statusDonut} height={240} />
+        </ChartFrame>
+        <ChartFrame title="Billable vs non-billable" subtitle="By employment class" icon={BarChart3} height={240} skeleton="bars" isLoading={empLoadingInitial} isEmpty={!billableData.length} emptyLabel="No active employees">
+          <CompareBarChart data={billableData} xKey="type" stacked height={240} bars={[{ key: 'Billable', name: 'Billable', color: VIZ.emerald }, { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate }]} />
+        </ChartFrame>
+        <ChartFrame title="Utilization by class" subtitle="Billable share %" icon={Gauge} height={240} skeleton="bars" isLoading={empLoadingInitial} isEmpty={!utilData.length} emptyLabel="No active employees">
+          <CompareBarChart data={utilData} xKey="type" height={240} bars={[{ key: 'Utilization', name: 'Utilization %', color: VIZ.brand }]} />
+        </ChartFrame>
+      </div>
+    </React.Fragment>
+  );
+
+  const complianceBlock = (
+    <React.Fragment>
+      <SectionDivider label="Compliance & time off" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2"><ComplianceFunnelWidget /></div>
+        <ChartFrame
+          title="Compliance expiry"
+          subtitle="Next 90 days"
+          icon={CalendarClock}
+          height={300}
+          skeleton="list"
+          isLoading={empLoadingInitial}
+          isEmpty={expiryTimeline.length === 0}
+          emptyLabel="Nothing expiring in 90 days"
+          action={<button onClick={() => router.push('/dashboard/compliance')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}
+        >
+          <ul className="space-y-2.5">
+            {expiryTimeline.slice(0, 6).map(({ id, name, days, sub, href }) => {
+              const tone = days < 7 ? { bar: 'bg-red-500', chip: 'bg-red-50 text-red-600 ring-red-200' } : days < 30 ? { bar: 'bg-accent-400', chip: 'bg-accent-50 text-accent-700 ring-accent-200' } : { bar: 'bg-slate-300', chip: 'bg-slate-50 text-slate-500 ring-slate-200' };
+              const fill = Math.max(6, Math.min(100, 100 - (days / 90) * 100));
+              return (
+                <li key={`${href}-${id}`}>
+                  <button onClick={() => router.push(href)} className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-semibold text-slate-900">{name}</span>
+                        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
+                      </div>
+                      <p className="truncate text-[11px] text-slate-400">{sub}</p>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </ChartFrame>
+      </div>
+      <div className="grid gap-5">
+        <LeaveAttendanceWidget />
+      </div>
+    </React.Fragment>
+  );
+
+  /* ── Tier-3 detail table — view-aware recent slice with CSV/PDF export ──── */
+  type ExpiryRow = { id: string; name: string; days: number; sub: string; href: string };
+  const statusChip = (s: string) => (
+    <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', s === 'Terminated' ? 'bg-red-50 text-red-600 ring-red-200' : 'bg-emerald-50 text-emerald-700 ring-emerald-200')}>{s}</span>
+  );
+
+  const employeeColumns: DataTableColumn<Employee>[] = [
+    { id: 'name', header: 'Name', cell: (e) => <span className="font-semibold text-slate-900">{e.name || 'Unnamed'}</span>, sortValue: (e) => e.name?.toLowerCase() ?? '' },
+    { id: 'type', header: 'Type', cell: (e) => <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600">{CLASS_LABEL[e.type]}</span>, sortValue: (e) => e.type },
+    { id: 'position', header: 'Position', hideBelow: 'md', cell: (e) => e.position || '—', sortValue: (e) => e.position ?? '' },
+    { id: 'hireDate', header: 'Hire date', hideBelow: 'sm', cell: (e) => fmtDate(e.hireDate), sortValue: (e) => e.hireDate ?? '' },
+    { id: 'status', header: 'Status', align: 'right', cell: (e) => statusChip(statusOf(e)), sortValue: (e) => statusOf(e) },
+  ];
+
+  const timesheetColumns: DataTableColumn<Timesheet>[] = [
+    { id: 'worker', header: 'Worker', cell: (t) => <span className="font-semibold text-slate-900">{t.employeeName}</span>, sortValue: (t) => t.employeeName?.toLowerCase() ?? '' },
+    { id: 'client', header: 'Client', hideBelow: 'md', cell: (t) => t.clientName || 'Unassigned', sortValue: (t) => t.clientName ?? '' },
+    { id: 'period', header: 'Period', hideBelow: 'lg', cell: (t) => `${fmtDate(t.periodStart)} – ${fmtDate(t.periodEnd)}`, sortValue: (t) => t.periodEnd ?? '' },
+    { id: 'hours', header: 'Hours', align: 'right', cell: (t) => t.hours ?? 0, sortValue: (t) => t.hours ?? 0 },
+    { id: 'billed', header: 'Billed', align: 'right', cell: (t) => fullUsd((t.billRate || 0) * (t.hours || 0)), sortValue: (t) => (t.billRate || 0) * (t.hours || 0) },
+    { id: 'margin', header: 'Margin', align: 'right', cell: (t) => { const m = tsMargin(t); return <span className={cn('font-semibold', m >= 25 ? 'text-emerald-600' : 'text-accent-600')}>{m.toFixed(0)}%</span>; }, sortValue: (t) => tsMargin(t) },
+    { id: 'status', header: 'Status', align: 'right', hideBelow: 'sm', cell: (t) => <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{t.status}</span>, sortValue: (t) => t.status },
+  ];
+
+  const expiryColumns: DataTableColumn<ExpiryRow>[] = [
+    { id: 'name', header: 'Name', cell: (r) => <span className="font-semibold text-slate-900">{r.name}</span>, sortValue: (r) => r.name.toLowerCase() },
+    { id: 'auth', header: 'Authorization', hideBelow: 'md', cell: (r) => r.sub, sortValue: (r) => r.sub },
+    { id: 'days', header: 'Days left', align: 'right', cell: (r) => <span className={cn('font-semibold', r.days < 7 ? 'text-red-600' : r.days < 30 ? 'text-accent-600' : 'text-slate-600')}>{r.days < 0 ? `${Math.abs(r.days)}d overdue` : `${r.days}d`}</span>, sortValue: (r) => r.days },
+  ];
+
+  const detailTable =
+    activeView === 'financial' ? (
+      <DashboardDetailTable<Timesheet>
+        title="Recent timesheets" subtitle="Latest billing entries in range" icon={Building2}
+        columns={timesheetColumns}
+        data={[...tsInRange].sort((a, b) => (b.periodEnd || '').localeCompare(a.periodEnd || ''))}
+        getRowId={(t) => t.id} caption="Recent timesheets" isLoading={revLoadingInitial}
+        onRowClick={() => router.push('/dashboard/timesheets')} viewAllHref="/dashboard/timesheets"
+        exportName="dashboard-timesheets" initialSort={{ columnId: 'period', dir: 'desc' }}
+        empty={{ title: 'No timesheets in this period' }}
+        serialize={{
+          headers: ['Worker', 'Client', 'Period', 'Hours', 'Billed', 'Paid', 'Margin %', 'Status'],
+          row: (t) => [t.employeeName, t.clientName || 'Unassigned', `${fmtDate(t.periodStart)} – ${fmtDate(t.periodEnd)}`, t.hours || 0, Math.round((t.billRate || 0) * (t.hours || 0)), Math.round((t.payRate || 0) * (t.hours || 0)), `${tsMargin(t).toFixed(0)}%`, t.status],
+        }}
+      />
+    ) : activeView === 'compliance' ? (
+      <DashboardDetailTable<ExpiryRow>
+        title="Work authorization expiry" subtitle="Active workers · next 90 days" icon={CalendarClock}
+        columns={expiryColumns} data={expiryTimeline as ExpiryRow[]} getRowId={(r) => r.id} caption="Work authorization expiry"
+        isLoading={empLoadingInitial} onRowClick={(r) => router.push(r.href)} viewAllHref="/dashboard/compliance"
+        exportName="dashboard-compliance" initialSort={{ columnId: 'days', dir: 'asc' }}
+        empty={{ title: 'Nothing expiring in 90 days' }}
+        serialize={{
+          headers: ['Name', 'Authorization', 'Days left'],
+          row: (r) => [r.name, r.sub, r.days < 0 ? `${Math.abs(r.days)}d overdue` : `${r.days}d`],
+        }}
+      />
+    ) : (
+      <DashboardDetailTable<Employee>
+        title="Recent hires" subtitle="Most recent additions in view" icon={Users}
+        columns={employeeColumns}
+        data={[...emps].sort((a, b) => (b.hireDate || '').localeCompare(a.hireDate || ''))}
+        getRowId={(e) => e.id} caption="Recent employees" isLoading={empLoadingInitial}
+        onRowClick={(e) => router.push(`/dashboard/employees/${e.id}`)} viewAllHref="/dashboard/employees"
+        exportName="dashboard-employees" initialSort={{ columnId: 'hireDate', dir: 'desc' }}
+        empty={{ title: 'No employees match the filters' }}
+        serialize={{
+          headers: ['Name', 'Type', 'Position', 'Hire date', 'Status'],
+          row: (e) => [e.name || 'Unnamed', CLASS_LABEL[e.type], e.position || '—', fmtDate(e.hireDate), statusOf(e)],
+        }}
+      />
+    );
+
   return (
     <PageContainer>
       <PageHeader
@@ -269,6 +517,7 @@ export default function DashboardPage() {
         tone="brand"
         actions={
           <>
+            <DateRangePicker />
             <button onClick={handleRefresh} disabled={refreshing} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 disabled:opacity-50" title="Refresh">
               <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} strokeWidth={1.75} />
             </button>
@@ -279,6 +528,28 @@ export default function DashboardPage() {
           </>
         }
       />
+
+      {/* View switcher — Overview / Financial / Compliance / Workforce (role-gated) */}
+      <div className="inline-flex w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-100/70 p-1 sm:w-auto">
+        {userViews.map((v) => {
+          const VIcon = v.icon;
+          const on = activeView === v.key;
+          return (
+            <button
+              key={v.key}
+              onClick={() => setView(v.key)}
+              aria-pressed={on}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-display text-sm font-semibold transition-all sm:flex-none sm:px-4',
+                on ? 'bg-white text-brand-700 shadow-sm ring-1 ring-black/[0.04]' : 'text-slate-500 hover:text-slate-700',
+              )}
+            >
+              <VIcon className="h-4 w-4" strokeWidth={1.75} />
+              {v.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Inline filter panel (no side drawer) */}
       {filtersOpen && (
@@ -298,26 +569,24 @@ export default function DashboardPage() {
                 {CLASSES.map((c) => <button key={c} onClick={() => toggleClass(c)} className={cn('rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', classFilter.has(c) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>{CLASS_LABEL[c]}</button>)}
               </div>
             </div>
-            <div className="lg:col-span-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Date range · billed revenue</p>
-              <Segmented value={range} onChange={setRange} options={RANGES} />
-            </div>
-            <div className="flex items-end justify-end">
+            <div className="flex items-end justify-end lg:col-span-2">
               <button onClick={resetFilters} disabled={!filtersOn} className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50">
                 <X className="h-4 w-4" strokeWidth={1.75} /> Reset
               </button>
             </div>
           </div>
-          <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">{emps.length} of {employees.length} employees in view</p>
+          <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">Showing {emps.length} of {employees.length} employees · date range applies to billed-revenue widgets</p>
         </div>
       )}
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={Users} label="Active workforce" value={<CountUp value={totalActive} />} tone="brand" why="How big your active team is right now — the foundation for every other metric." />
+        <KpiCard icon={Users} label="Active workforce" value={<CountUp value={totalActive} />} tone="brand" why="How big your active team is right now — the foundation for every other metric." delta={deltaFrom(headcountSpark)} spark={headcountSpark} period="vs last month" />
         <KpiCard icon={Gauge} label="Billable utilization" value={`${utilization}%`} tone={utilization >= 75 ? 'emerald' : 'red'} why="Share of active workers who are billable. Core profitability metric — red below the 75% target." accessory={<ProgressRing value={utilization} color={utilization >= 75 ? '#059669' : '#dc2626'} label={`${utilization}%`} />} />
         <KpiCard icon={ShieldAlert} label="Compliance at risk" value={<CountUp value={complianceRisk.length} />} tone="red" alert={complianceRisk.length > 0} why="Work authorizations expiring within 30 days or already expired. Click to see who." onClick={complianceRisk.length ? () => setPeopleModal({ title: 'Compliance at risk', description: 'Expiring within 30 days or already expired', people: complianceRisk, tone: 'red', ctx: ctxExpiry }) : undefined} />
-        <KpiCard icon={Percent} label="Blended margin" value={`${blendedMargin}%`} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} why="Profit after paying contractors, from bill vs pay rates. Set rates on the Margins page." accessory={gpSpark.length ? <Sparkline data={gpSpark} /> : undefined} sub={<span className="text-right text-[11px] font-semibold text-slate-400">{usd0(weeklyGp)}/wk</span>} />
+        {isAdmin && (
+          <KpiCard icon={Percent} label="Blended margin" value={`${blendedMargin}%`} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} why="Profit after paying contractors, from bill vs pay rates. Set rates on the Margins page." accessory={gpSpark.length ? <Sparkline data={gpSpark} /> : undefined} delta={deltaFrom(gpSpark)} period="vs last month" sub={<span className="text-right text-[11px] font-semibold text-slate-400">{usd0(weeklyGp)}/wk</span>} />
+        )}
       </div>
 
       {/* Insights */}
@@ -330,64 +599,21 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── PRIMARY (≈60%) — the money + the risk ── */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <SectionCard title={revenueMode ? 'Revenue by client' : 'Top clients'} subtitle={revenueMode ? 'Billed from timesheets · click a bar to drill in' : 'By people placed'} icon={Building2} className="lg:col-span-2">
-          {clientChart.length ? <HBarChart data={clientChart as Record<string, unknown>[]} categoryKey="name" valueKey="value" money={revenueMode} color={revenueMode ? VIZ.brand : VIZ.teal} height={300} onBarClick={onClientBar} /> : <p className="py-16 text-center text-sm text-slate-400">No client placements yet.</p>}
-        </SectionCard>
-        <SectionCard title="Compliance expiry" subtitle="Next 90 days" icon={CalendarClock} action={<button onClick={() => router.push('/dashboard/compliance')} className="text-xs font-semibold text-brand-700 hover:underline">View all</button>}>
-          {expiryTimeline.length === 0 ? (
-            <p className="py-12 text-center text-sm text-slate-400">Nothing expiring in 90 days.</p>
-          ) : (
-            <ul className="space-y-2.5">
-              {expiryTimeline.slice(0, 6).map(({ id, name, days, sub, href }) => {
-                const tone = days < 7 ? { bar: 'bg-red-500', chip: 'bg-red-50 text-red-600 ring-red-200' } : days < 30 ? { bar: 'bg-accent-400', chip: 'bg-accent-50 text-accent-700 ring-accent-200' } : { bar: 'bg-slate-300', chip: 'bg-slate-50 text-slate-500 ring-slate-200' };
-                const fill = Math.max(6, Math.min(100, 100 - (days / 90) * 100));
-                return (
-                  <li key={`${href}-${id}`}>
-                    <button onClick={() => router.push(href)} className="group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-slate-50">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-semibold text-slate-900">{name}</span>
-                          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
-                        </div>
-                        <p className="truncate text-[11px] text-slate-400">{sub}</p>
-                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </SectionCard>
-      </div>
+      {/* ── VIEW COMPOSITION — Overview shows all (financial gated); each tab is a focused slice ── */}
+      {activeView === 'overview' && (
+        <React.Fragment>
+          {isAdmin && financialBlock}
+          {workforceBlock}
+          {complianceBlock}
+        </React.Fragment>
+      )}
+      {activeView === 'financial' && isAdmin && financialBlock}
+      {activeView === 'workforce' && workforceBlock}
+      {activeView === 'compliance' && complianceBlock}
 
-      {/* ── TREND (≈30%) — hiring momentum + workforce mix ── */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <SectionCard title="Hiring trend by type" subtitle="New hires per month · last 8 months" icon={TrendingUp} className="lg:col-span-2">
-          {emps.length ? (
-            <CompareBarChart data={hiringByType} xKey="month" stacked height={280} bars={CLASSES.map((c) => ({ key: CLASS_LABEL[c], name: CLASS_LABEL[c], color: TYPE_COLOR[c] }))} />
-          ) : <p className="py-16 text-center text-sm text-slate-400">No employees match the filters.</p>}
-        </SectionCard>
-        <SectionCard title="Workforce by type" subtitle={`${emps.length} in view`} icon={PieIcon}>
-          {typeDonut.length ? <DonutChart data={typeDonut} height={280} /> : <p className="py-16 text-center text-sm text-slate-400">No employees.</p>}
-        </SectionCard>
-      </div>
-
-      {/* ── COMPARISONS (≈20%) — status · billable mix · utilization ── */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <SectionCard title="Active vs terminated" subtitle="Workforce status" icon={Users}>
-          {statusDonut.length ? <DonutChart data={statusDonut} height={240} /> : <p className="py-14 text-center text-sm text-slate-400">No status data.</p>}
-        </SectionCard>
-        <SectionCard title="Billable vs non-billable" subtitle="By employment class" icon={BarChart3}>
-          {billableData.length ? <CompareBarChart data={billableData} xKey="type" stacked height={240} bars={[{ key: 'Billable', name: 'Billable', color: VIZ.emerald }, { key: 'Non-billable', name: 'Non-billable', color: VIZ.slate }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
-        </SectionCard>
-        <SectionCard title="Utilization by class" subtitle="Billable share %" icon={Gauge}>
-          {utilData.length ? <CompareBarChart data={utilData} xKey="type" height={240} bars={[{ key: 'Utilization', name: 'Utilization %', color: VIZ.brand }]} /> : <p className="py-14 text-center text-sm text-slate-400">No active employees.</p>}
-        </SectionCard>
-      </div>
+      {/* ── TIER-3 DETAIL — recent records with sort + CSV/PDF export ── */}
+      <SectionDivider label="Details" />
+      {detailTable}
 
       {isLoading && employees.length === 0 && (
         <p className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Loading workforce…</p>
@@ -444,5 +670,13 @@ export default function DashboardPage() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <DashboardFilterProvider>
+      <DashboardOverview />
+    </DashboardFilterProvider>
   );
 }

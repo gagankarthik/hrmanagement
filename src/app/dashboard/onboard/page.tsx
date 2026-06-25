@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, Users, UserCheck, Upload, Info } from 'lucide-react';
+import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, Users, UserCheck, Upload, Info, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Stepper } from '@/components/ui/stepper';
@@ -126,6 +126,13 @@ export default function OnboardPage() {
     setSubcontractorAssignments([]);
   };
 
+  // Metadata (icon / colors / description) for the chosen type — drives the
+  // "selected type" banner shown on the details & review steps.
+  const selectedMeta = useMemo(
+    () => employeeTypes.find((t) => t.value === selectedType) ?? null,
+    [selectedType]
+  );
+
   const fields = useMemo(() => {
     if (!selectedType) return [];
     return getFieldsByType(selectedType).filter(
@@ -148,6 +155,8 @@ export default function OnboardPage() {
   );
 
   const handleTypeSelect = (type: EmployeeType) => {
+    // Re-selecting the current type (e.g. after "Change type") keeps entered data.
+    if (type === selectedType) return;
     setSelectedType(type);
     setFormData({ type });
     setClientAssignments([]);
@@ -562,6 +571,32 @@ export default function OnboardPage() {
       {/* Step 2: Employee Details */}
       {step === 1 && selectedType && (
         <div className="space-y-6">
+          {/* Locked-in type banner — the chosen type gates the fields below */}
+          {selectedMeta && (
+            <div className="surface flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', selectedMeta.iconBg)}>
+                  <selectedMeta.icon className={cn('h-5 w-5', selectedMeta.iconColor)} strokeWidth={1.75} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-sm font-bold text-slate-900">{selectedMeta.label}</h3>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Selected type
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Showing the fields specific to {selectedMeta.label.replace(/ Employee$/, '')} employees.
+                  </p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setStep(0)} className="btn-ghost">
+                <RefreshCw className="h-4 w-4" />
+                Change type
+              </button>
+            </div>
+          )}
+
           {draftRestored && (
             <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
               <p className="text-xs font-medium text-amber-800">

@@ -20,6 +20,7 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 
@@ -37,6 +38,13 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const toggleCol = (id: string) =>
+    setHiddenCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   const getEmpCount = (endClientId: string) =>
     employees.filter((emp) =>
@@ -163,6 +171,9 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
     },
   ];
 
+  const columnItems = columns.map((c) => ({ id: c.id, label: typeof c.header === 'string' ? c.header : c.id }));
+  const visibleColumns = columns.filter((c) => !hiddenCols.has(c.id));
+
   return (
     <PageContainer>
       {!embedded && (
@@ -197,9 +208,9 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
       <PartnerBulkBar source="endclients" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
 
       <div className="surface">
-        {/* Toolbar */}
-        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-xs flex-1">
+        {/* Toolbar — Search · All/Active/Inactive · Columns (single row) */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -223,14 +234,14 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
               </button>
             ))}
           </div>
+          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
         </div>
 
         <DataTable<EndClientRow>
-          columns={columns}
+          columns={visibleColumns}
           data={rows}
           getRowId={(c) => c.id}
           caption="End clients"
-          tableId="endclients"
           isLoading={isLoading}
           onRowClick={(c) => router.push(`/dashboard/endclients/${c.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}

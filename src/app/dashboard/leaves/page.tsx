@@ -11,6 +11,7 @@ import {
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
 import AttendancePage from '@/app/dashboard/attendance/page';
+import AttendanceModal from '@/components/dashboard/AttendanceModal';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { useLeaves } from '@/context/LeaveContext';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -57,6 +58,7 @@ export default function LeavesPage() {
   const [deciding, setDeciding] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const toast = useToast();
 
   const validLeaves = leaves.filter((l) => l && l.id);
@@ -202,12 +204,20 @@ export default function LeavesPage() {
         description="Track and approve employee leave requests"
         tone="brand"
         actions={
-          <button
-            onClick={() => router.push('/dashboard/leaves/new')}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" /> Apply Leave
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAttendanceModalOpen(true)}
+              className="btn-ghost"
+            >
+              <CalendarCheck className="h-4 w-4" /> Add Attendance
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/leaves/new')}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" /> Apply Leave
+            </button>
+          </div>
         }
       />
 
@@ -526,6 +536,12 @@ export default function LeavesPage() {
         }
         confirmLabel={decision?.status === 'Approved' ? 'Approve' : 'Reject'}
         isLoading={deciding}
+      />
+
+      <AttendanceModal
+        isOpen={attendanceModalOpen}
+        onClose={() => setAttendanceModalOpen(false)}
+        mode="create"
       />
     </PageContainer>
   );

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Eye, Edit2, Trash2, X, Users } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Eye, Edit2, Trash2, Users, SlidersHorizontal, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Employee, EmployeeType } from '@/types/employee';
 import { format } from 'date-fns';
@@ -26,15 +26,129 @@ const typeBadge: Record<EmployeeType, string> = {
 
 const statusOf = (e: Employee): string => ('status' in e ? (e as { status?: string }).status ?? '' : '');
 
+type StatusFilter = 'all' | 'Active' | 'Terminated';
+const STATUS_PILLS: StatusFilter[] = ['all', 'Active', 'Terminated'];
+
+/** localStorage key for persisting which employee columns are hidden. */
+const COLS_STORAGE_KEY = 'ob:cols:employees';
+
+/** Columns that may never be hidden (the table's primary anchor column). */
+const ALWAYS_VISIBLE = new Set<string>(['name']);
+
+/**
+ * ColumnsToggle — self-contained "Columns" dropdown used inline in the toolbar.
+ * A button that opens a checkbox popover to show/hide table columns. Closes on
+ * click-outside. Kept local to this file so it has zero shared-file dependencies.
+ */
+function ColumnsToggle({
+  columns,
+  hidden,
+  onToggle,
+}: {
+  columns: { id: string; label: string }[];
+  hidden: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Columns
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="surface absolute right-0 top-full z-20 mt-1 w-52 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100"
+        >
+          <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            Show columns
+          </p>
+          {columns.map((c) => {
+            const locked = ALWAYS_VISIBLE.has(c.id);
+            const shown = !hidden.has(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={shown}
+                disabled={locked}
+                onClick={() => !locked && onToggle(c.id)}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium transition-colors',
+                  locked ? 'cursor-not-allowed text-slate-400' : 'text-slate-700 hover:bg-slate-50',
+                )}
+              >
+                {c.label}
+                <span
+                  className={cn(
+                    'flex h-4 w-4 items-center justify-center rounded border',
+                    shown ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300',
+                  )}
+                >
+                  {shown && <Check className="h-3 w-3" strokeWidth={3} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EmployeeDataTable({ employees, onView, onEdit, onDelete, isLoading = false }: Props) {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'Active' | 'Terminated' | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
 
   // Pick up a global search from the top-bar (e.g. /dashboard/employees?q=jane)
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('q');
     if (q) setSearch(q);
   }, []);
+
+  // Restore persisted column visibility.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLS_STORAGE_KEY);
+      if (raw) setHidden(new Set((JSON.parse(raw) as string[]).filter((id) => !ALWAYS_VISIBLE.has(id))));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleHidden = (id: string) => {
+    if (ALWAYS_VISIBLE.has(id)) return;
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   const filtered = useMemo(() => {
     let r = employees;
@@ -55,7 +169,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
 
   const hasFilters = Boolean(search) || statusFilter !== 'all';
 
-  const columns: DataTableColumn<Employee>[] = [
+  const allColumns: DataTableColumn<Employee>[] = useMemo(() => [
     {
       id: 'name',
       header: 'Employee',
@@ -110,40 +224,52 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
         return s ? <StatusBadge label={s} tone={statusTone(s)} /> : <StatusBadge label="N/A" tone="neutral" showIcon={false} />;
       },
     },
-  ];
+  ], []);
+
+  // The toggle list (uses the header text as the menu label).
+  const toggleColumns = useMemo(
+    () => allColumns.map((c) => ({ id: c.id, label: typeof c.header === 'string' ? c.header : c.id })),
+    [allColumns],
+  );
+
+  // Apply column visibility before handing columns to the table.
+  const columns = useMemo(
+    () => allColumns.filter((c) => !hidden.has(c.id)),
+    [allColumns, hidden],
+  );
 
   return (
     <div className="space-y-3 p-3">
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Single-row filter toolbar: Search · status pills · Columns */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search employees…"
+            placeholder="Search by name, email, position…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
           />
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'Active' | 'Terminated' | 'all')}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-50"
-          >
-            <option value="all">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Terminated">Terminated</option>
-          </select>
-          {hasFilters && (
-            <button
-              onClick={() => { setSearch(''); setStatusFilter('all'); }}
-              className="flex items-center gap-1 rounded-lg px-2.5 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100"
-            >
-              <X className="h-3.5 w-3.5" /> Clear
-            </button>
-          )}
+          <div className="flex gap-1.5">
+            {STATUS_PILLS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                )}
+              >
+                {s === 'all' ? 'All' : s}
+              </button>
+            ))}
+          </div>
+
+          <ColumnsToggle columns={toggleColumns} hidden={hidden} onToggle={toggleHidden} />
         </div>
       </div>
 
@@ -153,7 +279,6 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
           data={filtered}
           getRowId={(e) => e.id}
           caption="Employees"
-          tableId="employees"
           isLoading={isLoading}
           minWidth="min-w-[760px]"
           initialSort={{ columnId: 'name', dir: 'asc' }}
