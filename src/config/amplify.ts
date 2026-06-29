@@ -50,12 +50,43 @@ export function configureAmplify() {
   if (typeof window !== 'undefined') {
     const secure = window.location.protocol === 'https:';
     const host = window.location.hostname;
-    const domain = host === 'oceanbluecorp.com' || host.endsWith('.oceanbluecorp.com')
-      ? '.oceanbluecorp.com'
-      : undefined; // localhost / preview hosts → host-only cookie
+    const shared = host === 'oceanbluecorp.com' || host.endsWith('.oceanbluecorp.com');
+    const domain = shared ? '.oceanbluecorp.com' : undefined; // localhost/preview → host-only
+
+    // Remove stale HOST-ONLY Cognito cookies BEFORE Amplify reads anything. A
+    // user who previously signed in to the HR portal directly (host-only scope)
+    // ends up with two cookies per key once the shared `.oceanbluecorp.com`
+    // cookies arrive; js-cookie returns the first/oldest, so Amplify would read
+    // the dead host-only session and bounce to login. Purging the host-only
+    // variant leaves only the shared session. No-op when no duplicates exist.
+    if (shared) purgeHostOnlyCognitoCookies();
+
     cognitoUserPoolsTokenProvider.setKeyValueStorage(
       new CookieStorage({ domain, path: '/', sameSite: 'lax', secure, expires: 30 }),
     );
+  }
+}
+
+/**
+ * Expire any host-only `CognitoIdentityServiceProvider.*` cookies (those set
+ * without a Domain attribute, i.e. scoped to the exact host). Deleting without
+ * a Domain only matches the host-only variant — the shared `.oceanbluecorp.com`
+ * cookie has an explicit Domain and is left intact.
+ */
+function purgeHostOnlyCognitoCookies() {
+  try {
+    const names = new Set(
+      document.cookie
+        .split('; ')
+        .map((c) => c.split('=')[0])
+        .filter((n) => n.startsWith('CognitoIdentityServiceProvider.')),
+    );
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    names.forEach((name) => {
+      document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+    });
+  } catch {
+    /* noop */
   }
 }
 
