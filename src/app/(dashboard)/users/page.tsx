@@ -13,8 +13,12 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
+
+const EMPLOYEE_TYPES = ['W2', 'Contract', '1099', 'Offshore'] as const;
+type EmployeeType = (typeof EMPLOYEE_TYPES)[number];
 
 interface AppUser {
   username: string;
@@ -23,6 +27,8 @@ interface AppUser {
   phoneNumber?: string;
   status?: string;
   enabled: boolean;
+  employeeType?: EmployeeType;
+  hrAccess: boolean;
   createdAt?: string;
 }
 
@@ -54,6 +60,7 @@ export default function UsersPage() {
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [resendingFor, setResendingFor] = useState<string | null>(null);
+  const [savingFor, setSavingFor] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -123,6 +130,38 @@ export default function UsersPage() {
     }
   };
 
+  // Patch employee type / HR-portal access. Optimistic with revert on failure.
+  const updateMeta = async (u: AppUser, patch: Partial<Pick<AppUser, 'employeeType' | 'hrAccess'>>) => {
+    const prev = users;
+    setUsers((list) => list.map((x) => (x.username === u.username ? { ...x, ...patch } : x)));
+    setSavingFor(u.username);
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(u.username)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...('employeeType' in patch ? { employeeType: patch.employeeType ?? '' } : {}),
+          ...('hrAccess' in patch ? { hrAccess: patch.hrAccess } : {}),
+        }),
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Update failed');
+      if ('hrAccess' in patch) {
+        toast.success(
+          patch.hrAccess ? 'HR portal access granted' : 'HR portal access revoked',
+          `${u.email} ${patch.hrAccess ? 'can now use' : 'can no longer use'} the HR portal.`,
+        );
+      } else {
+        toast.success('Employee type updated', `${u.email} set to ${patch.employeeType || 'none'}.`);
+      }
+    } catch (err) {
+      setUsers(prev); // revert
+      toast.error('Could not update user', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSavingFor(null);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -167,6 +206,42 @@ export default function UsersPage() {
         const s = statusInfo(u);
         return <StatusBadge label={s.label} tone={s.tone} icon={s.Icon} />;
       },
+    },
+    {
+      id: 'employeeType',
+      header: 'Employee type',
+      hideBelow: 'md',
+      sortValue: (u) => u.employeeType ?? '',
+      cell: (u) => (
+        <select
+          value={u.employeeType ?? ''}
+          disabled={savingFor === u.username}
+          onChange={(e) => updateMeta(u, { employeeType: (e.target.value || undefined) as EmployeeType | undefined })}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-50 disabled:opacity-50"
+          aria-label={`Employee type for ${u.email}`}
+        >
+          <option value="">—</option>
+          {EMPLOYEE_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      id: 'hrAccess',
+      header: 'Portal access',
+      sortValue: (u) => (u.hrAccess ? 1 : 0),
+      cell: (u) => (
+        <div onClick={(e) => e.stopPropagation()} className="flex items-center">
+          <Switch
+            checked={u.hrAccess}
+            disabled={savingFor === u.username}
+            onChange={(v) => updateMeta(u, { hrAccess: v })}
+            label={<span className="text-xs">{u.hrAccess ? 'Allowed' : 'Blocked'}</span>}
+          />
+        </div>
+      ),
     },
     {
       id: 'invited',
@@ -223,7 +298,7 @@ export default function UsersPage() {
           caption="Users with sign-in access"
           tableId="users"
           isLoading={isLoading}
-          minWidth="min-w-[560px]"
+          minWidth="min-w-[820px]"
           rowActions={(u) => {
             const pending = u.status === 'FORCE_CHANGE_PASSWORD';
             return (

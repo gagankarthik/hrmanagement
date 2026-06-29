@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { useAccess } from '@/hooks/useAccess';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
@@ -58,6 +59,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { selfServiceOnly } = useAccess();
   const { density, setDensity } = usePreferences();
 
   // Auto breadcrumb from the path (the Home icon stands in for /dashboard).
@@ -148,7 +150,11 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         <Breadcrumb items={crumbs} className="hidden min-w-0 lg:flex" />
       </div>
 
-      {/* Center — global search */}
+      {/* Center — global search (full-access only; self-service users have no
+          records to search and shouldn't see other people's data). */}
+      {selfServiceOnly ? (
+        <div aria-hidden className="hidden lg:block lg:justify-self-center" />
+      ) : (
       <div ref={searchRef} className="relative w-full max-w-md lg:justify-self-center">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
         <input
@@ -216,9 +222,11 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           </>
         )}
       </div>
+      )}
 
       <div className="ml-auto flex items-center justify-end gap-1.5 sm:gap-2 lg:ml-0">
-        {/* Notifications → recent activity side sheet */}
+        {/* Notifications → recent activity side sheet (full-access only) */}
+        {!selfServiceOnly && (
         <button
           onClick={() => setActivityOpen(true)}
           className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
@@ -228,6 +236,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <Bell className="h-4 w-4" strokeWidth={1.75} />
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-500" />
         </button>
+        )}
 
         {/* User dropdown */}
         <div ref={menuRef} className="relative">

@@ -12,10 +12,26 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useAccess } from '@/hooks/useAccess';
 
 type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean };
 /** `flat` sections render their items as standalone links — no collapsible header. */
 type NavSection = { heading: string; items: NavItem[]; flat?: boolean };
+
+/** Limited nav for self-service (recruiter / sales) users. */
+const selfServiceSections: NavSection[] = [
+  {
+    heading: 'My Portal',
+    flat: true,
+    items: [
+      { label: 'Handbook', href: '/handbook', icon: BookOpen },
+      { label: 'Company Procedures', href: '/procedures', icon: ClipboardList },
+      { label: 'Policies', href: '/policies', icon: ScrollText },
+      { label: 'Benefits', href: '/benefits', icon: HeartPulse },
+      { label: 'My Leave', href: '/my-leave', icon: CalendarDays },
+    ],
+  },
+];
 
 const sections: NavSection[] = [
   {
@@ -69,6 +85,10 @@ function SidebarContent({
   onToggleCollapse?: () => void;
 }) {
   const pathname = usePathname();
+  const { selfServiceOnly } = useAccess();
+
+  // Self-service (recruiter / sales) users get the limited portal nav.
+  const navSections = selfServiceOnly ? selfServiceSections : sections;
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -76,14 +96,14 @@ function SidebarContent({
   // Collapsible sections (progressive disclosure): on first visit only the
   // active section is open; user toggles are persisted. The active section is
   // always kept open so you never lose your current location.
-  const activeHeading = sections.find((s) => s.items.some(isActive))?.heading;
+  const activeHeading = navSections.find((s) => s.items.some(isActive))?.heading;
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let stored: Record<string, boolean> | null = null;
     try { const r = localStorage.getItem(NAV_SECTIONS_KEY); if (r) stored = JSON.parse(r); } catch { /* noop */ }
     const next: Record<string, boolean> = {};
-    sections.forEach((s) => { next[s.heading] = stored ? !!stored[s.heading] : s.heading === activeHeading; });
+    navSections.forEach((s) => { next[s.heading] = stored ? !!stored[s.heading] : s.heading === activeHeading; });
     if (activeHeading) next[activeHeading] = true;
     setOpenMap(next);
   }, [activeHeading]);
@@ -146,7 +166,7 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className={cn('flex-1 overflow-y-auto py-3', collapsed ? 'px-2' : 'px-3')}>
-        {sections.map((section, si) => {
+        {navSections.map((section, si) => {
           const sectionOpen = collapsed || section.flat || openMap[section.heading];
           const HeadingIcon = HEADING_ICONS[section.heading];
           return (

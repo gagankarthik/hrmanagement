@@ -18,6 +18,13 @@ export interface Leave {
   status: LeaveStatus;
   appliedDate: string;
   documents?: UploadedDoc[];
+  /**
+   * Self-service requester identity. Set when a user files leave for themselves
+   * (recruiter / sales ESS) and may have no employee record — `employeeId` can
+   * then be blank, so these carry who applied for the HR review screen.
+   */
+  requesterEmail?: string;
+  requesterName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,4 +37,6 @@ export interface LeaveFormData {
   endDate: string;
   reason?: string;
   documents?: UploadedDoc[];
+  requesterEmail?: string;
+  requesterName?: string;
 }

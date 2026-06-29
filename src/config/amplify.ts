@@ -38,12 +38,23 @@ export function configureAmplify() {
   Amplify.configure(amplifyConfig);
 
   // Store Cognito tokens in cookies (instead of localStorage) so they are sent
-  // on same-origin requests to /api/* and can be verified by the Edge
-  // middleware. `secure` is enabled only over HTTPS so local http dev still works.
+  // on same-origin requests to /api/*. `secure` is enabled only over HTTPS so
+  // local http dev still works.
+  //
+  // SSO: when served from an *.oceanbluecorp.com host we scope the cookie to the
+  // parent domain (`.oceanbluecorp.com`). The marketing site (oceanbluecorp.com)
+  // writes the same Cognito cookies (same User Pool + App Client) on that parent
+  // domain at login, so Amplify here picks up the session automatically — the
+  // user lands signed-in without re-entering credentials. Visiting the HR portal
+  // directly with no shared cookie still shows the login screen.
   if (typeof window !== 'undefined') {
     const secure = window.location.protocol === 'https:';
+    const host = window.location.hostname;
+    const domain = host === 'oceanbluecorp.com' || host.endsWith('.oceanbluecorp.com')
+      ? '.oceanbluecorp.com'
+      : undefined; // localhost / preview hosts → host-only cookie
     cognitoUserPoolsTokenProvider.setKeyValueStorage(
-      new CookieStorage({ path: '/', sameSite: 'lax', secure, expires: 30 }),
+      new CookieStorage({ domain, path: '/', sameSite: 'lax', secure, expires: 30 }),
     );
   }
 }

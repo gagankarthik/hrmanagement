@@ -68,6 +68,9 @@ export async function POST(request: NextRequest) {
       status: body.status || 'Pending',
       appliedDate: now,
       documents: body.documents || [],
+      // Self-service requester identity (recruiter / sales ESS, no employee record).
+      requesterEmail: body.requesterEmail || '',
+      requesterName: body.requesterName || '',
       PK: `LEAVE#${id}`,
       SK: `LEAVE#${id}`,
       GSI1PK: 'LEAVES',

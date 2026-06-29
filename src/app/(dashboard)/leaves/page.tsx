@@ -64,11 +64,14 @@ export default function LeavesPage() {
   const validLeaves = leaves.filter((l) => l && l.id);
 
   const nameOf = (employeeId: string) => resolveName(employeeId, employees, { unknown: 'Unknown employee' });
+  // Self-service (ESS) requests may have no employeeId — fall back to the
+  // requester name captured at submission so HR always sees who applied.
+  const labelFor = (l: Leave) => (l.requesterName?.trim() || nameOf(l.employeeId));
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return validLeaves.filter((l) => {
-      const matchSearch = !q || nameOf(l.employeeId).toLowerCase().includes(q);
+      const matchSearch = !q || labelFor(l).toLowerCase().includes(q);
       const matchStatus = statusFilter === 'all' || l.status === statusFilter;
       const matchType = typeFilter === 'all' || l.type === typeFilter;
       return matchSearch && matchStatus && matchType;
@@ -87,7 +90,7 @@ export default function LeavesPage() {
 
   const handleExport = () => {
     exportToCsv('leave-requests', filtered as unknown as Record<string, unknown>[], [
-      { key: 'employeeId', label: 'Employee', value: (l) => nameOf(l.employeeId as string) },
+      { key: 'employeeId', label: 'Employee', value: (l) => labelFor(l as unknown as Leave) },
       { key: 'type', label: 'Type' },
       { key: 'startDate', label: 'Start' },
       { key: 'endDate', label: 'End' },
@@ -156,7 +159,7 @@ export default function LeavesPage() {
     setDeleteState((prev) => ({ ...prev, isDeleting: true }));
     try {
       await deleteLeave(leave.id);
-      toast.success('Leave request deleted', `${nameOf(leave.employeeId)}'s request has been removed.`);
+      toast.success('Leave request deleted', `${labelFor(leave)}'s request has been removed.`);
       setDeleteState({ leave: null, isDeleting: false });
     } catch (err) {
       toast.error('Failed to delete leave request', err instanceof Error ? err.message : 'Please try again.');
@@ -171,7 +174,7 @@ export default function LeavesPage() {
       await updateLeave(decision.leave.id, { status: decision.status });
       toast.success(
         decision.status === 'Approved' ? 'Leave approved' : 'Leave rejected',
-        `${nameOf(decision.leave.employeeId)}'s request has been ${decision.status.toLowerCase()}.`
+        `${labelFor(decision.leave)}'s request has been ${decision.status.toLowerCase()}.`
       );
       setDecision(null);
     } catch (err) {
@@ -345,7 +348,7 @@ export default function LeavesPage() {
                 </thead>
                 <tbody>
                   {paged.map((leave, idx) => {
-                    const name = nameOf(leave.employeeId);
+                    const name = labelFor(leave);
                     const badge = statusBadge[leave.status];
                     const StatusIcon = badge.icon;
                     return (
@@ -510,7 +513,7 @@ export default function LeavesPage() {
           deleteState.leave ? (
             <>
               Are you sure you want to delete the leave request for{' '}
-              <span className="font-semibold text-slate-900">{nameOf(deleteState.leave.employeeId)}</span>?
+              <span className="font-semibold text-slate-900">{labelFor(deleteState.leave)}</span>?
               This action cannot be undone.
             </>
           ) : null
@@ -529,7 +532,7 @@ export default function LeavesPage() {
           decision ? (
             <>
               {decision.status === 'Approved' ? 'Approve' : 'Reject'} the leave request for{' '}
-              <span className="font-semibold text-slate-900">{nameOf(decision.leave.employeeId)}</span>{' '}
+              <span className="font-semibold text-slate-900">{labelFor(decision.leave)}</span>{' '}
               ({decision.leave.days} {decision.leave.days === 1 ? 'day' : 'days'})?
             </>
           ) : null

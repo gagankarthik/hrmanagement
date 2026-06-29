@@ -2,13 +2,14 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { isSelfServiceOnly, SELF_SERVICE_HOME } from "@/config/access";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Users, ShieldCheck, BarChart3, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
-  const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword } = useAuth();
+  const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword, roles } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -22,8 +23,11 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    if (isAuthenticated) router.push("/dashboard");
-  }, [isAuthenticated, router]);
+    if (isAuthenticated) {
+      // Self-service (recruiter / sales) users land in their limited portal.
+      router.push(isSelfServiceOnly(roles) ? SELF_SERVICE_HOME : "/dashboard");
+    }
+  }, [isAuthenticated, roles, router]);
 
   if (isLoading) {
     return (

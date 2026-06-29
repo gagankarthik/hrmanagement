@@ -14,7 +14,11 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 
-function initialForm(mode: 'create' | 'edit', initial?: Leave): LeaveFormData {
+/** Identity of a user filing leave for themselves (ESS). `employeeId` is
+ *  optional — recruiter / sales users may have no employee record. */
+export type SelfApply = { employeeId?: string; name: string; email: string };
+
+function initialForm(mode: 'create' | 'edit', initial?: Leave, selfApply?: SelfApply): LeaveFormData {
   if (mode === 'edit' && initial) {
     return {
       employeeId: initial.employeeId,
@@ -25,20 +29,44 @@ function initialForm(mode: 'create' | 'edit', initial?: Leave): LeaveFormData {
       documents: initial.documents || [],
     };
   }
-  return { employeeId: '', type: 'Sick', startDate: '', endDate: '', reason: '', documents: [] };
+  return {
+    employeeId: selfApply?.employeeId || '',
+    type: 'Sick',
+    startDate: '',
+    endDate: '',
+    reason: '',
+    documents: [],
+    ...(selfApply ? { requesterEmail: selfApply.email, requesterName: selfApply.name } : {}),
+  };
 }
 
 /**
  * Dedicated (non-dialog) leave create/edit form. Rendered inside a FormPageShell
- * on /dashboard/leaves/new and /dashboard/leaves/[id]/edit.
+ * on /leaves/new and /leaves/[id]/edit.
+ *
+ * `selfApply` binds the request to the signed-in user and hides the employee
+ * picker — used by the self-service portal so recruiter/sales users can only
+ * file leave for themselves (and works even when they have no employee record).
+ * `redirectTo` overrides where the form navigates after submit/cancel
+ * (defaults to the admin /leaves list).
  */
-export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?: Leave }) {
+export function LeaveForm({
+  mode,
+  initial,
+  selfApply,
+  redirectTo = '/leaves',
+}: {
+  mode: 'create' | 'edit';
+  initial?: Leave;
+  selfApply?: SelfApply;
+  redirectTo?: string;
+}) {
   const router = useRouter();
   const { createLeave, updateLeave } = useLeaves();
   const { employees } = useEmployees();
   const toast = useToast();
 
-  const [form, setForm] = useState<LeaveFormData>(() => initialForm(mode, initial));
+  const [form, setForm] = useState<LeaveFormData>(() => initialForm(mode, initial, selfApply));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,25 +77,26 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
 
   const cancel = () => {
     if (mode === 'edit' && initial) router.push(`/leaves/${initial.id}`);
-    else router.push('/leaves');
+    else router.push(redirectTo);
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors: Record<string, string> = {};
-    if (!form.employeeId) nextErrors.employeeId = 'Please select an employee';
+    // ESS users have no picker — their identity is fixed, so don't require employeeId.
+    if (!selfApply && !form.employeeId) nextErrors.employeeId = 'Please select an employee';
     if (!form.startDate) nextErrors.startDate = 'Start date is required';
     if (!form.endDate) nextErrors.endDate = 'End date is required';
     if (form.startDate && form.endDate && form.endDate < form.startDate) nextErrors.endDate = 'End date must be after start date';
     if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
 
-    const employeeName = employees.find((emp) => emp.id === form.employeeId)?.name || 'Employee';
+    const employeeName = selfApply?.name || employees.find((emp) => emp.id === form.employeeId)?.name || 'Employee';
     setSubmitting(true);
     try {
       if (mode === 'create') {
         await createLeave(form);
         toast.success('Leave request created', `Request for ${employeeName} has been added.`);
-        router.push('/leaves');
+        router.push(redirectTo);
       } else {
         await updateLeave(initial!.id, form);
         toast.success('Leave request updated', `Request for ${employeeName} has been saved.`);
@@ -85,14 +114,26 @@ export function LeaveForm({ mode, initial }: { mode: 'create' | 'edit'; initial?
     <form onSubmit={submit} className="surface space-y-5 p-5 sm:p-6">
       {errors._ && <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600">{errors._}</p>}
 
-      <FormField label="Employee" required error={errors.employeeId}>
-        <Combobox
-          value={form.employeeId}
-          onChange={(v) => set('employeeId', v)}
-          options={employees.map((e) => ({ value: e.id, label: e.name, sublabel: e.type }))}
-          placeholder="Select an employee…"
-          className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
-        />
+      <FormField label="Employee" required error={selfApply ? undefined : errors.employeeId}>
+        {selfApply ? (
+          <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">
+              {(selfApply.name || '?').charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-sm font-medium text-slate-800">{selfApply.name}</span>
+              <span className="block truncate text-xs text-slate-400">{selfApply.email}</span>
+            </div>
+          </div>
+        ) : (
+          <Combobox
+            value={form.employeeId}
+            onChange={(v) => set('employeeId', v)}
+            options={employees.map((e) => ({ value: e.id, label: e.name, sublabel: e.type }))}
+            placeholder="Select an employee…"
+            className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
+          />
+        )}
       </FormField>
 
       <FormField label="Leave Type" required>

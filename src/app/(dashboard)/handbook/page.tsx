@@ -5,6 +5,7 @@ import { BookOpen, Plus, Pencil, Trash2, FileText, ExternalLink, Download, Tag, 
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import HandbookFormModal from '@/components/dashboard/HandbookFormModal';
 import { useHandbook } from '@/context/HandbookContext';
+import { useAccess } from '@/hooks/useAccess';
 import { HandbookForm, HANDBOOK_FORM_CATEGORIES } from '@/types/handbook';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkeletonTable } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ import { useToast } from '@/components/ui/toast';
 
 export default function HandbookPage() {
   const { forms, isLoading, deleteForm } = useHandbook();
+  const { canManage } = useAccess();
   const toast = useToast();
 
   const [search, setSearch] = useState('');
@@ -63,9 +65,11 @@ export default function HandbookPage() {
         description="Company forms and documents for hiring, onboarding, termination, leave requests and more"
         tone="brand"
         actions={
-          <button onClick={openCreate} className="btn-primary">
-            <Plus className="h-4 w-4" /> Add form
-          </button>
+          canManage ? (
+            <button onClick={openCreate} className="btn-primary">
+              <Plus className="h-4 w-4" /> Add form
+            </button>
+          ) : undefined
         }
       />
 
@@ -103,9 +107,11 @@ export default function HandbookPage() {
           title="No forms yet"
           description="Add your first company form — hiring, onboarding, termination, leave requests and more."
           action={
-            <button onClick={openCreate} className="btn-primary">
-              <Plus className="h-4 w-4" /> Add form
-            </button>
+            canManage ? (
+              <button onClick={openCreate} className="btn-primary">
+                <Plus className="h-4 w-4" /> Add form
+              </button>
+            ) : undefined
           }
         />
       ) : filtered.length === 0 ? (
@@ -130,22 +136,24 @@ export default function HandbookPage() {
                   </div>
                   <h3 className="min-w-0 truncate font-display text-base font-bold text-slate-900">{form.title}</h3>
                 </div>
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <button
-                    onClick={() => openEdit(form)}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteState({ form, isDeleting: false })}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      onClick={() => openEdit(form)}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteState({ form, isDeleting: false })}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {form.category && (

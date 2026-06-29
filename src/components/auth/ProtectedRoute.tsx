@@ -1,10 +1,17 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { hasAppAccess, APP_ACCESS_ROLES } from '@/config/access';
+import {
+  hasAppAccess,
+  hasFullAccess,
+  isSelfServiceOnly,
+  isSelfServiceRouteAllowed,
+  SELF_SERVICE_HOME,
+  FULL_ACCESS_ROLES,
+} from '@/config/access';
 import { BRAND } from '@/config/brand';
 
 interface ProtectedRouteProps {
@@ -12,16 +19,27 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, roles, signOut } = useAuth();
+  const { isAuthenticated, isLoading, roles, hrAccess, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const allowed = hasAppAccess(roles);
+  // Access requires both an allowed role AND a non-revoked HR-portal flag.
+  const allowed = hasAppAccess(roles) && hrAccess;
+  const selfOnly = isSelfServiceOnly(roles);
+  // Self-service users may only visit their allow-listed routes.
+  const routeBlocked = selfOnly && !isSelfServiceRouteAllowed(pathname);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && routeBlocked) {
+      router.replace(SELF_SERVICE_HOME);
+    }
+  }, [isLoading, isAuthenticated, routeBlocked, router]);
 
   if (isLoading) {
     return (
@@ -44,7 +62,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     return null;
   }
 
-  // Authenticated but not authorized: only Admin and HR may use the app for now.
+  // Self-service user on a page they can't see — don't flash it while redirecting.
+  if (routeBlocked) {
+    return null;
+  }
+
+  // Authenticated but not authorized at all.
   if (!allowed) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#f8fafc] px-6">
@@ -55,7 +78,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Access restricted</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
             Your account doesn&apos;t have permission to use the {BRAND.name} HR portal. Access is
-            currently limited to {APP_ACCESS_ROLES.map((r) => r.toUpperCase()).join(' and ')} roles.
+            currently limited to {FULL_ACCESS_ROLES.map((r) => r.toUpperCase()).join(' and ')} roles.
           </p>
           <p className="mt-2 text-sm text-slate-500">
             Need access? Contact{' '}

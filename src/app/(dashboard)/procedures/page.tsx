@@ -5,6 +5,7 @@ import { BookOpen, Plus, Pencil, Trash2, FileText, ExternalLink, Tag } from 'luc
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import SopModal from '@/components/dashboard/SopModal';
 import { useHandbook } from '@/context/HandbookContext';
+import { useAccess } from '@/hooks/useAccess';
 import { SopDoc } from '@/types/handbook';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkeletonTable } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ import { useToast } from '@/components/ui/toast';
 
 export default function CompanyProceduresPage() {
   const { sops, isLoading, deleteSop } = useHandbook();
+  const { canManage } = useAccess();
   const toast = useToast();
 
   const [modalState, setModalState] = useState<{ isOpen: boolean; mode: 'create' | 'edit'; sop?: SopDoc }>({
@@ -48,9 +50,11 @@ export default function CompanyProceduresPage() {
         description="Standard operating procedures and shared company documents"
         tone="brand"
         actions={
-          <button onClick={openCreateSop} className="btn-primary">
-            <Plus className="h-4 w-4" /> Add document
-          </button>
+          canManage ? (
+            <button onClick={openCreateSop} className="btn-primary">
+              <Plus className="h-4 w-4" /> Add document
+            </button>
+          ) : undefined
         }
       />
 
@@ -63,9 +67,11 @@ export default function CompanyProceduresPage() {
           title="No documents yet"
           description="Add your first SOP or company procedure document to share it with the team."
           action={
-            <button onClick={openCreateSop} className="btn-primary">
-              <Plus className="h-4 w-4" /> Add document
-            </button>
+            canManage ? (
+              <button onClick={openCreateSop} className="btn-primary">
+                <Plus className="h-4 w-4" /> Add document
+              </button>
+            ) : undefined
           }
         />
       ) : (
@@ -83,22 +89,24 @@ export default function CompanyProceduresPage() {
                   </div>
                   <h3 className="min-w-0 truncate font-display text-base font-bold text-slate-900">{sop.title}</h3>
                 </div>
-                <div className="flex shrink-0 items-center gap-0.5">
-                  <button
-                    onClick={() => openEditSop(sop)}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                    title="Edit"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteState({ sop, isDeleting: false })}
-                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      onClick={() => openEditSop(sop)}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteState({ sop, isDeleting: false })}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {sop.category && (

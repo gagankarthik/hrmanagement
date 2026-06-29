@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useBenefits } from '@/context/BenefitsContext';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useAccess } from '@/hooks/useAccess';
 import { BenefitPlan, BenefitType } from '@/types/benefits';
 import { cn } from '@/lib/utils';
 import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
@@ -38,6 +39,7 @@ function fmtMoney(n?: number) {
 function BenefitsContent() {
   const { plans, isLoading, deleteBenefit } = useBenefits();
   const { employees } = useEmployees();
+  const { canManage } = useAccess();
   const toast = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,12 +110,14 @@ function BenefitsContent() {
         description="Benefit plans and eligibility by employee category"
         tone="teal"
         actions={
-          <button
-            onClick={() => router.push('/benefits/new')}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" /> Add plan
-          </button>
+          canManage ? (
+            <button
+              onClick={() => router.push('/benefits/new')}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" /> Add plan
+            </button>
+          ) : undefined
         }
       />
 
@@ -174,7 +178,7 @@ function BenefitsContent() {
               title={searchQuery || typeFilter !== 'all' || statusFilter !== 'all' ? 'No plans match your filters' : 'No benefit plans yet'}
               description={searchQuery || typeFilter !== 'all' || statusFilter !== 'all' ? 'Try different keywords or clear filters.' : 'Add your first benefit plan to start managing coverage and eligibility.'}
               action={
-                !(searchQuery || typeFilter !== 'all' || statusFilter !== 'all') ? (
+                canManage && !(searchQuery || typeFilter !== 'all' || statusFilter !== 'all') ? (
                   <button
                     onClick={() => router.push('/benefits/new')}
                     className="btn-primary"
@@ -199,8 +203,11 @@ function BenefitsContent() {
                 return (
                   <div
                     key={plan.id ?? idx}
-                    onClick={() => router.push(`/benefits/${plan.id}`)}
-                    className="surface-hover group flex cursor-pointer flex-col rounded-2xl border border-slate-100 p-4 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]"
+                    onClick={canManage ? () => router.push(`/benefits/${plan.id}`) : undefined}
+                    className={cn(
+                      'surface-hover group flex flex-col rounded-2xl border border-slate-100 p-4 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]',
+                      canManage && 'cursor-pointer',
+                    )}
                     style={{ animationDelay: `${Math.min(idx * 40, 320)}ms` }}
                   >
                     {/* Header row */}
@@ -221,6 +228,7 @@ function BenefitsContent() {
                           )}
                         </div>
                       </div>
+                      {canManage && (
                       <div
                         className="shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
                         onClick={(e) => e.stopPropagation()}
@@ -247,6 +255,7 @@ function BenefitsContent() {
                           ] satisfies ActionMenuItem[]}
                         />
                       </div>
+                      )}
                     </div>
 
                     {/* Type + status chips */}
@@ -281,24 +290,27 @@ function BenefitsContent() {
                       )}
                     </div>
 
-                    {/* Enrolled employees */}
-                    <div className="mt-3">
-                      <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        <Users className="h-3 w-3" /> Enrolled · {enrolledCount}
-                      </p>
-                      {enrolledCount > 0 ? (
-                        <p className="truncate text-xs text-slate-600">
-                          {enrolledNames.slice(0, 2).join(', ')}
-                          {enrolledCount > enrolledNames.slice(0, 2).length && (
-                            <span className="text-slate-400">
-                              {` +${enrolledCount - Math.min(2, enrolledNames.length)} more`}
-                            </span>
-                          )}
+                    {/* Enrolled employees — hidden from self-service users
+                        (they shouldn't see other people's enrollment). */}
+                    {canManage && (
+                      <div className="mt-3">
+                        <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                          <Users className="h-3 w-3" /> Enrolled · {enrolledCount}
                         </p>
-                      ) : (
-                        <span className="text-xs text-slate-300">No employees enrolled</span>
-                      )}
-                    </div>
+                        {enrolledCount > 0 ? (
+                          <p className="truncate text-xs text-slate-600">
+                            {enrolledNames.slice(0, 2).join(', ')}
+                            {enrolledCount > enrolledNames.slice(0, 2).length && (
+                              <span className="text-slate-400">
+                                {` +${enrolledCount - Math.min(2, enrolledNames.length)} more`}
+                              </span>
+                            )}
+                          </p>
+                        ) : (
+                          <span className="text-xs text-slate-300">No employees enrolled</span>
+                        )}
+                      </div>
+                    )}
 
                     {/* Cost / employer contribution */}
                     {(cost || employer) && (

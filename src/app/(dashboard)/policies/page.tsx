@@ -20,6 +20,7 @@ import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import { Switch } from '@/components/ui/switch';
 import { DetailField, DetailGrid } from '@/components/ui/section-card';
 import { useHandbook } from '@/context/HandbookContext';
+import { useAccess } from '@/hooks/useAccess';
 import { CategoryPolicy, LeaveAccrualTier } from '@/types/handbook';
 import { EmployeeType } from '@/types/employee';
 import { UploadedDoc } from '@/types/uploads';
@@ -201,6 +202,7 @@ function PolicySummary({ policy }: { policy: CategoryPolicy }) {
 
 function PolicyCard({ type, index }: { type: EmployeeType; index: number }) {
   const { getPolicy, savePolicy } = useHandbook();
+  const { canManage } = useAccess();
   const toast = useToast();
   const existing = getPolicy(type);
 
@@ -293,7 +295,7 @@ function PolicyCard({ type, index }: { type: EmployeeType; index: number }) {
             <p className="text-xs text-slate-400">Company leave policy framework</p>
           </div>
         </div>
-        {!editing && (
+        {!editing && canManage && (
           <button type="button" onClick={openEditor} className="btn-ghost">
             <Pencil className="h-4 w-4" strokeWidth={1.75} />
             {isConfigured ? 'Edit' : 'Set up'}
@@ -306,7 +308,8 @@ function PolicyCard({ type, index }: { type: EmployeeType; index: number }) {
           <PolicySummary policy={existing} />
         ) : (
           <p className="text-sm text-slate-400">
-            No leave policy configured yet for {type}. Click “Set up” to define the framework.
+            No leave policy configured yet for {type}.
+            {canManage ? ' Click “Set up” to define the framework.' : ''}
           </p>
         )
       ) : (

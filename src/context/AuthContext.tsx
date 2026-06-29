@@ -26,6 +26,12 @@ interface User {
   name?: string;
   /** Roles from Cognito groups (and a `custom:role` attribute), lowercased. */
   roles: string[];
+  /**
+   * HR-portal access flag from `custom:hr_access`. Defaults to true unless an
+   * admin explicitly set it to "false" on the Users page. The company website
+   * ignores this attribute, so blocking here never affects that login.
+   */
+  hrAccess: boolean;
 }
 
 interface AuthContextType {
@@ -34,6 +40,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   /** Roles for the signed-in user (empty when signed out). */
   roles: string[];
+  /** False only when an admin has revoked this user's HR-portal access. */
+  hrAccess: boolean;
   /** True when sign-in returned the FORCE_CHANGE_PASSWORD challenge (admin-created users). */
   newPasswordRequired: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -68,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const roles = Array.from(
         new Set([...groups, ...(roleAttr ? [roleAttr] : [])].map((r) => r.toLowerCase().trim()).filter(Boolean)),
       );
+      // HR-portal access: blocked only when explicitly "false".
+      const hrAccess = (attributes as Record<string, string | undefined>)['custom:hr_access'] !== 'false';
 
       setUser({
         username: currentUser.username,
@@ -75,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId: currentUser.userId,
         name: attributes.name,
         roles,
+        hrAccess,
       });
     } catch {
       setUser(null);
@@ -178,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     roles: user?.roles ?? [],
+    hrAccess: user?.hrAccess ?? true,
     newPasswordRequired,
     signIn: handleSignIn,
     confirmNewPassword: handleConfirmNewPassword,
