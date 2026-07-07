@@ -11,11 +11,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import { useInvoices } from '@/context/InvoiceContext';
+import { money, formatDate } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { Invoice, InvoiceStatus } from '@/types/invoice';
-
-const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-const fmtDate = (s?: string) => (s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
 
 const STATUS_BADGE: Record<InvoiceStatus, string> = {
   Draft: 'bg-slate-100 text-slate-600 ring-slate-200',
@@ -42,7 +41,7 @@ export default function InvoicesPage() {
       toast.success('Invoice deleted');
       setDel({ inv: null, busy: false });
     } catch (err) {
-      toast.error('Failed to delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete', friendlyError(err));
       setDel((p) => ({ ...p, busy: false }));
     }
   };
@@ -72,9 +71,9 @@ export default function InvoicesPage() {
       />
 
       <StatGrid cols={3}>
-        <StatCard label="Total billed" value={usd(totalBilled)} icon={Receipt} tone="brand" hint={`${valid.length} invoices`} />
-        <StatCard label="Outstanding" value={usd(outstanding)} icon={Receipt} tone="amber" hint="status: sent" />
-        <StatCard label="Paid" value={usd(paid)} icon={Receipt} tone="emerald" />
+        <StatCard label="Total billed" value={money(totalBilled, { cents: true })} icon={Receipt} tone="brand" hint={`${valid.length} invoices`} />
+        <StatCard label="Outstanding" value={money(outstanding, { cents: true })} icon={Receipt} tone="amber" hint="status: sent" />
+        <StatCard label="Paid" value={money(paid, { cents: true })} icon={Receipt} tone="emerald" />
       </StatGrid>
 
       <div className="surface">
@@ -94,7 +93,7 @@ export default function InvoicesPage() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Invoice', 'Client', 'Period', 'Issued', 'Total', 'Status', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -102,14 +101,22 @@ export default function InvoicesPage() {
                 {valid.map((inv) => (
                   <tr
                     key={inv.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => router.push(`/invoices/${inv.id}`)}
-                    className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        router.push(`/invoices/${inv.id}`);
+                      }
+                    }}
+                    className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
                   >
                     <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{inv.invoiceNumber}</td>
                     <td className="px-5 py-3.5 text-sm text-slate-600">{inv.clientName || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-5 py-3.5 text-sm text-slate-600">{fmtDate(inv.periodStart)} → {fmtDate(inv.periodEnd)}</td>
-                    <td className="px-5 py-3.5 text-sm text-slate-600">{fmtDate(inv.issueDate)}</td>
-                    <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{usd(inv.total || 0)}</td>
+                    <td className="px-5 py-3.5 text-sm text-slate-600">{formatDate(inv.periodStart)} → {formatDate(inv.periodEnd)}</td>
+                    <td className="px-5 py-3.5 text-sm text-slate-600">{formatDate(inv.issueDate)}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{money(inv.total || 0, { cents: true })}</td>
                     <td className="px-5 py-3.5">
                       <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1', STATUS_BADGE[inv.status])}>{inv.status}</span>
                     </td>

@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Network, Plus, ChevronDown, Building2, Target, Package, UserRoundCheck, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { PageContainer } from '@/components/dashboard/page-container';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import ClientsList from '@/components/dashboard/partners/ClientsList';
@@ -21,6 +22,8 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'vendors', label: 'Vendors', icon: Package },
   { id: 'subcontractors', label: 'Subcontractors', icon: UserRoundCheck },
 ];
+
+const TAB_ITEMS: TabItem<TabId>[] = TABS.map((t) => ({ value: t.id, label: t.label, icon: t.icon }));
 
 const ADD_OPTIONS: { label: string; href: string; icon: React.ElementType }[] = [
   { label: 'Add Client', href: '/clients/new', icon: Building2 },
@@ -134,30 +137,7 @@ function PartnersContent() {
       />
 
       {/* Tabs */}
-      <div className="overflow-x-auto border-b border-slate-200">
-        <div className="flex min-w-max items-center gap-1" role="tablist">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={active}
-                onClick={() => selectTab(t.id)}
-                className={cn(
-                  'relative inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
-                  active ? 'text-brand-700' : 'text-slate-500 hover:text-slate-800',
-                )}
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.75} />
-                {t.label}
-                {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-brand-600" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <Tabs items={TAB_ITEMS} value={tab} onChange={selectTab} ariaLabel="Partner categories" />
 
       {/* Active list (header-less embedded view) */}
       {tab === 'clients' && <ClientsList embedded />}

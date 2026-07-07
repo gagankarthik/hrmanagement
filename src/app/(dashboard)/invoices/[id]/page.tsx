@@ -7,11 +7,10 @@ import { useInvoices } from '@/context/InvoiceContext';
 import { useToast } from '@/components/ui/toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BRAND } from '@/config/brand';
+import { money, formatDate } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { Invoice, InvoiceStatus, INVOICE_STATUSES } from '@/types/invoice';
-
-const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-const fmtDate = (s?: string) => (s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—');
 
 const STATUS_BADGE: Record<InvoiceStatus, string> = {
   Draft: 'bg-slate-100 text-slate-600 ring-slate-200',
@@ -25,8 +24,8 @@ function printInvoice(inv: Invoice) {
       (li) => `<tr>
         <td>${li.description}</td>
         <td style="text-align:right">${li.hours}</td>
-        <td style="text-align:right">${usd(li.rate)}</td>
-        <td style="text-align:right">${usd(li.amount)}</td>
+        <td style="text-align:right">${money(li.rate, { cents: true })}</td>
+        <td style="text-align:right">${money(li.amount, { cents: true })}</td>
       </tr>`,
     )
     .join('');
@@ -50,13 +49,13 @@ function printInvoice(inv: Invoice) {
     </div>
     <div class="meta">
       <div><div class="muted">Bill to</div><div style="font-weight:700">${inv.clientName || '—'}</div></div>
-      <div><div class="muted">Period</div><div>${fmtDate(inv.periodStart)} → ${fmtDate(inv.periodEnd)}</div></div>
-      <div><div class="muted">Issued</div><div>${fmtDate(inv.issueDate)}</div></div>
-      <div><div class="muted">Due</div><div>${fmtDate(inv.dueDate)}</div></div>
+      <div><div class="muted">Period</div><div>${formatDate(inv.periodStart)} → ${formatDate(inv.periodEnd)}</div></div>
+      <div><div class="muted">Issued</div><div>${formatDate(inv.issueDate)}</div></div>
+      <div><div class="muted">Due</div><div>${formatDate(inv.dueDate)}</div></div>
     </div>
     <table><thead><tr><th>Description</th><th style="text-align:right">Hours</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td colspan="3" style="text-align:right">Total</td><td style="text-align:right" class="total">${usd(inv.total)}</td></tr></tfoot></table>
+    <tfoot><tr><td colspan="3" style="text-align:right">Total</td><td style="text-align:right" class="total">${money(inv.total, { cents: true })}</td></tr></tfoot></table>
     ${inv.notes ? `<p class="muted" style="margin-top:24px">${inv.notes}</p>` : ''}
     <script>window.onload=function(){window.print();setTimeout(function(){window.close()},400)}<\/script>
   </body></html>`;
@@ -93,7 +92,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
       await updateInvoice(inv.id, { status });
       toast.success('Invoice updated', `Marked ${status}.`);
     } catch (err) {
-      toast.error('Could not update', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not update', friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -106,7 +105,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
       toast.success('Invoice deleted');
       router.push('/invoices');
     } catch (err) {
-      toast.error('Failed to delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete', friendlyError(err));
       setBusy(false);
       setDel(false);
     }
@@ -162,19 +161,19 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
 
         <div className="grid gap-4 px-6 py-5 sm:grid-cols-4">
           <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bill to</p><p className="mt-0.5 text-sm font-semibold text-slate-900">{inv.clientName || '—'}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Period</p><p className="mt-0.5 text-sm text-slate-700">{fmtDate(inv.periodStart)} → {fmtDate(inv.periodEnd)}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Issued</p><p className="mt-0.5 text-sm text-slate-700">{fmtDate(inv.issueDate)}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Due</p><p className="mt-0.5 text-sm text-slate-700">{fmtDate(inv.dueDate)}</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Period</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.periodStart)} → {formatDate(inv.periodEnd)}</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Issued</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.issueDate)}</p></div>
+          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Due</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.dueDate)}</p></div>
         </div>
 
         <div className="overflow-x-auto px-2">
           <table className="w-full min-w-[520px]">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/40">
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">Description</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-400">Hours</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-400">Rate</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-400">Amount</th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hours</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rate</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -182,8 +181,8 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
                 <tr key={i} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-3 text-sm text-slate-700">{li.description}</td>
                   <td className="px-4 py-3 text-right text-sm text-slate-600">{li.hours}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{usd(li.rate)}</td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold text-slate-900">{usd(li.amount)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-slate-600">{money(li.rate, { cents: true })}</td>
+                  <td className="px-4 py-3 text-right text-sm font-semibold text-slate-900">{money(li.amount, { cents: true })}</td>
                 </tr>
               ))}
             </tbody>
@@ -192,8 +191,8 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
 
         <div className="flex justify-end border-t border-slate-100 px-6 py-4">
           <div className="w-56">
-            <div className="flex items-center justify-between py-1 text-sm text-slate-500"><span>Subtotal</span><span>{usd(inv.subtotal)}</span></div>
-            <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-2"><span className="font-semibold text-slate-700">Total</span><span className="font-display text-xl font-bold text-brand-900">{usd(inv.total)}</span></div>
+            <div className="flex items-center justify-between py-1 text-sm text-slate-500"><span>Subtotal</span><span>{money(inv.subtotal, { cents: true })}</span></div>
+            <div className="mt-1 flex items-center justify-between border-t border-slate-100 pt-2"><span className="font-semibold text-slate-700">Total</span><span className="font-display text-xl font-bold text-brand-900">{money(inv.total, { cents: true })}</span></div>
           </div>
         </div>
 

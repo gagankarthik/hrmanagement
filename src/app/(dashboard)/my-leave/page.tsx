@@ -200,15 +200,16 @@ export default function MyLeavePage() {
         isOpen={cancelState.leave !== null}
         onClose={() => setCancelState({ leave: null, isDeleting: false })}
         onConfirm={confirmCancel}
-        title="Cancel Leave Request"
+        title="Withdraw leave request?"
         tone="danger"
         description={
           cancelState.leave ? (
             <>Withdraw your {cancelState.leave.type.toLowerCase()} leave request for{' '}
-              <span className="font-semibold text-slate-900">{cancelState.leave.days} {cancelState.leave.days === 1 ? 'day' : 'days'}</span>? This cannot be undone.</>
+              <span className="font-semibold text-slate-900">{cancelState.leave.days} {cancelState.leave.days === 1 ? 'day' : 'days'}</span>? You can always apply again.</>
           ) : null
         }
-        confirmLabel="Cancel Request"
+        confirmLabel="Withdraw request"
+        cancelLabel="Keep request"
         isLoading={cancelState.isDeleting}
       />
     </PageContainer>

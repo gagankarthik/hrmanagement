@@ -11,6 +11,8 @@ import { useBenefits } from '@/context/BenefitsContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useAccess } from '@/hooks/useAccess';
 import { BenefitPlan, BenefitType } from '@/types/benefits';
+import { money } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -18,6 +20,7 @@ import { SkeletonTable } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { FilterSelect } from '@/components/ui/filter-select';
 
 const BENEFIT_TYPES: BenefitType[] = ['Medical', 'Dental', 'Vision', '401k', 'Life', 'Disability', 'Other'];
 
@@ -33,7 +36,7 @@ const typeChipStyles: Record<BenefitType, string> = {
 
 function fmtMoney(n?: number) {
   if (n === undefined || n === null || Number.isNaN(n)) return null;
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return money(n, { cents: true });
 }
 
 function BenefitsContent() {
@@ -83,7 +86,7 @@ function BenefitsContent() {
       toast.success('Benefit deleted', `${benefit.name} has been removed.`);
       setDeleteState({ benefit: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete benefit', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete benefit', friendlyError(err));
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -143,30 +146,25 @@ function BenefitsContent() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <FilterSelect
+              label="Filter by type"
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as 'all' | BenefitType)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-50"
-            >
-              <option value="all">All types</option>
-              {BENEFIT_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-            <div className="flex gap-1.5">
-              {(['all', 'Active', 'Inactive'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                    statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  )}
-                >
-                  {s === 'all' ? 'All' : s}
-                </button>
-              ))}
-            </div>
+              onChange={setTypeFilter}
+              options={[
+                { value: 'all', label: 'All types' },
+                ...BENEFIT_TYPES.map((t) => ({ value: t, label: t })),
+              ]}
+            />
+            <FilterSelect
+              label="Filter by status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'all', label: 'All statuses' },
+                { value: 'Active', label: 'Active' },
+                { value: 'Inactive', label: 'Inactive' },
+              ]}
+            />
           </div>
         </div>
 
@@ -203,10 +201,18 @@ function BenefitsContent() {
                 return (
                   <div
                     key={plan.id ?? idx}
+                    role={canManage ? 'button' : undefined}
+                    tabIndex={canManage ? 0 : undefined}
                     onClick={canManage ? () => router.push(`/benefits/${plan.id}`) : undefined}
+                    onKeyDown={canManage ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        router.push(`/benefits/${plan.id}`);
+                      }
+                    } : undefined}
                     className={cn(
                       'surface-hover group flex flex-col rounded-2xl border border-slate-100 p-4 animate-in fade-in slide-in-from-bottom-3 duration-500 [animation-fill-mode:both]',
-                      canManage && 'cursor-pointer',
+                      canManage && 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200',
                     )}
                     style={{ animationDelay: `${Math.min(idx * 40, 320)}ms` }}
                   >
@@ -219,7 +225,7 @@ function BenefitsContent() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">{plan.name}</p>
                           {plan.provider ? (
-                            <p className="flex items-center gap-1 truncate text-xs text-slate-400">
+                            <p className="flex items-center gap-1 truncate text-xs text-slate-500">
                               <Building2 className="h-3 w-3 shrink-0" />
                               <span className="truncate">{plan.provider}</span>
                             </p>
@@ -357,7 +363,7 @@ function BenefitsContent() {
         )}
 
         <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             {filtered.length} of {validPlans.length} plan{validPlans.length !== 1 ? 's' : ''}
           </p>
         </div>

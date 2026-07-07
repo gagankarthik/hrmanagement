@@ -11,7 +11,6 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Subcontractor } from '@/types/subcontractor';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -19,15 +18,17 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { exportToCsv } from '@/lib/export';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { SUBCONTRACTOR_IMPORT } from '@/lib/bulk-import/configs';
+import { friendlyError } from '@/lib/errors';
 
 type SubcontractorRow = Subcontractor & { status: 'Active' | 'Inactive'; autoInactive: boolean; empCount: number };
 
 export default function SubcontractorsPage({ embedded = false }: { embedded?: boolean }) {
-  const { subcontractors, isLoading, deleteSubcontractor, fetchSubcontractors } = useSubcontractors();
+  const { subcontractors, isLoading, error, deleteSubcontractor, fetchSubcontractors } = useSubcontractors();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,7 +107,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       toast.success('Subcontractor deleted', `${subcontractor.name} has been removed.`);
       setDeleteState({ subcontractor: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete subcontractor', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete subcontractor', friendlyError(err));
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -124,7 +125,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{subcontractor.name}</p>
             {subcontractor.address && (
-              <p className="flex items-center gap-1 text-xs text-slate-400">
+              <p className="flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate max-w-[160px]">{subcontractor.address}</span>
               </p>
@@ -239,20 +240,16 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
             />
           </div>
-          <div className="flex gap-1.5">
-            {(['all', 'Active', 'Inactive'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                )}
-              >
-                {s === 'all' ? 'All' : s}
-              </button>
-            ))}
-          </div>
+          <FilterSelect
+            label="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All statuses' },
+              { value: 'Active', label: 'Active' },
+              { value: 'Inactive', label: 'Inactive' },
+            ]}
+          />
           <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
         </div>
 
@@ -262,6 +259,8 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           getRowId={(s) => s.id}
           caption="Subcontractors"
           isLoading={isLoading}
+          error={error}
+          onRetry={fetchSubcontractors}
           onRowClick={(s) => router.push(`/subcontractors/${s.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
@@ -296,7 +295,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
 
         {!isLoading && rows.length > 0 && (
           <div className="border-t border-slate-100 px-5 py-3">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {rows.length} of {validSubcontractors.length} subcontractor{validSubcontractors.length !== 1 ? 's' : ''}
             </p>
           </div>

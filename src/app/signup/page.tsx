@@ -47,7 +47,7 @@ export default function SignUpPage() {
 
           <div>
             <p className="eyebrow">Request access</p>
-            <h1 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Join your team on Ocean Blue</h1>
+            <h1 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Join your team</h1>
             <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
               Ocean Blue accounts are provisioned by HR administrators. Contact your admin to get started.
             </p>

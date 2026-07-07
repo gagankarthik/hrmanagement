@@ -4,13 +4,30 @@ import {
   AdminDeleteUserCommand,
   AdminUpdateUserAttributesCommand,
   AddCustomAttributesCommand,
+  AdminAddUserToGroupCommand,
+  AdminRemoveUserFromGroupCommand,
+  AdminListGroupsForUserCommand,
+  CreateGroupCommand,
   ListUsersCommand,
   type UserType,
 } from '@aws-sdk/client-cognito-identity-provider';
 
+import { INVITE_ROLE_OPTIONS, type AppRole } from '@/config/access';
+
 /** Employee classification stored on the Cognito user (display/category only). */
 export type UserEmployeeType = 'W2' | 'Contract' | '1099' | 'Offshore';
 export const USER_EMPLOYEE_TYPES: UserEmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
+
+/**
+ * Application roles an admin may assign from the Users page — the canonical list
+ * lives in `src/config/access.ts` (client-safe) and is re-exported here for the
+ * API routes. Each maps 1:1 to a Cognito group (`cognito:groups`). `employee` is
+ * the invite-only ESS default.
+ */
+export { ROLE_LABELS as APP_ROLE_LABELS } from '@/config/access';
+export type { AppRole } from '@/config/access';
+export const APP_INVITE_ROLES: AppRole[] = [...INVITE_ROLE_OPTIONS];
+const APP_ROLE_SET = new Set<string>(INVITE_ROLE_OPTIONS);
 
 // SERVER-ONLY MODULE. Never import from a Client Component — it reads AWS
 // credentials. Reuses the same non-public credential env vars as the DynamoDB
@@ -58,6 +75,12 @@ export interface AppUser {
   employeeType?: UserEmployeeType;
   /** HR-portal access. Defaults to true when the attribute is unset. */
   hrAccess: boolean;
+  /**
+   * Assigned application role, mirrored to `custom:role` at invite/update time
+   * so the Users table can show it without an AdminListGroupsForUser call per
+   * user. The authoritative source for access is the Cognito group.
+   */
+  role?: AppRole;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -70,6 +93,7 @@ function toAppUser(user: UserType): AppUser {
   const empType = attr(user, 'custom:employee_type');
   // hr_access defaults to allowed unless explicitly set to 'false'.
   const access = attr(user, 'custom:hr_access');
+  const roleAttr = (attr(user, 'custom:role') || '').toLowerCase().trim();
   return {
     username: user.Username || '',
     email: attr(user, 'email') || user.Username || '',
@@ -81,9 +105,32 @@ function toAppUser(user: UserType): AppUser {
       ? (empType as UserEmployeeType)
       : undefined,
     hrAccess: access !== 'false',
+    role: APP_ROLE_SET.has(roleAttr) ? (roleAttr as AppRole) : undefined,
     createdAt: user.UserCreateDate ? user.UserCreateDate.toISOString() : undefined,
     updatedAt: user.UserLastModifiedDate ? user.UserLastModifiedDate.toISOString() : undefined,
   };
+}
+
+/**
+ * A user's current application role, read from their live Cognito group
+ * membership — the authoritative source for access, and what the OceanBlue site
+ * writes to as well. When a user is in several role groups, the highest-privilege
+ * one is shown. Returns undefined if they hold no app-role group. Best-effort:
+ * resolves to undefined on error so one failure never breaks the whole list.
+ */
+const ROLE_DISPLAY_PRIORITY: AppRole[] = ['admin', 'hr', 'recruiter', 'sales', 'employee'];
+async function groupRoleFor(username: string): Promise<AppRole | undefined> {
+  try {
+    const res = await client.send(
+      new AdminListGroupsForUserCommand({ UserPoolId: USER_POOL_ID, Username: username }),
+    );
+    const owned = new Set(
+      (res.Groups || []).map((g) => (g.GroupName || '').toLowerCase().trim()).filter(Boolean),
+    );
+    return ROLE_DISPLAY_PRIORITY.find((r) => owned.has(r));
+  } catch {
+    return undefined;
+  }
 }
 
 /** List all users in the pool (paginates up to a reasonable limit). */
@@ -97,6 +144,21 @@ export async function listUsers(): Promise<AppUser[]> {
     (res.Users || []).forEach((u) => users.push(toAppUser(u)));
     paginationToken = res.PaginationToken;
   } while (paginationToken && users.length < 600);
+
+  // Enrich each user's role from their live group membership (authoritative),
+  // overriding the mirrored `custom:role`. Bounded concurrency to avoid Cognito
+  // AdminListGroupsForUser throttling on larger pools.
+  const CONCURRENCY = 12;
+  for (let i = 0; i < users.length; i += CONCURRENCY) {
+    const chunk = users.slice(i, i + CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (u) => {
+        const groupRole = await groupRoleFor(u.username);
+        if (groupRole) u.role = groupRole;
+      }),
+    );
+  }
+
   return users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 }
 
@@ -105,14 +167,20 @@ export async function listUsers(): Promise<AppUser[]> {
  * password (DesiredDeliveryMediums EMAIL). The invitee then signs in and
  * completes the FORCE_CHANGE_PASSWORD challenge (name + phone + new password).
  * Pass `resend: true` to re-send the invitation to an existing pending user.
+ *
+ * `role` (default `employee`) is assigned as a Cognito group so the invitee
+ * lands in the right access tier on first sign-in — without it a new user has
+ * no group and is blocked by the HR portal's access policy.
  */
 export async function inviteUser({
   email,
   name,
+  role = 'employee',
   resend = false,
 }: {
   email: string;
   name?: string;
+  role?: AppRole;
   resend?: boolean;
 }): Promise<AppUser> {
   const userAttributes: { Name: string; Value: string }[] = [
@@ -130,7 +198,68 @@ export async function inviteUser({
       ...(resend ? { MessageAction: 'RESEND' } : {}),
     }),
   );
-  return res.User ? toAppUser(res.User) : { username: email, email, enabled: true, hrAccess: true };
+
+  // A resend targets an existing user whose role is already set — don't touch it.
+  if (!resend && APP_ROLE_SET.has(role)) {
+    await setUserRole(email, role);
+  }
+
+  const invited = res.User ? toAppUser(res.User) : { username: email, email, enabled: true, hrAccess: true };
+  return { ...invited, role };
+}
+
+/** Cognito group name for an app role. Groups are named exactly like the role. */
+function roleGroupName(role: AppRole): string {
+  return role;
+}
+
+/** Ensure a Cognito group exists (best-effort; ignore if it already does). */
+async function ensureGroup(groupName: string): Promise<void> {
+  try {
+    await client.send(new CreateGroupCommand({ UserPoolId: USER_POOL_ID, GroupName: groupName }));
+  } catch {
+    // Group very likely already exists — safe to ignore.
+  }
+}
+
+/**
+ * Set a user's application role: ensures the target Cognito group exists, adds
+ * the user to it, removes any *other* app-role groups so exactly one role is
+ * active, and mirrors the role to `custom:role` for cheap display in the Users
+ * table. The Cognito group remains the authoritative source for access tiers.
+ */
+export async function setUserRole(username: string, role: AppRole): Promise<void> {
+  const target = roleGroupName(role);
+  await ensureGroup(target);
+  await client.send(
+    new AdminAddUserToGroupCommand({ UserPoolId: USER_POOL_ID, Username: username, GroupName: target }),
+  );
+
+  // Remove any stale app-role groups so the user holds exactly one role.
+  try {
+    const groups = await client.send(
+      new AdminListGroupsForUserCommand({ UserPoolId: USER_POOL_ID, Username: username }),
+    );
+    const stale = (groups.Groups || [])
+      .map((g) => g.GroupName || '')
+      .filter((g) => g && g !== target && APP_ROLE_SET.has(g.toLowerCase()));
+    await Promise.all(
+      stale.map((g) =>
+        client.send(
+          new AdminRemoveUserFromGroupCommand({ UserPoolId: USER_POOL_ID, Username: username, GroupName: g }),
+        ),
+      ),
+    );
+  } catch {
+    // Listing/removing is best-effort cleanup; the add above is what grants access.
+  }
+
+  // Mirror to custom:role (display only). Best-effort — never fail the whole op.
+  try {
+    await updateUserMeta(username, { role });
+  } catch {
+    /* noop */
+  }
 }
 
 /** Remove a user from the pool. */
@@ -176,7 +305,7 @@ async function ensureCustomAttributes(names: string[]): Promise<void> {
  */
 export async function updateUserMeta(
   username: string,
-  meta: { employeeType?: UserEmployeeType | null; hrAccess?: boolean },
+  meta: { employeeType?: UserEmployeeType | null; hrAccess?: boolean; role?: AppRole },
 ): Promise<void> {
   const attrs: { Name: string; Value: string }[] = [];
   if (meta.employeeType !== undefined) {
@@ -184,6 +313,9 @@ export async function updateUserMeta(
   }
   if (meta.hrAccess !== undefined) {
     attrs.push({ Name: 'custom:hr_access', Value: meta.hrAccess ? 'true' : 'false' });
+  }
+  if (meta.role !== undefined) {
+    attrs.push({ Name: 'custom:role', Value: meta.role });
   }
   if (attrs.length === 0) return;
 

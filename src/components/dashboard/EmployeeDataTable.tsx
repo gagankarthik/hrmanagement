@@ -4,9 +4,10 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Eye, Edit2, Trash2, Users, SlidersHorizontal, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Employee, EmployeeType } from '@/types/employee';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/format';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { StatusBadge, statusTone } from '@/components/ui/status-badge';
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
   onEdit?: (e: Employee) => void;
   onDelete?: (e: Employee) => void;
   isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 const typeBadge: Record<EmployeeType, string> = {
@@ -27,7 +30,20 @@ const typeBadge: Record<EmployeeType, string> = {
 const statusOf = (e: Employee): string => ('status' in e ? (e as { status?: string }).status ?? '' : '');
 
 type StatusFilter = 'all' | 'Active' | 'Terminated';
-const STATUS_PILLS: StatusFilter[] = ['all', 'Active', 'Terminated'];
+type TypeFilter = 'all' | EmployeeType;
+
+const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
+  { value: 'all', label: 'All types' },
+  { value: 'W2', label: 'W2' },
+  { value: 'Contract', label: 'Contract' },
+  { value: '1099', label: '1099' },
+  { value: 'Offshore', label: 'Offshore' },
+];
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Terminated', label: 'Terminated' },
+];
 
 /** localStorage key for persisting which employee columns are hidden. */
 const COLS_STORAGE_KEY = 'ob:cols:employees';
@@ -114,8 +130,9 @@ function ColumnsToggle({
   );
 }
 
-export default function EmployeeDataTable({ employees, onView, onEdit, onDelete, isLoading = false }: Props) {
+export default function EmployeeDataTable({ employees, onView, onEdit, onDelete, isLoading = false, error = null, onRetry }: Props) {
   const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [hidden, setHidden] = useState<Set<string>>(new Set());
 
@@ -161,13 +178,16 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
         e.state?.toLowerCase().includes(q),
       );
     }
+    if (typeFilter !== 'all') {
+      r = r.filter((e) => e.type === typeFilter);
+    }
     if (statusFilter !== 'all') {
       r = r.filter((e) => ('status' in e ? statusOf(e) === statusFilter : statusFilter === 'Active'));
     }
     return r;
-  }, [employees, search, statusFilter]);
+  }, [employees, search, typeFilter, statusFilter]);
 
-  const hasFilters = Boolean(search) || statusFilter !== 'all';
+  const hasFilters = Boolean(search) || typeFilter !== 'all' || statusFilter !== 'all';
 
   const allColumns: DataTableColumn<Employee>[] = useMemo(() => [
     {
@@ -181,7 +201,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
           </div>
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{emp.name}</p>
-            {emp.personalEmail && <p className="truncate text-xs text-slate-400">{emp.personalEmail}</p>}
+            {emp.personalEmail && <p className="truncate text-xs text-slate-500">{emp.personalEmail}</p>}
           </div>
         </div>
       ),
@@ -213,7 +233,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
       header: 'Hire Date',
       hideBelow: 'sm',
       sortValue: (e) => e.hireDate ?? '',
-      cell: (e) => (e.hireDate ? format(new Date(e.hireDate), 'MM/dd/yyyy') : <span className="text-slate-300">—</span>),
+      cell: (e) => (e.hireDate ? formatDate(e.hireDate) : <span className="text-slate-300">—</span>),
     },
     {
       id: 'status',
@@ -254,21 +274,8 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-1.5">
-            {STATUS_PILLS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                )}
-              >
-                {s === 'all' ? 'All' : s}
-              </button>
-            ))}
-          </div>
-
+          <FilterSelect label="Filter by type" value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} />
+          <FilterSelect label="Filter by status" value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} />
           <ColumnsToggle columns={toggleColumns} hidden={hidden} onToggle={toggleHidden} />
         </div>
       </div>
@@ -280,6 +287,8 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
           getRowId={(e) => e.id}
           caption="Employees"
           isLoading={isLoading}
+          error={error}
+          onRetry={onRetry}
           minWidth="min-w-[760px]"
           initialSort={{ columnId: 'name', dir: 'asc' }}
           onRowClick={onView}
@@ -302,7 +311,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
       </div>
 
       {!isLoading && filtered.length > 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           {filtered.length} employee{filtered.length !== 1 ? 's' : ''}
           {hasFilters && ` — filtered from ${employees.length} total`}
         </p>

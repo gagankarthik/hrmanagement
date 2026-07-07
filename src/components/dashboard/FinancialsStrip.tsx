@@ -4,8 +4,7 @@ import React, { useMemo } from 'react';
 import { DollarSign, Percent, UserMinus, TrendingUp } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
-
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+import { money } from '@/lib/format';
 
 const HOURS_WEEK = 40;
 const HOURS_MONTH = 160;
@@ -54,10 +53,10 @@ export default function FinancialsStrip({ employees }: { employees: Employee[] }
 
   return (
     <StatGrid cols={4}>
-      <StatCard label="Weekly gross profit" value={usd0(m.weeklyGp)} icon={DollarSign} tone="emerald" hint={`${m.priced} billable placements`} />
+      <StatCard label="Weekly gross profit" value={money(m.weeklyGp)} icon={DollarSign} tone="emerald" hint={`${m.priced} billable placements`} />
       <StatCard label="Blended margin" value={`${m.blendedMargin.toFixed(1)}%`} icon={Percent} tone={m.blendedMargin >= 25 ? 'emerald' : 'amber'} hint="bill vs pay" />
-      <StatCard label="Annualized GP" value={usd0(m.weeklyGp * 52)} icon={TrendingUp} tone="purple" hint="weekly × 52" />
-      <StatCard label="Bench cost / mo" value={usd0(m.benchCostMonthly)} icon={UserMinus} tone="amber" hint={`${m.benchCount} on bench`} />
+      <StatCard label="Annualized GP" value={money(m.weeklyGp * 52)} icon={TrendingUp} tone="purple" hint="weekly × 52" />
+      <StatCard label="Bench cost / mo" value={money(m.benchCostMonthly)} icon={UserMinus} tone="amber" hint={`${m.benchCount} on bench`} />
     </StatGrid>
   );
 }

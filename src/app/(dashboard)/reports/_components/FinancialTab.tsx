@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 import { EmployeeType } from '@/types/employee';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DonutChart, CompareBarChart, VIZ, TYPE_COLOR as VIZ_TYPE_COLOR } from '@/components/dashboard/Charts';
-import { TabProps, TYPE_COLOR, TYPE_LABEL, isActive, monthlyPay, compactCurrency, fullCurrency } from './shared';
+import { money } from '@/lib/format';
+import { TabProps, TYPE_COLOR, TYPE_LABEL, isActive, monthlyPay, compactCurrency } from './shared';
 import { ChartCard, ReportCard } from './report-cards';
 
 export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { revenue: number; totalPay: number; billable: number; utilization: number } }) {
@@ -83,7 +84,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
       <ReportCard title="Monthly Run-Rate by Class" subtitle="Billable revenue contribution per employee class" icon={DollarSign}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
               <th className="py-3 pr-4">Class</th>
               <th className="py-3 pr-4">Active</th>
               <th className="py-3 pr-4">Billable</th>
@@ -137,7 +138,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-2.5 pr-4">Rank</th>
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
@@ -164,7 +165,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
                       <td className="py-2.5 pr-4 text-xs text-slate-500">
                         {salaryType || '—'} · {revenueStatus === 'B' ? 'Billable' : revenueStatus === 'NB' ? 'Non-billable' : '—'}
                       </td>
-                      <td className="py-2.5 font-bold tabular-nums text-emerald-700">{fullCurrency(row.monthly)}</td>
+                      <td className="py-2.5 font-bold tabular-nums text-emerald-700">{money(row.monthly)}</td>
                     </tr>
                   );
                 })}

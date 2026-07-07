@@ -75,7 +75,7 @@ export function WorkforceTab({ filtered }: TabProps) {
       <ReportCard title="Headcount by Class" subtitle="Class distribution + status breakdown" icon={Users}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
               <th className="py-3 pr-4">Class</th>
               <th className="py-3 pr-4">Total</th>
               <th className="py-3 pr-4">Active</th>
@@ -130,7 +130,7 @@ export function WorkforceTab({ filtered }: TabProps) {
         ) : (
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-2.5 pr-4">Rank</th>
                 <th className="py-2.5 pr-4">State</th>
                 <th className="py-2.5 pr-4">Employees</th>

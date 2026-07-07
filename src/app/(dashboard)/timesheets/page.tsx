@@ -12,11 +12,10 @@ import { SkeletonTable } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import { useTimesheets } from '@/context/TimesheetContext';
 import { exportToCsv } from '@/lib/export';
+import { money, formatDate } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { Timesheet, TimesheetStatus } from '@/types/timesheet';
-
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const fmtDate = (s?: string) => (s ? new Date(s + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—');
 
 const STATUS_BADGE: Record<TimesheetStatus, string> = {
   Draft: 'bg-slate-100 text-slate-600 ring-slate-200',
@@ -44,7 +43,7 @@ export default function TimesheetsPage() {
       toast.success('Timesheet deleted');
       setDel({ ts: null, busy: false });
     } catch (err) {
-      toast.error('Failed to delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete', friendlyError(err));
       setDel((p) => ({ ...p, busy: false }));
     }
   };
@@ -94,8 +93,8 @@ export default function TimesheetsPage() {
 
       <StatGrid cols={3}>
         <StatCard label="Logged hours" value={totalHours.toLocaleString()} icon={Clock} tone="brand" hint={`${valid.length} timesheets`} />
-        <StatCard label="Billable value" value={usd0(billable)} icon={Clock} tone="emerald" />
-        <StatCard label="Gross profit" value={usd0(gp)} icon={Clock} tone="purple" />
+        <StatCard label="Billable value" value={money(billable)} icon={Clock} tone="emerald" />
+        <StatCard label="Gross profit" value={money(gp)} icon={Clock} tone="purple" />
       </StatGrid>
 
       <div className="surface">
@@ -115,7 +114,7 @@ export default function TimesheetsPage() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Worker', 'Client', 'Period', 'Hours', 'Bill total', 'GP', 'Status', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -126,8 +125,16 @@ export default function TimesheetsPage() {
                   return (
                     <tr
                       key={t.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => router.push(`/timesheets/${t.id}/edit`)}
-                      className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/timesheets/${t.id}/edit`);
+                        }
+                      }}
+                      className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
@@ -138,10 +145,10 @@ export default function TimesheetsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-slate-600">{t.clientName || <span className="text-slate-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">{fmtDate(t.periodStart)} → {fmtDate(t.periodEnd)}</td>
+                      <td className="px-5 py-3.5 text-sm text-slate-600">{formatDate(t.periodStart)} → {formatDate(t.periodEnd)}</td>
                       <td className="px-5 py-3.5 text-sm font-medium text-slate-700">{t.hours}</td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{usd0(billTotal)}</td>
-                      <td className="px-5 py-3.5 text-sm text-emerald-700">{usd0(rowGp)}</td>
+                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{money(billTotal)}</td>
+                      <td className="px-5 py-3.5 text-sm text-emerald-700">{money(rowGp)}</td>
                       <td className="px-5 py-3.5">
                         <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1', STATUS_BADGE[t.status])}>{t.status}</span>
                       </td>

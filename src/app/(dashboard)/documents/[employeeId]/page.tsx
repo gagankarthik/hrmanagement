@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useEmployeeDocs } from '@/context/EmployeeDocsContext';
 import { useToast } from '@/components/ui/toast';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { DOC_CATEGORIES, DocCategory, EmployeeDocItem } from '@/types/employee-docs';
 import type { UploadedDoc } from '@/types/uploads';
@@ -110,7 +111,7 @@ export default function EmployeeDocsManagePage({ params }: { params: Promise<{ e
       });
       toast.success('Documents saved', `${emp?.name || 'Employee'} · ${docs.length} ${docs.length === 1 ? 'document' : 'documents'}`);
     } catch (err) {
-      toast.error('Could not save documents', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save documents', friendlyError(err));
     } finally {
       setSaving(false);
     }
@@ -124,7 +125,7 @@ export default function EmployeeDocsManagePage({ params }: { params: Promise<{ e
       setConfirmDelete(false);
       router.push('/documents');
     } catch (err) {
-      toast.error('Could not delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not delete', friendlyError(err));
     } finally {
       setDeleting(false);
     }

@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useI983 } from '@/context/I983Context';
 import { exportToCsv } from '@/lib/export';
+import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { I983Status, deriveI983Status, nextEvaluationDue } from '@/types/i983';
 import type { Employee } from '@/types/employee';
@@ -68,7 +69,7 @@ export default function I983Page() {
 
   const fmtDue = (next: NonNullable<(typeof started)[number]['next']>) => {
     if (!next.dueDate) return next.label;
-    const d = new Date(next.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const d = formatDate(next.dueDate);
     return next.overdue ? `${d} · ${Math.abs(next.days)}d overdue` : `${d} · in ${next.days}d`;
   };
 
@@ -117,7 +118,7 @@ export default function I983Page() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
-                      <span className="block truncate text-xs text-slate-400">{e.type} · {wa || 'no work auth'}</span>
+                      <span className="block truncate text-xs text-slate-500">{e.type} · {wa || 'no work auth'}</span>
                     </span>
                     {isOptAuth(wa) && <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 ring-1 ring-brand-200">STEM OPT</span>}
                     <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
@@ -141,13 +142,13 @@ export default function I983Page() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Employee', 'Work auth', 'I-983 status', 'Next evaluation', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {started.map(({ e, status, workAuth, opt, next }) => (
-                  <tr key={e.id} onClick={() => router.push(`/i983/${e.id}`)} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
+                  <tr key={e.id} role="button" tabIndex={0} onClick={() => router.push(`/i983/${e.id}`)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); router.push(`/i983/${e.id}`); } }} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>

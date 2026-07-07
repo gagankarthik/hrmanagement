@@ -12,8 +12,9 @@ import { FormField } from '@/components/ui/form-field';
 import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 import { Timesheet, TimesheetStatus, TIMESHEET_STATUSES } from '@/types/timesheet';
 import type { Employee } from '@/types/employee';
+import { money } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'edit'; timesheet?: Timesheet }) {
@@ -86,7 +87,7 @@ export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'e
       }
       router.push('/timesheets');
     } catch (err) {
-      toast.error('Could not save timesheet', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save timesheet', friendlyError(err));
       setSaving(false);
     }
   };
@@ -140,11 +141,11 @@ export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'e
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-100 bg-slate-100 sm:grid-cols-3">
         <div className="bg-white px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bill total</p>
-          <p className="font-display text-lg font-bold text-slate-900">{usd0(billTotal)}</p>
+          <p className="font-display text-lg font-bold text-slate-900">{money(billTotal)}</p>
         </div>
         <div className="bg-white px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gross profit</p>
-          <p className="font-display text-lg font-bold text-emerald-700">{usd0(gp)}</p>
+          <p className="font-display text-lg font-bold text-emerald-700">{money(gp)}</p>
         </div>
         <div className="bg-white px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Margin</p>

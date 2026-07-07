@@ -12,11 +12,15 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { Attendance, AttendanceStatus } from '@/types/attendance';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
+import { friendlyError } from '@/lib/errors';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkeletonTable } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { formatDate } from '@/lib/format';
 
 const STATUS_FILTERS: ('all' | AttendanceStatus)[] = ['all', 'Present', 'Remote', 'Half-day', 'Absent', 'Leave'];
 
@@ -33,7 +37,7 @@ function todayISO() {
 }
 
 export default function AttendancePage({ embedded = false }: { embedded?: boolean }) {
-  const { records, isLoading, deleteAttendance } = useAttendance();
+  const { records, isLoading, error, deleteAttendance, fetchAttendance } = useAttendance();
   const { employees } = useEmployees();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | AttendanceStatus>('all');
@@ -74,10 +78,67 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
     ? Math.round(((presentCount + remoteCount + halfCount) / statScope.length) * 100)
     : 0;
 
-  const handleDelete = (e: React.MouseEvent, attendance: Attendance) => {
-    e.stopPropagation();
-    setDeleteState({ attendance, isDeleting: false });
-  };
+  const attendanceColumns: DataTableColumn<Attendance>[] = [
+    {
+      id: 'employee',
+      header: 'Employee',
+      sortValue: (r) => nameOf(r.employeeId).toLowerCase(),
+      cell: (r) => {
+        const name = nameOf(r.employeeId);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
+              {name?.charAt(0)?.toUpperCase() ?? '?'}
+            </div>
+            <p className="text-sm font-semibold text-slate-900">{name}</p>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      sortValue: (r) => r.date,
+      cell: (r) => formatDate(r.date),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      sortValue: (r) => r.status,
+      cell: (r) => {
+        const badge = statusBadge[r.status];
+        return (
+          <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1', badge.bg, badge.text, badge.ring)}>
+            {r.status}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'checkIn',
+      header: 'Check-in',
+      hideBelow: 'md',
+      cell: (r) => r.checkIn
+        ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><LogIn className="h-3.5 w-3.5 text-slate-400" />{r.checkIn}</span>
+        : <span className="text-sm text-slate-400">—</span>,
+    },
+    {
+      id: 'checkOut',
+      header: 'Check-out',
+      hideBelow: 'md',
+      cell: (r) => r.checkOut
+        ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><LogOut className="h-3.5 w-3.5 text-slate-400" />{r.checkOut}</span>
+        : <span className="text-sm text-slate-400">—</span>,
+    },
+    {
+      id: 'note',
+      header: 'Note',
+      hideBelow: 'lg',
+      cell: (r) => r.note
+        ? <span className="block max-w-[180px] truncate text-sm text-slate-600" title={r.note}>{r.note}</span>
+        : <span className="text-sm text-slate-400">—</span>,
+    },
+  ];
 
   const confirmDelete = async () => {
     const attendance = deleteState.attendance;
@@ -88,7 +149,7 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
       toast.success('Attendance deleted', `${nameOf(attendance.employeeId)}'s record has been removed.`);
       setDeleteState({ attendance: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete attendance', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete attendance', friendlyError(err));
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -174,122 +235,51 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUS_FILTERS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                )}
-              >
-                {s === 'all' ? 'All' : s}
-              </button>
-            ))}
-          </div>
+          <FilterSelect
+            label="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_FILTERS.map((s) => ({ value: s, label: s === 'all' ? 'All statuses' : s }))}
+          />
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="p-5">
-            <EmptyState
-              icon={CalendarCheck}
-              tone="default"
-              title={searchQuery || statusFilter !== 'all' || dateFilter ? 'No attendance matches your filters' : 'No attendance recorded yet'}
-              description={searchQuery || statusFilter !== 'all' || dateFilter ? 'Try a different date, status, or clear filters.' : 'Mark your first attendance entry to start tracking.'}
-              action={
-                !(searchQuery || statusFilter !== 'all' || dateFilter) ? (
-                  <button
-                    onClick={() => setModalState({ isOpen: true, mode: 'create' })}
-                    className="btn-primary"
-                  >
-                    <Plus className="h-4 w-4" /> Mark Attendance
-                  </button>
-                ) : undefined
-              }
+        <DataTable<Attendance>
+          columns={attendanceColumns}
+          data={filtered}
+          getRowId={(r) => r.id}
+          caption="Attendance records"
+          error={error}
+          onRetry={fetchAttendance}
+          minWidth="min-w-[800px]"
+          tableId="attendance"
+          initialSort={{ columnId: 'date', dir: 'desc' }}
+          rowActions={(record) => (
+            <ActionMenu
+              items={[
+                { label: 'Edit record', icon: Pencil, onClick: () => setModalState({ isOpen: true, mode: 'edit', attendance: record }) },
+                { label: 'Delete record', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ attendance: record, isDeleting: false }) },
+              ]}
             />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px]">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  {['Employee', 'Date', 'Status', 'Check-in', 'Check-out', 'Note', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((record, idx) => {
-                  const name = nameOf(record.employeeId);
-                  const badge = statusBadge[record.status];
-                  return (
-                    <tr
-                      key={record.id ?? idx}
-                      className="group border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
-                    >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                            {name?.charAt(0)?.toUpperCase() ?? '?'}
-                          </div>
-                          <p className="text-sm font-semibold text-slate-900">{name}</p>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">{record.date}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1', badge.bg, badge.text, badge.ring)}>
-                          {record.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {record.checkIn
-                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><LogIn className="h-3.5 w-3.5 text-slate-300" />{record.checkIn}</span>
-                          : <span className="text-slate-300 text-sm">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {record.checkOut
-                          ? <span className="flex items-center gap-1.5 text-sm text-slate-600"><LogOut className="h-3.5 w-3.5 text-slate-300" />{record.checkOut}</span>
-                          : <span className="text-slate-300 text-sm">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {record.note
-                          ? <span className="block max-w-[180px] truncate text-sm text-slate-600" title={record.note}>{record.note}</span>
-                          : <span className="text-slate-300 text-sm">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                          <button
-                            onClick={() => setModalState({ isOpen: true, mode: 'edit', attendance: record })}
-                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            title="Edit"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(e, record)}
-                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          )}
+          empty={{
+            icon: CalendarCheck,
+            title: searchQuery || statusFilter !== 'all' || dateFilter ? 'No attendance matches your filters' : 'No attendance recorded yet',
+            description: searchQuery || statusFilter !== 'all' || dateFilter ? 'Try a different date, status, or clear filters.' : 'Mark your first attendance entry to start tracking.',
+            action: !(searchQuery || statusFilter !== 'all' || dateFilter) ? (
+              <button onClick={() => setModalState({ isOpen: true, mode: 'create' })} className="btn-primary">
+                <Plus className="h-4 w-4" /> Mark Attendance
+              </button>
+            ) : undefined,
+          }}
+        />
+
+        {filtered.length > 0 && (
+          <div className="border-t border-slate-100 px-5 py-3">
+            <p className="text-xs text-slate-500">
+              {filtered.length} of {validRecords.length} record{validRecords.length !== 1 ? 's' : ''}
+            </p>
           </div>
         )}
-
-        <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">
-            {filtered.length} of {validRecords.length} record{validRecords.length !== 1 ? 's' : ''}
-          </p>
-        </div>
       </div>
 
       <AttendanceModal

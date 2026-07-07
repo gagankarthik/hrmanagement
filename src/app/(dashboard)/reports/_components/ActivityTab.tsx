@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { UserCheck, UserX } from 'lucide-react';
-import { format, differenceInDays, differenceInYears } from 'date-fns';
+import { differenceInDays, differenceInYears } from 'date-fns';
+import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TabProps, TYPE_COLOR, TYPE_LABEL } from './shared';
@@ -46,7 +47,7 @@ export function ActivityTab({ filtered }: TabProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Position</th>
@@ -66,8 +67,8 @@ export function ActivityTab({ filtered }: TabProps) {
                     <td className="py-2.5 pr-4 text-slate-600">{e.position || '—'}</td>
                     <td className="py-2.5 pr-4 text-xs text-slate-500">{[e.city, e.state].filter(Boolean).join(', ') || '—'}</td>
                     <td className="py-2.5">
-                      <p className="font-medium text-slate-900">{format(new Date(e.hireDate), 'MMM d, yyyy')}</p>
-                      <p className="text-[11px] text-slate-400">{differenceInDays(new Date(), new Date(e.hireDate))}d ago</p>
+                      <p className="font-medium text-slate-900">{formatDate(e.hireDate)}</p>
+                      <p className="text-[11px] text-slate-500">{differenceInDays(new Date(), new Date(e.hireDate))}d ago</p>
                     </td>
                   </tr>
                 ))}
@@ -83,7 +84,7 @@ export function ActivityTab({ filtered }: TabProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Tenure</th>
@@ -102,7 +103,7 @@ export function ActivityTab({ filtered }: TabProps) {
                         </span>
                       </td>
                       <td className="py-2.5 pr-4 text-slate-700">{tenure !== null ? `${tenure}y` : '—'}</td>
-                      <td className="py-2.5 font-medium text-slate-900">{format(new Date(e.dor!), 'MMM d, yyyy')}</td>
+                      <td className="py-2.5 font-medium text-slate-900">{formatDate(e.dor)}</td>
                     </tr>
                   );
                 })}

@@ -38,7 +38,7 @@ export function SummaryStat({ icon: Icon, label, value, sub, tone }: { icon: Rea
         <Icon className={cn('h-4 w-4', t.iconColor)} />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
         <p className={cn('mt-0.5 font-display text-lg font-bold tabular-nums leading-tight sm:text-xl', t.value)}>{value}</p>
         {sub && <p className="truncate text-[11px] text-slate-500">{sub}</p>}
       </div>

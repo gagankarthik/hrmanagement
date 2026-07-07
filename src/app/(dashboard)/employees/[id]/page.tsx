@@ -14,16 +14,20 @@ import { useBenefits } from '@/context/BenefitsContext';
 import { useI9 } from '@/context/I9Context';
 import { useI983 } from '@/context/I983Context';
 import { useEmployeeDocs } from '@/context/EmployeeDocsContext';
+import { useOnboarding } from '@/context/OnboardingContext';
 import { LeaveType } from '@/types/leave';
 import { nextEvaluationDue } from '@/types/i983';
+import { reconcileItems, packetProgress, ONBOARDING_CATEGORIES } from '@/types/onboarding';
 import { getFieldsByType, type FormField } from '@/types/employee';
 import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
-import { format } from 'date-fns';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import {
   ArrowLeft, Mail, Phone, Building2, Package, UserCheck,
   FileText, Shield, Trash2, XCircle, Printer,
   CheckCircle2, AlertTriangle, CalendarCheck, Hourglass, Pencil, HeartPulse,
   BadgeCheck, GraduationCap, FolderArchive, ChevronRight, ChevronDown, Download, ExternalLink,
+  ClipboardCheck, Circle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
@@ -152,9 +156,10 @@ const typeColors: Record<string, string> = {
   Offshore: 'bg-pink-100 text-pink-700',
 };
 
-type TabKey = 'details' | 'projects' | 'workauth' | 'forms' | 'i9' | 'docs' | 'notes';
+type TabKey = 'details' | 'onboarding' | 'projects' | 'workauth' | 'forms' | 'i9' | 'docs' | 'notes';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'details', label: 'Employment Details' },
+  { key: 'onboarding', label: 'Onboarding' },
   { key: 'projects', label: 'Projects' },
   { key: 'workauth', label: 'Work Authorization' },
   { key: 'forms', label: 'Forms' },
@@ -180,6 +185,7 @@ function EmployeeDetailPageContent() {
   const { getByEmployee: getI9Record } = useI9();
   const { getByEmployee: getI983Record } = useI983();
   const { getByEmployee: getDocsRecord } = useEmployeeDocs();
+  const { getByEmployee: getOnboardingPacket } = useOnboarding();
   const toast = useToast();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -193,7 +199,7 @@ function EmployeeDetailPageContent() {
   const clientAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.clientAssignments?.length) {
-      return employee.clientAssignments.map((a) => ({ ...a, name: resolveName(a.clientId, clients, { unknown: 'Unknown client' }) }));
+      return employee.clientAssignments.filter((a) => a.clientId).map((a) => ({ ...a, name: resolveName(a.clientId, clients, { unknown: 'Unknown client' }) }));
     }
     if (employee.clientId) {
       const name = resolveName(employee.clientId, clients, { legacy: employee.client, unknown: 'Unknown client' });
@@ -206,7 +212,7 @@ function EmployeeDetailPageContent() {
   const vendorAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.vendorAssignments?.length) {
-      return employee.vendorAssignments.map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown vendor' }) }));
+      return employee.vendorAssignments.filter((a) => a.vendorId).map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown vendor' }) }));
     }
     if (employee.vendorId) {
       const name = resolveName(employee.vendorId, vendors, { legacy: employee.vendorName, unknown: 'Unknown vendor' });
@@ -219,7 +225,7 @@ function EmployeeDetailPageContent() {
   const subcontractorAssignmentNames = useMemo(() => {
     if (!employee) return [];
     if (employee.subcontractorAssignments?.length) {
-      return employee.subcontractorAssignments.map((a) => ({ ...a, name: resolveName(a.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' }) }));
+      return employee.subcontractorAssignments.filter((a) => a.subcontractorId).map((a) => ({ ...a, name: resolveName(a.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' }) }));
     }
     if (employee.subcontractorId) {
       const name = resolveName(employee.subcontractorId, subcontractors, { unknown: 'Unknown subcontractor' });
@@ -233,7 +239,7 @@ function EmployeeDetailPageContent() {
     const list = employee.endClientAssignments?.length
       ? employee.endClientAssignments
       : (employee.endClientId ? [{ clientId: employee.endClientId, startDate: undefined, endDate: undefined }] : []);
-    return list.map((a) => ({ ...a, name: resolveName(a.clientId, endClients, { unknown: resolveName(a.clientId, clients, { unknown: 'Unknown end client' }) }) }));
+    return list.filter((a) => a.clientId).map((a) => ({ ...a, name: resolveName(a.clientId, endClients, { unknown: resolveName(a.clientId, clients, { unknown: 'Unknown end client' }) }) }));
   }, [employee, endClients, clients]);
 
   const endVendorAssignmentNames = useMemo(() => {
@@ -241,7 +247,7 @@ function EmployeeDetailPageContent() {
     const list = employee.endVendorAssignments?.length
       ? employee.endVendorAssignments
       : (employee.endVendorId ? [{ vendorId: employee.endVendorId, startDate: undefined, endDate: undefined }] : []);
-    return list.map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown end vendor' }) }));
+    return list.filter((a) => a.vendorId).map((a) => ({ ...a, name: resolveName(a.vendorId, vendors, { unknown: 'Unknown end vendor' }) }));
   }, [employee, vendors]);
 
   const age = useMemo(() => {
@@ -284,6 +290,14 @@ function EmployeeDetailPageContent() {
     return plans.filter((p) => p.enrolledEmployeeIds?.includes(employee.id));
   }, [employee, plans]);
 
+  // Onboarding checklist — reconcile the saved packet (if any) against the current
+  // template so the status view always reflects the live checklist.
+  const onboardingItems = useMemo(
+    () => reconcileItems(getOnboardingPacket(employeeId)?.items),
+    [getOnboardingPacket, employeeId],
+  );
+  const onboarding = packetProgress(onboardingItems);
+
   const handleDelete = () => setDeleteOpen(true);
 
   const confirmDelete = async () => {
@@ -294,7 +308,7 @@ function EmployeeDetailPageContent() {
       toast.success('Employee deleted', `${employee.name} has been removed.`);
       router.push('/employees');
     } catch (err) {
-      toast.error('Failed to delete employee', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete employee', friendlyError(err));
       setIsDeleting(false);
     }
   };
@@ -314,7 +328,7 @@ function EmployeeDetailPageContent() {
         <div class="section-title">Work Authorization</div>
         <table class="info-table">
           <tr><td class="label">Type</td><td>${(employee as { workAuthorization?: string }).workAuthorization || '—'}</td></tr>
-          ${'expiryDate' in employee && (employee as { expiryDate?: string }).expiryDate ? `<tr><td class="label">Expiry Date</td><td>${format(new Date((employee as { expiryDate: string }).expiryDate), 'MMMM d, yyyy')}</td></tr>` : ''}
+          ${'expiryDate' in employee && (employee as { expiryDate?: string }).expiryDate ? `<tr><td class="label">Expiry Date</td><td>${formatDate((employee as { expiryDate: string }).expiryDate, { long: true })}</td></tr>` : ''}
         </table>
       </div>` : '';
 
@@ -362,7 +376,7 @@ function EmployeeDetailPageContent() {
       </div>
       <div class="header-right">
         <strong>Employee Profile</strong><br/>
-        Generated: ${format(new Date(), 'MMMM d, yyyy')}<br/>
+        Generated: ${formatDate(new Date(), { long: true })}<br/>
         ID: ${employee.id.slice(0, 8)}…
       </div>
     </div>
@@ -372,7 +386,7 @@ function EmployeeDetailPageContent() {
         <table class="info-table">
           <tr><td class="label">Email</td><td>${employee.personalEmail || '—'}</td></tr>
           <tr><td class="label">Phone</td><td>${employee.contactNo || '—'}</td></tr>
-          <tr><td class="label">Date of Birth</td><td>${employee.dob ? format(new Date(employee.dob), 'MMMM d, yyyy') : '—'}</td></tr>
+          <tr><td class="label">Date of Birth</td><td>${employee.dob ? formatDate(employee.dob, { long: true }) : '—'}</td></tr>
           <tr><td class="label">Address</td><td>${[employee.address, employee.city, employee.state, employee.pincode].filter(Boolean).join(', ') || '—'}</td></tr>
         </table>
       </div>
@@ -380,7 +394,7 @@ function EmployeeDetailPageContent() {
         <div class="section-title">Employment Information</div>
         <table class="info-table">
           <tr><td class="label">Employee Type</td><td>${employee.type}</td></tr>
-          <tr><td class="label">Hire Date</td><td>${employee.hireDate ? format(new Date(employee.hireDate), 'MMMM d, yyyy') : '—'}</td></tr>
+          <tr><td class="label">Hire Date</td><td>${employee.hireDate ? formatDate(employee.hireDate, { long: true }) : '—'}</td></tr>
           ${'status' in employee ? `<tr><td class="label">Status</td><td>${(employee as { status: string }).status}</td></tr>` : ''}
           ${'revenueStatus' in employee ? `<tr><td class="label">Revenue Status</td><td>${(employee as { revenueStatus: string }).revenueStatus === 'B' ? 'Billable' : 'Non-Billable'}</td></tr>` : ''}
           ${'pay' in employee && (employee as { pay?: number }).pay ? `<tr><td class="label">Pay</td><td>$${(employee as { pay: number }).pay.toLocaleString()}</td></tr>` : ''}
@@ -456,7 +470,7 @@ function EmployeeDetailPageContent() {
   // Derived display values
   const primaryClient = clients.find((c) => c.id === clientAssignmentNames[0]?.clientId);
   const currentProject = clientAssignmentNames[0];
-  const fmt = (d?: string) => (d ? format(new Date(d), 'MM/dd/yyyy') : undefined);
+  const fmt = (d?: string) => (d ? formatDate(d) : undefined);
   const i983Due = i983Record ? nextEvaluationDue(i983Record) : null;
 
   // Read-only mirror of the create / edit / onboard form: render exactly the fields
@@ -570,6 +584,26 @@ function EmployeeDetailPageContent() {
               </ul>
             )}
           </div>
+
+          {/* Onboarding progress */}
+          <div className="surface p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4 text-brand-600" strokeWidth={1.75} />
+              <h2 className="font-display text-sm font-bold text-slate-900">Onboarding</h2>
+              {onboarding.pct === 100
+                ? <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"><CheckCircle2 className="h-3 w-3" /> Complete</span>
+                : <span className="ml-auto text-xs font-semibold text-slate-500">{onboarding.pct}%</span>}
+            </div>
+            <p className="text-sm text-slate-600">
+              <span className="font-display text-xl font-bold text-slate-900">{onboarding.done}</span> of {onboarding.total} steps complete
+            </p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+              <div className={cn('h-full rounded-full transition-all', onboarding.pct === 100 ? 'bg-emerald-500' : 'bg-brand-500')} style={{ width: `${Math.max(onboarding.pct, onboarding.done > 0 ? 4 : 0)}%` }} />
+            </div>
+            <button onClick={() => setTab('onboarding')} className="mt-3 text-xs font-semibold text-brand-700 transition-colors hover:text-brand-800">
+              View checklist →
+            </button>
+          </div>
         </aside>
 
         {/* ── Right pane: tabs ── */}
@@ -652,6 +686,56 @@ function EmployeeDetailPageContent() {
               </div>
             )}
 
+            {/* Onboarding */}
+            {tab === 'onboarding' && (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                  <div className="flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4 text-brand-600" />
+                    <h3 className="font-display text-sm font-bold text-slate-900">New-hire checklist</h3>
+                    {onboarding.pct === 100
+                      ? <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"><CheckCircle2 className="h-3 w-3" /> Completed</span>
+                      : <span className="ml-auto text-xs font-semibold text-slate-500">{onboarding.done} of {onboarding.total} done</span>}
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div className={cn('h-full rounded-full transition-all', onboarding.pct === 100 ? 'bg-emerald-500' : 'bg-brand-500')} style={{ width: `${Math.max(onboarding.pct, onboarding.done > 0 ? 4 : 0)}%` }} />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">{onboarding.pct}% complete</p>
+                </div>
+
+                <div className="space-y-5">
+                  {ONBOARDING_CATEGORIES.map((cat) => {
+                    const items = onboardingItems.filter((i) => i.category === cat);
+                    if (items.length === 0) return null;
+                    const catDone = items.filter((i) => i.done).length;
+                    return (
+                      <div key={cat}>
+                        <div className="mb-2 flex items-center gap-2">
+                          <h4 className="font-display text-[13px] font-bold text-brand-900">{cat}</h4>
+                          <span className="text-xs text-slate-400">{catDone}/{items.length}</span>
+                        </div>
+                        <ul className="space-y-1.5">
+                          {items.map((item) => (
+                            <li key={item.key} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-2.5">
+                              {item.done
+                                ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                                : <Circle className="h-4 w-4 shrink-0 text-slate-300" />}
+                              <span className={cn('text-sm', item.done ? 'font-medium text-slate-700' : 'text-slate-500')}>{item.label}</span>
+                              {item.done && item.doneAt && <span className="ml-auto text-xs text-slate-400">{formatDate(item.doneAt)}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Link href="/onboard/packets" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
+                  Manage onboarding packet <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
+
             {/* Projects */}
             {tab === 'projects' && (
               <div className="grid gap-5 lg:grid-cols-2">
@@ -689,7 +773,7 @@ function EmployeeDetailPageContent() {
                         <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm">
                           <span className="font-semibold text-slate-900">{a.type || '—'}</span>
                           {a.number && <span className="text-slate-500">#{a.number}</span>}
-                          <span className="text-slate-400">{fmt(a.issued) || '—'} → {fmt(a.expiry) || '—'}</span>
+                          <span className="text-slate-500">{fmt(a.issued) || '—'} → {fmt(a.expiry) || '—'}</span>
                           {a.status && <span className="ml-auto rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">{a.status}</span>}
                         </div>
                       ))}
@@ -772,8 +856,8 @@ function EmployeeDetailPageContent() {
       {/* Timestamps */}
       <div className="surface px-5 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          <span><span className="font-medium text-slate-700">Created:</span> {format(new Date(employee.createdAt), 'MMMM d, yyyy h:mm a')}</span>
-          <span><span className="font-medium text-slate-700">Updated:</span> {format(new Date(employee.updatedAt), 'MMMM d, yyyy h:mm a')}</span>
+          <span><span className="font-medium text-slate-700">Created:</span> {formatDateTime(employee.createdAt)}</span>
+          <span><span className="font-medium text-slate-700">Updated:</span> {formatDateTime(employee.updatedAt)}</span>
         </div>
       </div>
 

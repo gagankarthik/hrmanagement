@@ -64,7 +64,7 @@ export function StatCard({
         )}
       </div>
 
-      <p className="mt-3 font-display text-[1.65rem] font-bold leading-none text-slate-900">{value}</p>
+      <p className="mt-3 min-w-0 truncate font-display text-[1.65rem] font-bold leading-none text-slate-900">{value}</p>
 
       <div className="mt-1.5 flex items-end justify-between gap-2">
         <div className="min-w-0">

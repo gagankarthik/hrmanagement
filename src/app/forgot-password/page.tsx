@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { friendlyError } from "@/lib/errors";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -31,7 +32,7 @@ export default function ForgotPasswordPage() {
       setNotice(`We've sent a verification code to ${email}.`);
       setStep("confirm");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not start password reset.");
+      setError(friendlyError(err, "Could not start password reset."));
     } finally {
       setSubmitting(false);
     }
@@ -53,7 +54,7 @@ export default function ForgotPasswordPage() {
       await confirmResetPassword(email, code.trim(), newPassword);
       router.push("/login?reset=1");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not reset your password.");
+      setError(friendlyError(err, "Could not reset your password."));
     } finally {
       setSubmitting(false);
     }
@@ -103,6 +104,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 autoComplete="email"
                 required
+                aria-invalid={!!error}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
@@ -111,7 +113,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+              <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
             )}
 
             <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
@@ -143,6 +145,7 @@ export default function ForgotPasswordPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
+                  aria-invalid={!!error}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
@@ -160,6 +163,7 @@ export default function ForgotPasswordPage() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
+                aria-invalid={!!error}
                 value={confirmPwd}
                 onChange={(e) => setConfirmPwd(e.target.value)}
                 placeholder="••••••••"
@@ -168,7 +172,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+              <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
             )}
 
             <button type="submit" disabled={submitting} className="btn-primary w-full py-3">

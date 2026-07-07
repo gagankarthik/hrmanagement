@@ -14,7 +14,6 @@ import { useVendors } from '@/context/VendorContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Vendor } from '@/types/vendor';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { useToast } from '@/components/ui/toast';
@@ -22,12 +21,14 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
+import { friendlyError } from '@/lib/errors';
 
 type VendorRow = Vendor & { status: 'Active' | 'Inactive'; autoInactive: boolean; empCount: number };
 
 export default function VendorsPage({ embedded = false }: { embedded?: boolean }) {
-  const { vendors, isLoading, deleteVendor, fetchVendors } = useVendors();
+  const { vendors, isLoading, error, deleteVendor, fetchVendors } = useVendors();
   const { employees } = useEmployees();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,7 +103,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
       toast.success('Vendor deleted', `${vendor.name} has been removed.`);
       setDeleteState({ vendor: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete vendor', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete vendor', friendlyError(err));
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -120,7 +121,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{vendor.name}</p>
             {vendor.address && (
-              <p className="flex items-center gap-1 text-xs text-slate-400">
+              <p className="flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate max-w-[160px]">{vendor.address}</span>
               </p>
@@ -245,20 +246,16 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
             />
           </div>
-          <div className="flex gap-1.5">
-            {(['all', 'Active', 'Inactive'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                )}
-              >
-                {s === 'all' ? 'All' : s}
-              </button>
-            ))}
-          </div>
+          <FilterSelect
+            label="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All statuses' },
+              { value: 'Active', label: 'Active' },
+              { value: 'Inactive', label: 'Inactive' },
+            ]}
+          />
           <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
         </div>
 
@@ -268,6 +265,8 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
           getRowId={(v) => v.id}
           caption="Vendors"
           isLoading={isLoading}
+          error={error}
+          onRetry={fetchVendors}
           onRowClick={(v) => router.push(`/vendors/${v.id}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{
@@ -307,7 +306,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
 
         {!isLoading && filtered.length > 0 && (
           <div className="border-t border-slate-100 px-5 py-3">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {filtered.length} of {validVendors.length} vendor{validVendors.length !== 1 ? 's' : ''}
             </p>
           </div>

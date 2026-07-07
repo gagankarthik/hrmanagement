@@ -8,9 +8,10 @@ import { useClients } from '@/context/ClientContext';
 import { useTimesheets } from '@/context/TimesheetContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useToast } from '@/components/ui/toast';
+import { money } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { InvoiceLineItem } from '@/types/invoice';
 
-const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const addDays = (iso: string, days: number) => {
   const d = new Date(iso + 'T00:00:00');
@@ -95,10 +96,10 @@ export default function NewInvoicePage() {
             .map((li) => updateTimesheet(li.timesheetId as string, { status: 'Invoiced' })),
         );
       }
-      toast.success('Invoice created', `${invoice.invoiceNumber} · ${usd(total)}`);
+      toast.success('Invoice created', `${invoice.invoiceNumber} · ${money(total, { cents: true })}`);
       router.push(`/invoices/${invoice.id}`);
     } catch (err) {
-      toast.error('Could not create invoice', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not create invoice', friendlyError(err));
       setSaving(false);
     }
   };
@@ -155,7 +156,7 @@ export default function NewInvoicePage() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {['Description', 'Hours', 'Rate', 'Amount', ''].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -167,8 +168,8 @@ export default function NewInvoicePage() {
                   <tr key={`${li.timesheetId}-${idx}`} className="border-b border-slate-50 last:border-0">
                     <td className="px-4 py-2.5 text-sm text-slate-700">{li.description}</td>
                     <td className="px-4 py-2.5 text-sm text-slate-600">{li.hours}</td>
-                    <td className="px-4 py-2.5 text-sm text-slate-600">{usd(li.rate)}</td>
-                    <td className="px-4 py-2.5 text-sm font-semibold text-slate-900">{usd(li.amount)}</td>
+                    <td className="px-4 py-2.5 text-sm text-slate-600">{money(li.rate, { cents: true })}</td>
+                    <td className="px-4 py-2.5 text-sm font-semibold text-slate-900">{money(li.amount, { cents: true })}</td>
                     <td className="px-4 py-2.5 text-right">
                       <button onClick={() => removeItem(idx)} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" aria-label="Remove line">
                         <Trash2 className="h-4 w-4" strokeWidth={1.75} />
@@ -182,7 +183,7 @@ export default function NewInvoicePage() {
               <tfoot>
                 <tr className="border-t border-slate-100 bg-slate-50/40">
                   <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-slate-500">Total</td>
-                  <td className="px-4 py-3 font-display text-lg font-bold text-slate-900">{usd(total)}</td>
+                  <td className="px-4 py-3 font-display text-lg font-bold text-slate-900">{money(total, { cents: true })}</td>
                   <td />
                 </tr>
               </tfoot>

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { friendlyError } from '@/lib/errors';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -47,7 +48,7 @@ export function DefaultErrorFallback({ error, reset }: { error: Error; reset: ()
         </div>
         <h2 className="text-lg font-semibold text-slate-900">Something went wrong</h2>
         <p className="mt-1.5 text-sm text-slate-500">
-          {error.message || "An unexpected error occurred while loading this section."}
+          {friendlyError(error, 'An unexpected error occurred while loading this section.')}
         </p>
         <button
           type="button"

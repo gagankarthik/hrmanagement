@@ -30,7 +30,7 @@ export function Switch({
         }
       }}
       className={cn(
-        'flex items-start gap-3 outline-none',
+        'flex items-start gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-brand-200 focus-visible:ring-offset-2',
         disabled ? 'opacity-60' : 'cursor-pointer',
       )}
     >

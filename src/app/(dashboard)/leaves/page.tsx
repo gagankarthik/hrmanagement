@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   CalendarDays, Plus, Pencil, Trash2, Search, Check, X, Eye,
   Clock, CheckCircle2, XCircle, Layers, Inbox, Scale, CalendarRange, CalendarCheck,
-  ChevronLeft, ChevronRight, Download,
+  Download,
 } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
@@ -18,12 +18,14 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useHandbook } from '@/context/HandbookContext';
 import { Leave, LeaveStatus, LeaveType } from '@/types/leave';
 import { resolveName } from '@/lib/names';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SkeletonTable } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { exportToCsv } from '@/lib/export';
 import { STATUS_FILTERS, TYPE_FILTERS, statusBadge, typeBadge, formatDate, leaveCoversDay } from './_components/shared';
 import { BalancesPanel } from './_components/BalancesPanel';
@@ -39,7 +41,7 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function LeavesPage() {
-  const { leaves, isLoading, updateLeave, deleteLeave } = useLeaves();
+  const { leaves, isLoading, error, updateLeave, deleteLeave, fetchLeaves } = useLeaves();
   const { employees } = useEmployees();
   const { getPolicy } = useHandbook();
   const router = useRouter();
@@ -56,8 +58,6 @@ export default function LeavesPage() {
   });
   const [decision, setDecision] = useState<{ leave: Leave; status: LeaveStatus } | null>(null);
   const [deciding, setDeciding] = useState(false);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const toast = useToast();
 
@@ -78,15 +78,6 @@ export default function LeavesPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validLeaves, employees, searchQuery, statusFilter, typeFilter]);
-
-  // ── Requested-tab pagination (does not affect Balances/Calendar) ─────────────
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  // Reset to page 1 whenever the Requested filters/search change.
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, statusFilter, typeFilter]);
 
   const handleExport = () => {
     exportToCsv('leave-requests', filtered as unknown as Record<string, unknown>[], [
@@ -153,6 +144,67 @@ export default function LeavesPage() {
     [calCells]
   );
 
+  const leaveColumns: DataTableColumn<Leave>[] = [
+    {
+      id: 'employee',
+      header: 'Employee',
+      sortValue: (l) => labelFor(l).toLowerCase(),
+      cell: (l) => {
+        const name = labelFor(l);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
+              {name?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+            <p className="text-sm font-semibold text-slate-900">{name || 'Unknown'}</p>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      sortValue: (l) => l.type,
+      cell: (l) => (
+        <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', typeBadge[l.type])}>{l.type}</span>
+      ),
+    },
+    {
+      id: 'dates',
+      header: 'Dates',
+      sortValue: (l) => l.startDate,
+      cell: (l) => (
+        <span className="whitespace-nowrap">{formatDate(l.startDate)} <span className="text-slate-300">→</span> {formatDate(l.endDate)}</span>
+      ),
+    },
+    {
+      id: 'days',
+      header: 'Days',
+      sortValue: (l) => Number(l.days) || 0,
+      hideBelow: 'sm',
+      cell: (l) => (
+        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+          {l.days} {l.days === 1 ? 'day' : 'days'}
+        </span>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      sortValue: (l) => l.status,
+      cell: (l) => {
+        const badge = statusBadge[l.status];
+        const StatusIcon = badge.icon;
+        return (
+          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1', badge.cls)}>
+            <StatusIcon className="h-3 w-3" />
+            {l.status}
+          </span>
+        );
+      },
+    },
+  ];
+
   const confirmDelete = async () => {
     const leave = deleteState.leave;
     if (!leave) return;
@@ -162,7 +214,7 @@ export default function LeavesPage() {
       toast.success('Leave request deleted', `${labelFor(leave)}'s request has been removed.`);
       setDeleteState({ leave: null, isDeleting: false });
     } catch (err) {
-      toast.error('Failed to delete leave request', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete leave request', friendlyError(err));
       setDeleteState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -178,7 +230,7 @@ export default function LeavesPage() {
       );
       setDecision(null);
     } catch (err) {
-      toast.error('Could not update leave request', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not update leave request', friendlyError(err));
     } finally {
       setDeciding(false);
     }
@@ -186,10 +238,10 @@ export default function LeavesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[68px] animate-pulse rounded-xl border border-slate-100 bg-white shadow-sm" />
+            <div key={i} className="h-[92px] animate-pulse rounded-2xl border border-slate-100 bg-white shadow-sm" />
           ))}
         </div>
         <SkeletonTable rows={6} cols={6} />
@@ -284,199 +336,81 @@ export default function LeavesPage() {
               >
                 <Download className="h-4 w-4" /> Export CSV
               </button>
-              <div className="flex flex-wrap gap-1.5">
-                {STATUS_FILTERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                      statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    )}
-                  >
-                    {s === 'all' ? 'All status' : s}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {TYPE_FILTERS.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTypeFilter(t)}
-                    className={cn(
-                      'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                      typeFilter === t ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    )}
-                  >
-                    {t === 'all' ? 'All types' : t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="p-5">
-              <EmptyState
-                icon={CalendarDays}
-                tone="brand"
-                title={searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'No leave requests match your filters' : 'No leave requests yet'}
-                description={searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'Try different keywords or clear filters.' : 'Apply for leave to start tracking time off.'}
-                action={
-                  !searchQuery && statusFilter === 'all' && typeFilter === 'all' ? (
-                    <button
-                      onClick={() => router.push('/leaves/new')}
-                      className="btn-primary"
-                    >
-                      <Plus className="h-4 w-4" /> Apply Leave
-                    </button>
-                  ) : undefined
-                }
+              <FilterSelect
+                label="Filter by status"
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={STATUS_FILTERS.map((s) => ({ value: s, label: s === 'all' ? 'All statuses' : s }))}
+              />
+              <FilterSelect
+                label="Filter by type"
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={TYPE_FILTERS.map((t) => ({ value: t, label: t === 'all' ? 'All types' : t }))}
               />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px]">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/60">
-                    {['Employee', 'Type', 'Dates', 'Days', 'Status', ''].map((h) => (
-                      <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {paged.map((leave, idx) => {
-                    const name = labelFor(leave);
-                    const badge = statusBadge[leave.status];
-                    const StatusIcon = badge.icon;
-                    return (
-                      <tr
-                        key={leave.id ?? idx}
-                        onClick={() => router.push(`/leaves/${leave.id}`)}
-                        className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50"
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                              {name?.charAt(0)?.toUpperCase() || '?'}
-                            </div>
-                            <p className="text-sm font-semibold text-slate-900">{name || 'Unknown'}</p>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', typeBadge[leave.type])}>
-                            {leave.type}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-sm text-slate-600">
-                          <span className="whitespace-nowrap">{formatDate(leave.startDate)} <span className="text-slate-300">→</span> {formatDate(leave.endDate)}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                            {leave.days} {leave.days === 1 ? 'day' : 'days'}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1', badge.cls)}>
-                            <StatusIcon className="h-3 w-3" />
-                            {leave.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
-                            {leave.status === 'Pending' && (
-                              <div className="flex items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                                <button
-                                  onClick={() => setDecision({ leave, status: 'Approved' })}
-                                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
-                                  title="Approve"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => setDecision({ leave, status: 'Rejected' })}
-                                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                                  title="Reject"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            )}
-                            <ActionMenu
-                              items={[
-                                {
-                                  label: 'View details',
-                                  icon: Eye,
-                                  onClick: () => router.push(`/leaves/${leave.id}`),
-                                },
-                                {
-                                  label: 'Edit request',
-                                  icon: Pencil,
-                                  onClick: () => router.push(`/leaves/${leave.id}/edit`),
-                                },
-                                {
-                                  label: 'Delete request',
-                                  icon: Trash2,
-                                  danger: true,
-                                  separatorBefore: true,
-                                  onClick: () => setDeleteState({ leave, isDeleting: false }),
-                                },
-                              ]}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-100 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-400">
-              {filtered.length === 0
-                ? `0 of ${validLeaves.length} request${validLeaves.length !== 1 ? 's' : ''}`
-                : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, filtered.length)} of ${filtered.length} request${filtered.length !== 1 ? 's' : ''}`}
-            </p>
-            {filtered.length > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  Rows:
-                  <select
-                    value={pageSize}
-                    onChange={(e) => { setPageSize(+e.target.value); setPage(1); }}
-                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none focus:border-brand-300"
-                  >
-                    {[10, 25, 50].map((n) => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">Page {page} of {totalPages}</span>
-                  <div className="flex gap-1">
+          <DataTable<Leave>
+            columns={leaveColumns}
+            data={filtered}
+            getRowId={(l) => l.id}
+            caption="Leave requests"
+            error={error}
+            onRetry={fetchLeaves}
+            onRowClick={(l) => router.push(`/leaves/${l.id}`)}
+            minWidth="min-w-[760px]"
+            tableId="leaves"
+            initialSort={{ columnId: 'dates', dir: 'desc' }}
+            rowActions={(leave) => (
+              <div className="flex items-center gap-1">
+                {leave.status === 'Pending' && (
+                  <div className="flex items-center gap-0.5">
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                      aria-label="Previous page"
+                      onClick={() => setDecision({ leave, status: 'Approved' })}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600"
+                      title="Approve"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <Check className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                      aria-label="Next page"
+                      onClick={() => setDecision({ leave, status: 'Rejected' })}
+                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                      title="Reject"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                </div>
+                )}
+                <ActionMenu
+                  items={[
+                    { label: 'View details', icon: Eye, onClick: () => router.push(`/leaves/${leave.id}`) },
+                    { label: 'Edit request', icon: Pencil, onClick: () => router.push(`/leaves/${leave.id}/edit`) },
+                    { label: 'Delete request', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ leave, isDeleting: false }) },
+                  ]}
+                />
               </div>
             )}
-          </div>
+            empty={{
+              icon: CalendarDays,
+              tone: 'brand',
+              title: searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'No leave requests match your filters' : 'No leave requests yet',
+              description: searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'Try different keywords or clear filters.' : 'Apply for leave to start tracking time off.',
+              action: !searchQuery && statusFilter === 'all' && typeFilter === 'all' ? (
+                <button onClick={() => router.push('/leaves/new')} className="btn-primary">
+                  <Plus className="h-4 w-4" /> Apply Leave
+                </button>
+              ) : undefined,
+            }}
+          />
+
+          {filtered.length > 0 && (
+            <div className="border-t border-slate-100 px-5 py-3">
+              <p className="text-xs text-slate-500">
+                {filtered.length} of {validLeaves.length} request{validLeaves.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

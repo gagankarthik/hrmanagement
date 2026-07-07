@@ -8,7 +8,8 @@ import {
   BarChart3, X,
   PanelLeftClose, PanelLeftOpen, BookOpen, ScrollText,
   HeartPulse, ShieldCheck, ClipboardList, UserCog,
-  LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings, ChevronDown,
+  LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings, ChevronDown, FolderOpen,
+  ClipboardCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -24,11 +25,12 @@ const selfServiceSections: NavSection[] = [
     heading: 'My Portal',
     flat: true,
     items: [
+      { label: 'My Leave', href: '/my-leave', icon: CalendarDays },
+      { label: 'My Documents', href: '/my-documents', icon: FolderOpen },
       { label: 'Handbook', href: '/handbook', icon: BookOpen },
       { label: 'Company Procedures', href: '/procedures', icon: ClipboardList },
       { label: 'Policies', href: '/policies', icon: ScrollText },
       { label: 'Benefits', href: '/benefits', icon: HeartPulse },
-      { label: 'My Leave', href: '/my-leave', icon: CalendarDays },
     ],
   },
 ];
@@ -40,6 +42,7 @@ const sections: NavSection[] = [
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
       { label: 'Employees', href: '/employees', icon: UsersRound },
+      { label: 'Onboarding', href: '/onboard/packets', icon: ClipboardCheck },
       { label: 'Partners', href: '/partners', icon: Network },
       { label: 'Leave Management', href: '/leaves', icon: CalendarDays },
       { label: 'Billing', href: '/billing', icon: Wallet },

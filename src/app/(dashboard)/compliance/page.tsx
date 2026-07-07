@@ -15,7 +15,7 @@ import {
   ShieldX,
   PieChart as PieChartIcon,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/format';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
@@ -431,7 +431,7 @@ export default function CompliancePage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   <th className="px-5 py-3">Employee</th>
                   <th className="px-5 py-3">Type</th>
                   <th className="px-5 py-3">Work auth</th>
@@ -443,14 +443,20 @@ export default function CompliancePage() {
               <tbody className="divide-y divide-slate-100">
                 {visibleRisk.map((row) => {
                   const pill = bucketPill[row.bucket];
-                  let expiryLabel = row.expiryDate;
-                  const d = new Date(row.expiryDate);
-                  if (!Number.isNaN(d.getTime())) expiryLabel = format(d, 'MMM d, yyyy');
+                  const expiryLabel = formatDate(row.expiryDate);
                   return (
                     <tr
                       key={row.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => router.push(`/employees/${row.id}`)}
-                      className="cursor-pointer transition-colors hover:bg-slate-50"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/employees/${row.id}`);
+                        }
+                      }}
+                      className="cursor-pointer transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
@@ -527,7 +533,7 @@ export default function CompliancePage() {
             />
           </div>
         ) : (
-          <div className="grid gap-2.5 p-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
             {coiExpiring.map(({ s, coi }) => {
               const expired = coi.state === 'expired';
               const chip = expired
@@ -539,7 +545,7 @@ export default function CompliancePage() {
                 <button
                   key={s.id}
                   onClick={() => router.push(`/subcontractors/${s.id}`)}
-                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                  className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:bg-slate-50"
                 >
                   <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', expired ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600')}>
                     <ShieldCheck className="h-4 w-4" />

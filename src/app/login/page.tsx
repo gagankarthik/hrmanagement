@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { friendlyError } from "@/lib/errors";
 import { isSelfServiceOnly, SELF_SERVICE_HOME } from "@/config/access";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -44,8 +45,7 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Invalid email or password";
-      setError(msg);
+      setError(friendlyError(err));
     } finally {
       setSubmitting(false);
     }
@@ -82,7 +82,7 @@ export default function LoginPage() {
         phone_number: phoneE164,
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not set your new password.");
+      setError(friendlyError(err, "Could not set your new password."));
     } finally {
       setSubmitting(false);
     }
@@ -124,7 +124,7 @@ export default function LoginPage() {
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-200">Workforce platform</p>
             <h1 className="font-display mt-3 text-[2.6rem] font-bold leading-[1.05] text-white">
-              The Ocean Blue<br />workforce platform
+              Your whole workforce,<br />one secure platform
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-brand-100/90">
               One secure place for your people, clients, compliance, billing, and reporting.
@@ -262,7 +262,7 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+                  <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
                 )}
 
                 <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
@@ -275,7 +275,7 @@ export default function LoginPage() {
           <>
           <div>
             <p className="eyebrow">Welcome back</p>
-            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to Ocean Blue</h2>
+            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to your account</h2>
             <p className="mt-1.5 text-sm text-slate-500">Access your HR dashboard and live workforce insights.</p>
           </div>
 
@@ -289,6 +289,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
+                aria-invalid={!!error}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
@@ -311,6 +312,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
+                  aria-invalid={!!error}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -328,7 +330,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}

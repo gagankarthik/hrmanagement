@@ -4,7 +4,8 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import {
   ArrowLeft,
   UserCheck,
@@ -84,7 +85,7 @@ function SubcontractorDetailPageContent() {
       toast.success('Subcontractor deleted', `${subcontractor.name} has been removed.`);
       router.push('/subcontractors');
     } catch (err) {
-      toast.error('Failed to delete subcontractor', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete subcontractor', friendlyError(err));
       setDeleting(false);
       setConfirmOpen(false);
     }
@@ -101,7 +102,7 @@ function SubcontractorDetailPageContent() {
         <td>${emp.position || '—'}</td>
         <td>${emp.type}</td>
         <td>${status}</td>
-        <td>${emp.hireDate ? format(new Date(emp.hireDate), 'MM/dd/yyyy') : '—'}</td>
+        <td>${emp.hireDate ? formatDate(emp.hireDate) : '—'}</td>
         <td>${workAuth?.workAuthorization || '—'}${isExpiring ? ' ⚠' : ''}</td>
       </tr>`;
     }).join('');
@@ -138,7 +139,7 @@ function SubcontractorDetailPageContent() {
       </div>
       <div style="text-align:right;color:#64748b;font-size:12px;">
         <strong>Subcontractor Report</strong><br/>
-        Generated: ${format(new Date(), 'MMMM d, yyyy')}<br/>
+        Generated: ${formatDate(new Date(), { long: true })}<br/>
         ${subcontractor.address ? subcontractor.address : ''}
       </div>
     </div>
@@ -383,8 +384,8 @@ function SubcontractorDetailPageContent() {
               ))}
             </div>
           )}
-          <div className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
-            {format(new Date(subcontractor.createdAt), 'MMM d, yyyy')} — {format(new Date(subcontractor.updatedAt), 'MMM d, yyyy')}
+          <div className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            {formatDate(subcontractor.createdAt)} — {formatDate(subcontractor.updatedAt)}
           </div>
         </div>
       </div>
@@ -417,13 +418,13 @@ function SubcontractorDetailPageContent() {
               <div>
                 <p className="text-xs font-medium text-slate-500">Policy Effective</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-900">
-                  {subcontractor.coiEffectiveDate ? format(new Date(subcontractor.coiEffectiveDate), 'MMM d, yyyy') : '—'}
+                  {subcontractor.coiEffectiveDate ? formatDate(subcontractor.coiEffectiveDate) : '—'}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-medium text-slate-500">Policy Expiry</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-900">
-                  {subcontractor.coiExpiryDate ? format(new Date(subcontractor.coiExpiryDate), 'MMM d, yyyy') : '—'}
+                  {subcontractor.coiExpiryDate ? formatDate(subcontractor.coiExpiryDate) : '—'}
                 </p>
               </div>
             </div>
@@ -468,7 +469,7 @@ function SubcontractorDetailPageContent() {
           <div className="min-w-[720px] divide-y divide-slate-50">
             <div className="grid grid-cols-[2fr_1.5fr_80px_90px_100px_80px] gap-3 px-5 py-3">
               {['Employee', 'Position', 'Type', 'Status', 'Hire Date', ''].map((h) => (
-                <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</span>
+                <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</span>
               ))}
             </div>
             {subconEmployees.map((emp, idx) => {
@@ -480,8 +481,11 @@ function SubcontractorDetailPageContent() {
               return (
                 <div
                   key={emp.id ?? idx}
-                  className="grid cursor-pointer grid-cols-[2fr_1.5fr_80px_90px_100px_80px] items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
+                  role="button"
+                  tabIndex={0}
+                  className="grid cursor-pointer grid-cols-[2fr_1.5fr_80px_90px_100px_80px] items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
                   onClick={() => router.push(`/employees/${emp.id}`)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/employees/${emp.id}`); } }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white">
@@ -489,7 +493,7 @@ function SubcontractorDetailPageContent() {
                     </div>
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-900">{emp.name}</p>
-                      {emp.personalEmail && <p className="truncate text-xs text-slate-400">{emp.personalEmail}</p>}
+                      {emp.personalEmail && <p className="truncate text-xs text-slate-500">{emp.personalEmail}</p>}
                     </div>
                   </div>
                   <span className="truncate text-sm text-slate-600">{emp.position || '—'}</span>
@@ -503,7 +507,7 @@ function SubcontractorDetailPageContent() {
                     {status || '—'}
                   </span>
                   <span className="text-sm text-slate-600">
-                    {emp.hireDate ? format(new Date(emp.hireDate), 'MM/dd/yyyy') : '—'}
+                    {emp.hireDate ? formatDate(emp.hireDate) : '—'}
                   </span>
                   <div className="flex items-center gap-1">
                     {isExpiring && <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
@@ -521,7 +525,7 @@ function SubcontractorDetailPageContent() {
           </div>
         )}
         <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">Showing {subconEmployees.length} employees</p>
+          <p className="text-xs text-slate-500">Showing {subconEmployees.length} employees</p>
         </div>
       </div>
 

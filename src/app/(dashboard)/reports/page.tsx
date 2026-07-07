@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   BarChart3, Download, Users, Filter, X, DollarSign,
   Shield, Activity, Award, UserCheck, AlertTriangle,
@@ -10,6 +10,8 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { format, differenceInDays } from 'date-fns';
+import { formatDate } from '@/lib/format';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { EmployeeType } from '@/types/employee';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,12 +29,12 @@ import { NetworkTab } from './_components/NetworkTab';
 
 type TabId = 'workforce' | 'compliance' | 'financial' | 'activity' | 'network';
 
-const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: 'workforce',  label: 'Workforce',  icon: Users },
-  { id: 'compliance', label: 'Compliance', icon: Shield },
-  { id: 'financial',  label: 'Financial',  icon: DollarSign },
-  { id: 'activity',   label: 'Activity',   icon: Activity },
-  { id: 'network',    label: 'Network',    icon: Building2 },
+const TABS: TabItem<TabId>[] = [
+  { value: 'workforce',  label: 'Workforce',  icon: Users },
+  { value: 'compliance', label: 'Compliance', icon: Shield },
+  { value: 'financial',  label: 'Financial',  icon: DollarSign },
+  { value: 'activity',   label: 'Activity',   icon: Activity },
+  { value: 'network',    label: 'Network',    icon: Building2 },
 ];
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -278,14 +280,14 @@ export default function ReportsPage() {
           <div>
             <p className="eyebrow">Executive Summary</p>
             <h2 className="mt-1 font-display text-lg font-bold text-slate-900 sm:text-xl">
-              Workforce snapshot — {format(new Date(), 'MMMM d, yyyy')}
+              Workforce snapshot — {formatDate(new Date(), { long: true })}
             </h2>
             <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Live numbers across {filtered.length.toLocaleString()} {filtered.length === 1 ? 'employee' : 'employees'}{hasFilters ? ' (filtered)' : ''}.
             </p>
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
           <SummaryStat icon={Users} label="Headcount" value={metrics.total.toLocaleString()} sub={`${metrics.active} active`} tone="brand" />
           <SummaryStat icon={DollarSign} label="Run-rate" value={compactCurrency(metrics.revenue)} sub="monthly billable" tone="emerald" />
           <SummaryStat icon={UserCheck} label="Utilization" value={`${metrics.utilization}%`} sub={`${metrics.billable} billable`} tone="purple" />
@@ -295,31 +297,8 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      {/* TAB SWITCHER — underline bar (no boxed card) */}
-      <div className="overflow-x-auto border-b border-slate-200">
-        <div className="flex min-w-max items-center gap-1" role="tablist">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const isTabActive = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={isTabActive}
-                onClick={() => setActiveTab(t.id)}
-                className={cn(
-                  'relative inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
-                  isTabActive ? 'text-brand-700' : 'text-slate-500 hover:text-slate-800'
-                )}
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.75} />
-                {t.label}
-                {isTabActive && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-brand-600" />}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* TAB SWITCHER — accessible underline tablist */}
+      <Tabs items={TABS} value={activeTab} onChange={setActiveTab} ariaLabel="Report sections" />
 
       {/* TAB CONTENT */}
       <div className="space-y-6">

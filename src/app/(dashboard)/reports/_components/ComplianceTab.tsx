@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Shield, FileText, Heart, Wallet, CheckCircle2 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TabProps, TYPE_COLOR, TYPE_LABEL, isActive } from './shared';
@@ -41,7 +42,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Authorization</th>
@@ -75,7 +76,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
                       </td>
                       <td className="py-2.5 pr-4 text-slate-700">{wa || '—'}</td>
                       <td className="py-2.5 pr-4 font-medium text-slate-900">
-                        {format(exp, 'MMM d, yyyy')}
+                        {formatDate(expiry)}
                       </td>
                       <td className="py-2.5 pr-4">
                         <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ring-1', toneColor)}>
@@ -103,7 +104,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
         ) : (
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-2.5 pr-4">Authorization</th>
                 <th className="py-2.5 pr-4">Count</th>
                 <th className="py-2.5">Distribution</th>

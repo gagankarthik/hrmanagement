@@ -9,6 +9,8 @@ import {
 import { useLeaves } from '@/context/LeaveContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { resolveName } from '@/lib/names';
+import { formatDate } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -35,13 +37,6 @@ const typeBadge: Record<LeaveType, string> = {
   'Long Leave': 'bg-amber-50 text-amber-700',
   Unpaid: 'bg-slate-100 text-slate-600',
 };
-
-function fmt(value?: string) {
-  if (!value) return '—';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return value;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 function Fact({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
   return (
@@ -81,7 +76,7 @@ function LeaveDetailContent({ params }: PageProps) {
       await updateLeave(leave.id, { status });
       toast.success(status === 'Approved' ? 'Leave approved' : 'Leave rejected', `${name}'s request has been ${status.toLowerCase()}.`);
     } catch (err) {
-      toast.error('Could not update request', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not update request', friendlyError(err));
     } finally {
       setActing(false);
     }
@@ -93,7 +88,7 @@ function LeaveDetailContent({ params }: PageProps) {
     try {
       await updateLeave(leave.id, { documents: docs });
     } catch (err) {
-      toast.error('Could not save attachments', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save attachments', friendlyError(err));
     } finally {
       setSavingDocs(false);
     }
@@ -107,7 +102,7 @@ function LeaveDetailContent({ params }: PageProps) {
       toast.success('Leave request deleted', `${name}'s request has been removed.`);
       router.push('/leaves');
     } catch (err) {
-      toast.error('Failed to delete request', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete request', friendlyError(err));
       setIsDeleting(false);
     }
   };
@@ -199,10 +194,10 @@ function LeaveDetailContent({ params }: PageProps) {
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Fact icon={CalendarDays} label="Start date" value={fmt(leave.startDate)} />
-          <Fact icon={CalendarRange} label="End date" value={fmt(leave.endDate)} />
+          <Fact icon={CalendarDays} label="Start date" value={formatDate(leave.startDate)} />
+          <Fact icon={CalendarRange} label="End date" value={formatDate(leave.endDate)} />
           <Fact icon={Hourglass} label="Duration" value={`${leave.days} ${leave.days === 1 ? 'day' : 'days'}`} />
-          <Fact icon={Clock} label="Applied" value={fmt(leave.appliedDate)} />
+          <Fact icon={Clock} label="Applied" value={formatDate(leave.appliedDate)} />
         </div>
       </div>
 

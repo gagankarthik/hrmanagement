@@ -7,9 +7,9 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { exportToCsv } from '@/lib/export';
+import { money } from '@/lib/format';
 import type { Employee } from '@/types/employee';
 
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const HOURS_MONTH = 160;
 
 export default function PayrollPage() {
@@ -68,8 +68,8 @@ export default function PayrollPage() {
 
       <StatGrid cols={3}>
         <StatCard label="Active workers" value={active.length} icon={Banknote} tone="brand" hint={`${withRate} with a pay rate`} />
-        <StatCard label="Monthly payroll (est)" value={usd0(monthlyPayroll)} icon={Banknote} tone="emerald" hint={`${HOURS_MONTH} hrs/mo`} />
-        <StatCard label="Annual payroll (est)" value={usd0(monthlyPayroll * 12)} icon={Banknote} tone="purple" />
+        <StatCard label="Monthly payroll (est)" value={money(monthlyPayroll)} icon={Banknote} tone="emerald" hint={`${HOURS_MONTH} hrs/mo`} />
+        <StatCard label="Annual payroll (est)" value={money(monthlyPayroll * 12)} icon={Banknote} tone="purple" />
       </StatGrid>
 
       <div className="surface">
@@ -91,7 +91,7 @@ export default function PayrollPage() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {['Employee', 'Type', 'Pay / hr', 'Monthly (est)', 'Client', 'Country', 'I-9'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -107,8 +107,8 @@ export default function PayrollPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-sm text-slate-600">{e.type}</td>
-                  <td className="px-5 py-3 text-sm font-medium text-slate-700">{e.payRate ? usd0(e.payRate) : <span className="text-slate-300">—</span>}</td>
-                  <td className="px-5 py-3 text-sm font-semibold text-slate-900">{e.payRate ? usd0(e.payRate * HOURS_MONTH) : <span className="text-slate-300">—</span>}</td>
+                  <td className="px-5 py-3 text-sm font-medium text-slate-700">{e.payRate ? money(e.payRate) : <span className="text-slate-300">—</span>}</td>
+                  <td className="px-5 py-3 text-sm font-semibold text-slate-900">{e.payRate ? money(e.payRate * HOURS_MONTH) : <span className="text-slate-300">—</span>}</td>
                   <td className="px-5 py-3 text-sm text-slate-600">{clientName(e) || <span className="text-slate-300">—</span>}</td>
                   <td className="px-5 py-3 text-sm text-slate-600">{e.workCountry || <span className="text-slate-300">—</span>}</td>
                   <td className="px-5 py-3 text-sm text-slate-600">{e.i9Status || <span className="text-slate-300">—</span>}</td>

@@ -11,6 +11,8 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useI9 } from '@/context/I9Context';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/toast';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import {
   I9Record, I9AuditEvent, WorkAuthEntry, EVERIFY_STATUSES, CITIZENSHIP_STATUSES,
@@ -21,7 +23,6 @@ import { WORK_AUTHORIZATION_OPTIONS, type Employee } from '@/types/employee';
 
 const input = 'w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100';
 const label = 'mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400';
-const fmt = (d?: Date | null) => (d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—');
 
 function Card({ icon: Icon, title, subtitle, children }: { icon: React.ElementType; title: string; subtitle?: string; children: React.ReactNode }) {
   return (
@@ -82,7 +83,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
       toast.success('I-9 record deleted');
       router.push('/i9');
     } catch (err) {
-      toast.error('Could not delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not delete', friendlyError(err));
       setDeleting(false);
       setDelConfirm(false);
     }
@@ -117,7 +118,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
       await saveRecord(record);
       toast.success('I-9 saved', `${emp?.name || 'Employee'} · ${newStatus}`);
     } catch (err) {
-      toast.error('Could not save I-9', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save I-9', friendlyError(err));
     } finally {
       setSaving(false);
     }
@@ -160,7 +161,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
 
       {/* Retention banner */}
       <div className="surface flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-        <span className="flex items-center gap-2 text-sm text-slate-600"><FolderArchive className="h-4 w-4 text-brand-600" strokeWidth={1.75} /> Retain this record until <span className="font-semibold text-slate-900">{fmt(retain)}</span></span>
+        <span className="flex items-center gap-2 text-sm text-slate-600"><FolderArchive className="h-4 w-4 text-brand-600" strokeWidth={1.75} /> Retain this record until <span className="font-semibold text-slate-900">{formatDate(retain, { long: true })}</span></span>
         <span className="text-xs text-slate-400">Later of 3 years after hire or 1 year after termination</span>
       </div>
 
@@ -262,7 +263,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
           <Card icon={ListChecks} title="Work authorization history" subtitle="Current and past authorizations on file">
             {authHistory.length > 0 && (
               <>
-                <div className="mb-1 hidden grid-cols-12 gap-2 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:grid">
+                <div className="mb-1 hidden grid-cols-12 gap-2 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:grid">
                   <span className="col-span-3">Authorization</span><span className="col-span-2">Number</span><span className="col-span-2">Issued</span><span className="col-span-2">Expiry</span><span className="col-span-2">Status</span><span className="col-span-1" />
                 </div>
                 <div className="space-y-2.5">
@@ -338,7 +339,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
                   <li key={i} className="relative border-l-2 border-slate-100 pl-4">
                     <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-brand-400" />
                     <p className="text-sm font-medium text-slate-800">{ev.action}</p>
-                    <p className="text-[11px] text-slate-400">{new Date(ev.at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}{ev.by ? ` · ${ev.by}` : ''}</p>
+                    <p className="text-[11px] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
                   </li>
                 ))}
               </ol>

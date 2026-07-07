@@ -16,6 +16,9 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
+import { ROLE_LABELS, type AppRole } from '@/config/access';
+import { friendlyError } from '@/lib/errors';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 const EMPLOYEE_TYPES = ['W2', 'Contract', '1099', 'Offshore'] as const;
 type EmployeeType = (typeof EMPLOYEE_TYPES)[number];
@@ -29,6 +32,7 @@ interface AppUser {
   enabled: boolean;
   employeeType?: EmployeeType;
   hrAccess: boolean;
+  role?: AppRole;
   createdAt?: string;
 }
 
@@ -61,6 +65,7 @@ export default function UsersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [resendingFor, setResendingFor] = useState<string | null>(null);
   const [savingFor, setSavingFor] = useState<string | null>(null);
+  const inviteTrapRef = useFocusTrap<HTMLDivElement>(inviteOpen);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -96,17 +101,17 @@ export default function UsersPage() {
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), name: name.trim() }),
+        body: JSON.stringify({ email: email.trim(), name: name.trim(), role: 'employee' }),
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to invite');
-      toast.success('Invitation sent', `${email.trim()} will receive an email with a temporary password.`);
+      toast.success('Invitation sent', `${email.trim()} was invited as ${ROLE_LABELS.employee} and will receive an email with a temporary password.`);
       setInviteOpen(false);
       setEmail('');
       setName('');
       fetchUsers();
     } catch (err) {
-      toast.error('Could not send invite', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not send invite', friendlyError(err));
     } finally {
       setSubmitting(false);
     }
@@ -124,14 +129,14 @@ export default function UsersPage() {
       if (!result.success) throw new Error(result.error || 'Failed to resend');
       toast.success('Invitation resent', `A new temporary password was emailed to ${u.email}.`);
     } catch (err) {
-      toast.error('Could not resend invite', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not resend invite', friendlyError(err));
     } finally {
       setResendingFor(null);
     }
   };
 
-  // Patch employee type / HR-portal access. Optimistic with revert on failure.
-  const updateMeta = async (u: AppUser, patch: Partial<Pick<AppUser, 'employeeType' | 'hrAccess'>>) => {
+  // Patch role / employee type / HR-portal access. Optimistic with revert on failure.
+  const updateMeta = async (u: AppUser, patch: Partial<Pick<AppUser, 'employeeType' | 'hrAccess' | 'role'>>) => {
     const prev = users;
     setUsers((list) => list.map((x) => (x.username === u.username ? { ...x, ...patch } : x)));
     setSavingFor(u.username);
@@ -140,13 +145,16 @@ export default function UsersPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...('role' in patch ? { role: patch.role } : {}),
           ...('employeeType' in patch ? { employeeType: patch.employeeType ?? '' } : {}),
           ...('hrAccess' in patch ? { hrAccess: patch.hrAccess } : {}),
         }),
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Update failed');
-      if ('hrAccess' in patch) {
+      if ('role' in patch && patch.role) {
+        toast.success('Role updated', `${u.email} is now ${ROLE_LABELS[patch.role]}. They'll see the change next time they sign in.`);
+      } else if ('hrAccess' in patch) {
         toast.success(
           patch.hrAccess ? 'HR portal access granted' : 'HR portal access revoked',
           `${u.email} ${patch.hrAccess ? 'can now use' : 'can no longer use'} the HR portal.`,
@@ -156,7 +164,7 @@ export default function UsersPage() {
       }
     } catch (err) {
       setUsers(prev); // revert
-      toast.error('Could not update user', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not update user', friendlyError(err));
     } finally {
       setSavingFor(null);
     }
@@ -173,7 +181,7 @@ export default function UsersPage() {
       setUsers((prev) => prev.filter((u) => u.username !== deleteTarget.username));
       setDeleteTarget(null);
     } catch (err) {
-      toast.error('Could not remove user', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not remove user', friendlyError(err));
     } finally {
       setIsDeleting(false);
     }
@@ -208,9 +216,21 @@ export default function UsersPage() {
       },
     },
     {
+      id: 'role',
+      header: 'Role',
+      sortValue: (u) => u.role ?? '',
+      cell: (u) => u.role ? (
+        <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
+          {ROLE_LABELS[u.role as AppRole] ?? u.role}
+        </span>
+      ) : (
+        <span className="text-sm text-slate-400">No role</span>
+      ),
+    },
+    {
       id: 'employeeType',
       header: 'Employee type',
-      hideBelow: 'md',
+      hideBelow: 'lg',
       sortValue: (u) => u.employeeType ?? '',
       cell: (u) => (
         <select
@@ -259,7 +279,7 @@ export default function UsersPage() {
         icon={UserCog}
         eyebrow="Administration"
         title="Users"
-        description="Invite team members to Ocean Blue. They receive an email with a temporary password, then set their own on first sign-in."
+        description="Invite team members to the self-service portal and see the role each person holds. HR and Admin have full access; everyone else is self-service. Invitees receive a temporary password and set their own on first sign-in."
         tone="brand"
         actions={
           <button onClick={() => setInviteOpen(true)} className="btn-primary">
@@ -286,9 +306,6 @@ export default function UsersPage() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50"
             />
           </div>
-          <button onClick={fetchUsers} className="btn-ghost px-3 py-2 text-sm">
-            <RotateCw className={cn('h-4 w-4', isLoading && 'animate-spin')} /> Refresh
-          </button>
         </div>
 
         <DataTable<AppUser>
@@ -298,7 +315,7 @@ export default function UsersPage() {
           caption="Users with sign-in access"
           tableId="users"
           isLoading={isLoading}
-          minWidth="min-w-[820px]"
+          minWidth="min-w-[960px]"
           rowActions={(u) => {
             const pending = u.status === 'FORCE_CHANGE_PASSWORD';
             return (
@@ -346,7 +363,7 @@ export default function UsersPage() {
       {inviteOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200" onClick={closeInvite} aria-hidden />
-          <div role="dialog" aria-label="Invite user" className="surface relative w-full max-w-md overflow-hidden p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 sm:rounded-2xl">
+          <div ref={inviteTrapRef} role="dialog" aria-modal="true" aria-label="Invite user" onKeyDown={(e) => { if (e.key === 'Escape' && !submitting) closeInvite(); }} className="surface relative w-full max-w-md overflow-hidden p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 sm:rounded-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
@@ -385,6 +402,18 @@ export default function UsersPage() {
                   placeholder="Jane Doe"
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-slate-700">Role</label>
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
+                  <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
+                    {ROLE_LABELS.employee}
+                  </span>
+                  <span className="text-xs text-slate-500">Self-service portal</span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Invited users get self-service (ESS) access: their own leave, documents and company info only. Any other role a person holds is shown in the table above once assigned.
+                </p>
               </div>
               <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
                 They&apos;ll get an email with a temporary password, then set their own password, name and phone number on first sign-in.

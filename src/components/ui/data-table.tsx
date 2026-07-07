@@ -129,8 +129,13 @@ export function DataTable<T>({
     const onDoc = (e: MouseEvent) => {
       if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) setColMenuOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setColMenuOpen(false); };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [colMenuOpen]);
 
   const toggleHidden = (id: string) => {
@@ -274,7 +279,7 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400',
+                      'px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500',
                       alignClass[col.align ?? 'left'],
                       col.width,
                       col.hideBelow && hideClass[col.hideBelow],

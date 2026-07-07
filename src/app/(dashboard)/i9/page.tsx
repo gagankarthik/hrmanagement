@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useI9 } from '@/context/I9Context';
 import { exportToCsv } from '@/lib/export';
+import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { I9Status, EverifyStatus, deriveI9Status, i9RetentionDate } from '@/types/i9';
 import type { Employee } from '@/types/employee';
@@ -28,7 +29,6 @@ const EV_BADGE: Record<EverifyStatus, string> = {
   'Final Nonconfirmation': 'bg-red-50 text-red-600 ring-red-200',
   Closed: 'bg-slate-100 text-slate-500 ring-slate-200',
 };
-const fmtDate = (d?: Date | null) => (d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
 const isActive = (e: Employee) => !('status' in e) || (e as { status?: string }).status !== 'Terminated';
 
 export default function I9Page() {
@@ -124,7 +124,7 @@ export default function I9Page() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
-                      <span className="block truncate text-xs text-slate-400">{e.type}</span>
+                      <span className="block truncate text-xs text-slate-500">{e.type}</span>
                     </span>
                     <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', I9_BADGE[st])}>{st}</span>
                     <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
@@ -148,13 +148,13 @@ export default function I9Page() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Employee', 'Type', 'I-9 status', 'E-Verify', 'Retain until', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {started.map(({ e, status, everify, retain }) => (
-                  <tr key={e.id} onClick={() => router.push(`/i9/${e.id}`)} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
+                  <tr key={e.id} role="button" tabIndex={0} onClick={() => router.push(`/i9/${e.id}`)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); router.push(`/i9/${e.id}`); } }} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
@@ -164,7 +164,7 @@ export default function I9Page() {
                     <td className="px-5 py-3.5 text-sm text-slate-600">{e.type}</td>
                     <td className="px-5 py-3.5"><span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1', I9_BADGE[status])}>{status}</span></td>
                     <td className="px-5 py-3.5"><span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1', EV_BADGE[everify])}>{everify}</span></td>
-                    <td className="px-5 py-3.5 text-sm text-slate-600">{fmtDate(retain)}</td>
+                    <td className="px-5 py-3.5 text-sm text-slate-600">{formatDate(retain)}</td>
                     <td className="px-5 py-3.5 text-right">
                       <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700">Manage <ChevronRight className="h-4 w-4 text-slate-300" strokeWidth={1.75} /></span>
                     </td>

@@ -15,6 +15,7 @@ import { InvoiceProvider } from '@/context/InvoiceContext';
 import { I9Provider } from '@/context/I9Context';
 import { I983Provider } from '@/context/I983Context';
 import { EmployeeDocsProvider } from '@/context/EmployeeDocsContext';
+import { OnboardingProvider } from '@/context/OnboardingContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { PreferencesProvider } from '@/context/PreferencesContext';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -44,15 +45,17 @@ export default function DashboardLayout({
                 <I9Provider>
                 <I983Provider>
                 <EmployeeDocsProvider>
+                <OnboardingProvider>
                   <div className="flex min-h-screen bg-slate-50">
                     <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
-                    <main className="app-canvas relative flex-1 min-w-0">
+                    <main id="main" className="app-canvas relative flex-1 min-w-0">
                       <Topbar onMenuClick={() => setMobileNavOpen(true)} />
                       <div className="mx-auto w-full max-w-[1360px] px-3.5 py-5 sm:px-5 lg:px-7 lg:py-6">
                         {children}
                       </div>
                     </main>
                   </div>
+                </OnboardingProvider>
                 </EmployeeDocsProvider>
                 </I983Provider>
                 </I9Provider>

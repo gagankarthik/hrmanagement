@@ -14,6 +14,8 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useI983 } from '@/context/I983Context';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/toast';
+import { formatDate, formatDateTime } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import {
   I983Record, I983MaterialChange, I983Evaluation, I983AuditEvent,
@@ -137,7 +139,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
       await saveRecord(record);
       toast.success('I-983 saved', `${emp?.name || 'Employee'} · ${newStatus}`);
     } catch (err) {
-      toast.error('Could not save I-983', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save I-983', friendlyError(err));
     } finally {
       setSaving(false);
     }
@@ -150,7 +152,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
       toast.success('I-983 plan deleted');
       router.push('/i983');
     } catch (err) {
-      toast.error('Could not delete', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not delete', friendlyError(err));
       setDeleting(false);
       setDelConfirm(false);
     }
@@ -197,7 +199,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
           <span className="flex items-center gap-2 text-sm text-slate-700">
             <CalendarClock className={cn('h-4 w-4', due.overdue ? 'text-red-500' : 'text-accent-600')} strokeWidth={1.75} />
             Next: <span className="font-semibold text-slate-900">{due.label}</span>
-            {due.dueDate ? <> due {new Date(due.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</> : ' — set a training start date'}
+            {due.dueDate ? <> due {formatDate(due.dueDate)}</> : ' — set a training start date'}
           </span>
           {due.dueDate && (
             <span className={cn('rounded-full px-2.5 py-1 text-xs font-bold ring-1', due.overdue ? 'bg-red-50 text-red-600 ring-red-200' : due.days <= 30 ? 'bg-accent-50 text-accent-700 ring-accent-200' : 'bg-slate-50 text-slate-500 ring-slate-200')}>
@@ -312,7 +314,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
                   <li key={i} className="relative border-l-2 border-slate-100 pl-4">
                     <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-brand-400" />
                     <p className="text-sm font-medium text-slate-800">{ev.action}</p>
-                    <p className="text-[11px] text-slate-400">{new Date(ev.at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}{ev.by ? ` · ${ev.by}` : ''}</p>
+                    <p className="text-[11px] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
                   </li>
                 ))}
               </ol>

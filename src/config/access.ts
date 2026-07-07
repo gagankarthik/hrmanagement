@@ -2,23 +2,45 @@
  * Application access policy — single source of truth for which roles may use the
  * HR portal and at what level.
  *
- * Roles in the Ocean Blue Cognito pool: admin, hr, recruiter, sales.
+ * Roles in the Ocean Blue Cognito pool: admin, hr, recruiter, sales, employee.
  *
  * Two access tiers:
  *  - **Full access** (admin, hr): the entire HR portal.
- *  - **Self-service** (recruiter, sales): a limited portal — view company
- *    handbook / procedures / policies / benefits, and apply for / view their
- *    own leave. They cannot manage records or see other employees' data.
+ *  - **Self-service** (recruiter, sales, employee): a limited ESS portal — view
+ *    company handbook / procedures / policies / benefits, view their own
+ *    documents / payslips, and apply for / view their own leave. They cannot
+ *    manage records or see other employees' data.
  *
  * To grant another role a tier later, just add it to the relevant list.
+ *
+ * Site boundary: this policy governs the HR portal ONLY. `employee` users are
+ * invite-only into this platform; the OceanBlue marketing site shares the same
+ * Cognito pool, so it must exclude the `employee` group on its own side — that
+ * separation cannot be enforced from this codebase.
  */
 export const FULL_ACCESS_ROLES = ['admin', 'hr'] as const;
-export const SELF_SERVICE_ROLES = ['recruiter', 'sales'] as const;
+export const SELF_SERVICE_ROLES = ['recruiter', 'sales', 'employee'] as const;
 
 /** Every role allowed to authenticate into the app (any tier). */
 export const APP_ACCESS_ROLES = [...FULL_ACCESS_ROLES, ...SELF_SERVICE_ROLES] as const;
 
 export type AppRole = (typeof APP_ACCESS_ROLES)[number];
+
+/**
+ * Roles an admin may assign from the Users page, in display order. Each maps 1:1
+ * to a Cognito group of the same name (the `cognito:groups` claim the portal
+ * reads for access tiers). `employee` is the invite-only ESS default.
+ * Client-safe (plain constants) so both the Users UI and the server share one source.
+ */
+export const INVITE_ROLE_OPTIONS = ['employee', 'recruiter', 'sales', 'hr', 'admin'] as const;
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  employee: 'Employee (ESS)',
+  recruiter: 'Recruiter',
+  sales: 'Sales',
+  hr: 'HR',
+  admin: 'Admin',
+};
 
 /** Normalize a raw role/group string for comparison. */
 function norm(role: string): string {
@@ -61,6 +83,7 @@ export const SELF_SERVICE_ROUTES = [
   '/policies',
   '/benefits',
   '/my-leave',
+  '/my-documents',
   '/profile',
 ] as const;
 

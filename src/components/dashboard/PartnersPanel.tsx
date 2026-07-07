@@ -10,6 +10,7 @@ import { useVendors } from '@/context/VendorContext';
 import { useEndClients } from '@/context/EndClientContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useTimesheets } from '@/context/TimesheetContext';
+import { money } from '@/lib/format';
 import type { Employee } from '@/types/employee';
 
 type PartnerRow = { id: string; name: string; contact?: string; status?: string; people: number; revenue?: number };
@@ -21,8 +22,6 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType; base: string 
   { key: 'endclients', label: 'End Clients', icon: Target, base: '/endclients' },
   { key: 'subcontractors', label: 'Subcontractors', icon: UserRoundCheck, base: '/subcontractors' },
 ];
-
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 export default function PartnersPanel() {
   const router = useRouter();
@@ -97,12 +96,19 @@ export default function PartnersPanel() {
           <table className="w-full min-w-[620px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
-                {headers.map((h) => <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>)}
+                {headers.map((h) => <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} onClick={() => router.push(`${base}/${r.id}`)} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
+                <tr
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => router.push(`${base}/${r.id}`)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`${base}/${r.id}`); } }}
+                  className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
+                >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{r.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
@@ -114,7 +120,7 @@ export default function PartnersPanel() {
                     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"><Users className="h-3 w-3" strokeWidth={2} />{r.people}</span>
                   </td>
                   {showRevenue && (
-                    <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{r.revenue ? usd0(r.revenue) : <span className="text-slate-300">—</span>}</td>
+                    <td className="px-5 py-3.5 text-sm font-semibold text-slate-900">{r.revenue ? money(r.revenue) : <span className="text-slate-300">—</span>}</td>
                   )}
                   <td className="px-5 py-3.5">
                     {r.status === 'Inactive' ? (
@@ -132,7 +138,7 @@ export default function PartnersPanel() {
       )}
 
       <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3">
-        <p className="text-xs text-slate-400">Top {rows.length} of {counts[tab]} by {showRevenue ? 'revenue billed' : 'people placed'}</p>
+        <p className="text-xs text-slate-500">Top {rows.length} of {counts[tab]} by {showRevenue ? 'revenue billed' : 'people placed'}</p>
         <button onClick={() => router.push(base)} className="text-xs font-semibold text-brand-700 hover:underline">View all →</button>
       </div>
     </section>

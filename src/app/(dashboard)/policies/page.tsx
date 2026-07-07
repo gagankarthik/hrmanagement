@@ -21,6 +21,8 @@ import { Switch } from '@/components/ui/switch';
 import { DetailField, DetailGrid } from '@/components/ui/section-card';
 import { useHandbook } from '@/context/HandbookContext';
 import { useAccess } from '@/hooks/useAccess';
+import { useSelfEmployee } from '@/hooks/useSelfEmployee';
+import { EmptyState } from '@/components/ui/empty-state';
 import { CategoryPolicy, LeaveAccrualTier } from '@/types/handbook';
 import { EmployeeType } from '@/types/employee';
 import { UploadedDoc } from '@/types/uploads';
@@ -597,20 +599,44 @@ function PolicyCard({ type, index }: { type: EmployeeType; index: number }) {
 }
 
 export default function PoliciesPage() {
+  const { canManage } = useAccess();
+  const self = useSelfEmployee();
+
+  // Admin / HR manage the framework for every category. Everyone else only sees
+  // the policy for their own employment category (e.g. a W2 hire sees just W2).
+  const visibleTypes: EmployeeType[] = canManage
+    ? EMPLOYEE_TYPES
+    : self?.type && EMPLOYEE_TYPES.includes(self.type)
+    ? [self.type]
+    : [];
+
   return (
     <div className="space-y-6">
       <PageHeader
         icon={ShieldCheck}
         eyebrow="Company"
         title="Policies"
-        description="Define the company leave policy framework — entitlement, accrual, and rules — for each employee category"
+        description={
+          canManage
+            ? 'Define the company leave policy framework: entitlement, accrual, and rules for each employee category'
+            : 'Your leave policy framework: entitlement, accrual, and rules for your employment category'
+        }
         tone="brand"
       />
-      <div className="grid gap-5 sm:grid-cols-2">
-        {EMPLOYEE_TYPES.map((type, i) => (
-          <PolicyCard key={type} type={type} index={i} />
-        ))}
-      </div>
+      {visibleTypes.length === 0 ? (
+        <EmptyState
+          icon={ShieldCheck}
+          tone="default"
+          title="No policy to show yet"
+          description="Policies are shown for your employment category. We couldn't match your account to an employee record, so reach out to HR to get set up."
+        />
+      ) : (
+        <div className="grid gap-5 sm:grid-cols-2">
+          {visibleTypes.map((type, i) => (
+            <PolicyCard key={type} type={type} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

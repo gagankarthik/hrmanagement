@@ -2,10 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { fetchUserAttributes, updateUserAttributes, updatePassword } from 'aws-amplify/auth';
-import { UserRound, Mail, Phone, IdCard, KeyRound, Save, Loader2, LogOut } from 'lucide-react';
+import { UserRound, Mail, Phone, IdCard, KeyRound, Save, Loader2, LogOut, Briefcase } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/ui/toast';
+import { useSelfEmployee } from '@/hooks/useSelfEmployee';
+import { getFieldsByType, type FormField } from '@/types/employee';
+import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
+import { formatDate, money } from '@/lib/format';
+
+// Financial fields an employee must not see on their own profile: the client
+// bill rate (and technical relationship IDs). Pay / pay rate / salary stay.
+const HIDDEN_SELF_FIELDS = new Set(['billRate', 'clientId', 'vendorId']);
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 
@@ -17,6 +25,40 @@ function initialsOf(name?: string, email?: string) {
 export default function ProfilePage() {
   const { user, refreshSession, signOut } = useAuth();
   const toast = useToast();
+  const self = useSelfEmployee();
+
+  // The signed-in user's own employment profile, grouped into the same sections
+  // as the admin view but with bill-rate amounts removed. Only fields that
+  // actually have a value are shown, so it stays a clean read-only summary.
+  const employmentSections = React.useMemo(() => {
+    if (!self) return [];
+    const rec = self as unknown as Record<string, unknown>;
+    const value = (field: FormField): React.ReactNode => {
+      const raw = rec[field.name];
+      if (field.type === 'checkbox') return raw ? 'Yes' : 'No';
+      if (raw === undefined || raw === null || raw === '') return undefined;
+      if (field.type === 'select') return field.options?.find((o) => o.value === String(raw))?.label ?? String(raw);
+      if (field.type === 'date') return formatDate(String(raw));
+      if (field.type === 'number') {
+        const n = Number(raw);
+        if (Number.isNaN(n)) return String(raw);
+        return /pay|salary|rate|reimbursement/i.test(field.name) ? money(n) : String(n);
+      }
+      return String(raw);
+    };
+    const fields = getFieldsByType(self.type).filter((f) => !HIDDEN_SELF_FIELDS.has(f.name));
+    const sections = [...EMPLOYEE_FORM_SECTIONS, { id: 'other', title: 'Additional details' }];
+    return sections
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        items: fields
+          .filter((f) => sectionForField(f.name) === s.id)
+          .map((f) => ({ label: f.label, value: value(f) }))
+          .filter((it) => it.value !== undefined),
+      }))
+      .filter((s) => s.items.length > 0);
+  }, [self]);
 
   // Profile details
   const [name, setName] = useState('');
@@ -124,6 +166,34 @@ export default function ProfilePage() {
           {user?.email && <p className="truncate text-sm text-slate-500">{user.email}</p>}
         </div>
       </div>
+
+      {/* Employment profile — the signed-in user's own record (bill rates hidden) */}
+      {self && employmentSections.length > 0 && (
+        <div className="surface p-5 sm:p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <Briefcase className="h-4 w-4 text-brand-600" strokeWidth={1.75} />
+            <h2 className="font-display text-lg font-bold text-slate-900">Employment profile</h2>
+            <span className="ml-1 inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{self.type}</span>
+            {self.position && <span className="text-sm text-slate-500">{self.position}</span>}
+          </div>
+          <p className="mt-1 text-sm text-slate-500">Your role, assignment and pay details on record. Managed by HR.</p>
+          <div className="mt-5 space-y-6">
+            {employmentSections.map((section) => (
+              <div key={section.id} className="border-b border-dashed border-slate-200 pb-5 last:border-0 last:pb-0">
+                <h3 className="font-display text-[13px] font-bold text-brand-900">{section.title}</h3>
+                <div className="mt-3 grid gap-x-6 gap-y-4 grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))]">
+                  {section.items.map((it) => (
+                    <div key={it.label} className="min-w-0">
+                      <p className="text-xs text-slate-500">{it.label}</p>
+                      <p className="mt-0.5 break-words text-sm font-semibold text-slate-900">{it.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Details */}

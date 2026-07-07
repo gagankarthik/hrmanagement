@@ -9,10 +9,10 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useToast } from '@/components/ui/toast';
 import { exportToCsv } from '@/lib/export';
+import { money } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import type { Employee } from '@/types/employee';
-
-const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 function marginTone(pct: number) {
   if (pct >= 30) return { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200', bar: 'bg-emerald-500' };
@@ -79,7 +79,7 @@ export default function MarginsPage() {
       });
       toast.success('Rates saved', `${emp.name || 'Worker'} updated.`);
     } catch (err) {
-      toast.error('Could not save rates', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Could not save rates', friendlyError(err));
     } finally {
       setSavingId(null);
     }
@@ -116,9 +116,9 @@ export default function MarginsPage() {
 
       <StatGrid cols={4}>
         <StatCard label="Placements priced" value={rated.length} icon={TrendingUp} tone="brand" hint={`${rows.length} active workers`} />
-        <StatCard label={`Weekly gross profit`} value={usd0(totalWeeklyGp)} icon={DollarSign} tone="emerald" hint={`at ${hoursPerWeek} hrs/wk`} />
+        <StatCard label={`Weekly gross profit`} value={money(totalWeeklyGp)} icon={DollarSign} tone="emerald" hint={`at ${hoursPerWeek} hrs/wk`} />
         <StatCard label="Blended margin" value={`${blendedMargin.toFixed(1)}%`} icon={Percent} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} />
-        <StatCard label="Annualized GP" value={usd0(totalWeeklyGp * 52)} icon={DollarSign} tone="purple" hint="weekly × 52" />
+        <StatCard label="Annualized GP" value={money(totalWeeklyGp * 52)} icon={DollarSign} tone="purple" hint="weekly × 52" />
       </StatGrid>
 
       <div className="surface">
@@ -149,7 +149,7 @@ export default function MarginsPage() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {['Worker', 'Client', 'Bill / hr', 'Pay / hr', 'Spread', `Weekly GP`, 'Margin', ''].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -165,7 +165,7 @@ export default function MarginsPage() {
                         </span>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</p>
-                          <p className="truncate text-xs text-slate-400">{e.type}</p>
+                          <p className="truncate text-xs text-slate-500">{e.type}</p>
                         </div>
                       </div>
                     </td>
@@ -192,8 +192,8 @@ export default function MarginsPage() {
                         />
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-sm font-medium text-slate-700">{bill > 0 ? usd0(bill - pay) : <span className="text-slate-300">—</span>}</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-slate-900">{bill > 0 ? usd0(weeklyGp) : <span className="text-slate-300">—</span>}</td>
+                    <td className="px-5 py-3 text-sm font-medium text-slate-700">{bill > 0 ? money(bill - pay) : <span className="text-slate-300">—</span>}</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-slate-900">{bill > 0 ? money(weeklyGp) : <span className="text-slate-300">—</span>}</td>
                     <td className="px-5 py-3">
                       {bill > 0 ? (
                         <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1', tone.badge)}>

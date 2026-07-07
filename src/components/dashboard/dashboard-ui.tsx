@@ -145,7 +145,7 @@ export function KpiCard({
       <div className="mt-4 flex items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="tnum font-display text-3xl font-bold leading-none text-slate-900">{value}</p>
+            <p className="tnum min-w-0 truncate font-display text-3xl font-bold leading-none text-slate-900">{value}</p>
             {delta && <DeltaIndicator delta={delta} period={period} />}
           </div>
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-slate-500">

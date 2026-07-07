@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { format } from 'date-fns';
 import {
   ArrowLeft,
   HeartPulse,
@@ -17,6 +16,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDate, money } from '@/lib/format';
+import { friendlyError } from '@/lib/errors';
 import { useBenefits } from '@/context/BenefitsContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { BenefitType } from '@/types/benefits';
@@ -40,7 +41,7 @@ const typeChipStyles: Record<BenefitType, string> = {
 
 function fmtMoney(n?: number) {
   if (n === undefined || n === null || Number.isNaN(n)) return null;
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  return money(n, { cents: true });
 }
 
 function BenefitDetailPageContent() {
@@ -74,7 +75,7 @@ function BenefitDetailPageContent() {
       toast.success('Benefit deleted', `${plan.name} has been removed.`);
       router.push('/benefits');
     } catch (err) {
-      toast.error('Failed to delete benefit', err instanceof Error ? err.message : 'Please try again.');
+      toast.error('Failed to delete benefit', friendlyError(err));
       setDeleting(false);
       setConfirmOpen(false);
     }
@@ -238,8 +239,8 @@ function BenefitDetailPageContent() {
               </div>
             )}
 
-            <div className="border-t border-slate-100 pt-3 text-xs text-slate-400">
-              {format(new Date(plan.createdAt), 'MMM d, yyyy')} — {format(new Date(plan.updatedAt), 'MMM d, yyyy')}
+            <div className="border-t border-slate-100 pt-3 text-xs text-slate-500">
+              {formatDate(plan.createdAt)} — {formatDate(plan.updatedAt)}
             </div>
           </div>
         </SectionCard>
@@ -313,17 +314,25 @@ function BenefitDetailPageContent() {
             {enrolled.map((emp, idx) => (
               <div
                 key={emp.id ?? idx}
-                className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50"
+                role="button"
+                tabIndex={0}
+                className="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200"
                 onClick={() => router.push(`/employees/${emp.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    router.push(`/employees/${emp.id}`);
+                  }
+                }}
               >
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white">
                   {emp.name?.charAt(0) ?? '?'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900">{emp.name}</p>
-                  {emp.position && <p className="truncate text-xs text-slate-400">{emp.position}</p>}
+                  {emp.position && <p className="truncate text-xs text-slate-500">{emp.position}</p>}
                 </div>
-                <span className="hidden text-xs text-slate-400 sm:block">{emp.type}</span>
+                <span className="hidden text-xs text-slate-500 sm:block">{emp.type}</span>
                 <button
                   onClick={(e) => { e.stopPropagation(); router.push(`/employees/${emp.id}`); }}
                   className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
@@ -335,7 +344,7 @@ function BenefitDetailPageContent() {
           </div>
         )}
         <div className="border-t border-slate-100 px-5 py-3">
-          <p className="text-xs text-slate-400">Showing {enrolled.length} enrolled employee{enrolled.length !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-slate-500">Showing {enrolled.length} enrolled employee{enrolled.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
