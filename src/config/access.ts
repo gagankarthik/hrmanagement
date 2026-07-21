@@ -21,6 +21,13 @@
 export const FULL_ACCESS_ROLES = ['admin', 'hr'] as const;
 export const SELF_SERVICE_ROLES = ['recruiter', 'sales', 'employee'] as const;
 
+/**
+ * Roles allowed to reach admin-only surfaces (e.g. data backups). Stricter than
+ * full-access: `hr` can run the HR portal but only `admin` may export/restore
+ * data. Add roles here to widen that gate.
+ */
+export const ADMIN_ROLES = ['admin'] as const;
+
 /** Every role allowed to authenticate into the app (any tier). */
 export const APP_ACCESS_ROLES = [...FULL_ACCESS_ROLES, ...SELF_SERVICE_ROLES] as const;
 
@@ -61,6 +68,11 @@ export function hasAppAccess(roles: ReadonlyArray<string> | null | undefined): b
 /** True if the user has full HR-portal access (admin / hr). */
 export function hasFullAccess(roles: ReadonlyArray<string> | null | undefined): boolean {
   return hasAnyRole(roles, FULL_ACCESS_ROLES);
+}
+
+/** True if the user holds an admin role (admin-only surfaces such as backups). */
+export function isAdmin(roles: ReadonlyArray<string> | null | undefined): boolean {
+  return hasAnyRole(roles, ADMIN_ROLES);
 }
 
 /**

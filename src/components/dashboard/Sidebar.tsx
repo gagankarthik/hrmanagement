@@ -9,13 +9,13 @@ import {
   PanelLeftClose, PanelLeftOpen, BookOpen, ScrollText,
   HeartPulse, ShieldCheck, ClipboardList, UserCog,
   LayoutGrid, Users, Wallet, CalendarDays, Network, Landmark, Settings, ChevronDown, FolderOpen,
-  ClipboardCheck,
+  ClipboardCheck, DatabaseBackup,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAccess } from '@/hooks/useAccess';
 
-type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean };
+type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean; adminOnly?: boolean };
 /** `flat` sections render their items as standalone links — no collapsible header. */
 type NavSection = { heading: string; items: NavItem[]; flat?: boolean };
 
@@ -63,6 +63,7 @@ const sections: NavSection[] = [
     heading: 'Administration',
     items: [
       { label: 'Users', href: '/users', icon: UserCog },
+      { label: 'Backups', href: '/backup', icon: DatabaseBackup, adminOnly: true },
     ],
   },
 ];
@@ -88,10 +89,14 @@ function SidebarContent({
   onToggleCollapse?: () => void;
 }) {
   const pathname = usePathname();
-  const { selfServiceOnly } = useAccess();
+  const { selfServiceOnly, admin } = useAccess();
 
-  // Self-service (recruiter / sales) users get the limited portal nav.
-  const navSections = selfServiceOnly ? selfServiceSections : sections;
+  // Self-service (recruiter / sales) users get the limited portal nav. Full-access
+  // users see the full nav, with admin-only items (e.g. Backups) hidden from
+  // non-admins (hr) and any section left empty by that filter dropped.
+  const navSections = (selfServiceOnly ? selfServiceSections : sections)
+    .map((s) => ({ ...s, items: s.items.filter((i) => !i.adminOnly || admin) }))
+    .filter((s) => s.items.length > 0);
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
