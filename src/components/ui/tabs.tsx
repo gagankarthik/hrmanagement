@@ -49,7 +49,7 @@ export function Tabs<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={cn('flex items-center gap-1 overflow-x-auto border-b border-slate-200', className)}
+      className={cn('flex items-center gap-1 overflow-x-auto border-b border-[var(--adm-line)]', className)}
     >
       {items.map((t, i) => {
         const active = t.value === value;
@@ -65,8 +65,10 @@ export function Tabs<T extends string>({
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(
-              'relative inline-flex items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
-              active ? 'text-brand-700' : 'text-slate-500 hover:text-slate-800',
+              'relative inline-flex items-center gap-2 whitespace-nowrap px-3.5 py-2.5 text-[13.5px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)]',
+              active
+                ? 'font-semibold text-[var(--adm-accent)]'
+                : 'text-[var(--adm-ink-mute)] hover:text-[var(--adm-ink)]',
             )}
           >
             {t.dotColor && <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t.dotColor }} />}
@@ -75,14 +77,14 @@ export function Tabs<T extends string>({
             {typeof t.count === 'number' && (
               <span
                 className={cn(
-                  'rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums',
-                  active ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-500',
+                  'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+                  active ? 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)]' : 'bg-[var(--adm-surface-2)] text-[var(--adm-ink-mute)]',
                 )}
               >
                 {t.count}
               </span>
             )}
-            {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-brand-600" />}
+            {active && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-[var(--adm-accent)]" />}
           </button>
         );
       })}

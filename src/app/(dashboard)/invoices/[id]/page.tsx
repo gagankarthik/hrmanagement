@@ -77,7 +77,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
 
   if (!inv) {
     return (
-      <div className="mx-auto max-w-3xl space-y-5">
+      <div className="max-w-3xl space-y-5">
         <button onClick={() => router.push('/invoices')} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-brand-700">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to Invoices
         </button>
@@ -112,7 +112,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       <div className="flex items-center justify-between">
         <button onClick={() => router.push('/invoices')} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-brand-700">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to Invoices

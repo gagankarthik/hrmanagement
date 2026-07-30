@@ -1,40 +1,21 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
-  Search, Menu, Bell, ChevronDown, LogOut,
+  Search, Menu, Bell, LogOut,
   UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft, UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useAccess } from '@/hooks/useAccess';
-import { usePreferences } from '@/context/PreferencesContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { ActivityDrawer } from '@/components/dashboard/ActivityDrawer';
-import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/breadcrumb';
 
 type Result = { key: string; label: string; sub?: string; group: string; href: string; icon: React.ElementType };
-
-/** Human labels for route segments, for the top-bar breadcrumb. */
-const SEGMENT_LABELS: Record<string, string> = {
-  employees: 'Employees', onboard: 'Onboard', documents: 'Documents',
-  leaves: 'Leaves', attendance: 'Attendance', margins: 'Margins', timesheets: 'Timesheets',
-  invoices: 'Invoices', payroll: 'Payroll', clients: 'Clients', endclients: 'End Clients',
-  vendors: 'Vendors', subcontractors: 'Subcontractors', handbook: 'Handbook', procedures: 'Procedures',
-  policies: 'Policies', benefits: 'Benefits', compliance: 'Compliance', i9: 'Form I-9', i983: 'Form I-983',
-  users: 'Users', reports: 'Reports', profile: 'Profile', new: 'New', edit: 'Edit',
-};
-
-/** A path segment that isn't a known page is treated as a record id → "Details". */
-function segmentLabel(seg: string): string {
-  if (SEGMENT_LABELS[seg]) return SEGMENT_LABELS[seg];
-  if (/\d/.test(seg) || seg.length > 16) return 'Details';
-  return seg.charAt(0).toUpperCase() + seg.slice(1);
-}
 
 /**
  * Dismiss a popover by listening for pointer events outside `ref`.
@@ -57,23 +38,8 @@ function useClickOutside<T extends HTMLElement>(enabled: boolean, onOutside: () 
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { selfServiceOnly } = useAccess();
-  const { density, setDensity } = usePreferences();
-
-  // Auto breadcrumb from the path (the Home icon stands in for /dashboard).
-  const crumbs = useMemo<BreadcrumbItem[]>(() => {
-    const parts = (pathname || '').split('/').filter(Boolean);
-    const items: BreadcrumbItem[] = [];
-    let href = '';
-    parts.forEach((seg) => {
-      href += `/${seg}`;
-      if (seg === 'dashboard') return;
-      items.push({ label: segmentLabel(seg), href });
-    });
-    return items;
-  }, [pathname]);
   const { employees } = useEmployees();
   const { clients } = useClients();
   const { vendors } = useVendors();
@@ -137,26 +103,25 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white/90 px-3 backdrop-blur sm:gap-3 sm:px-5 lg:grid lg:grid-cols-[1fr_minmax(0,28rem)_1fr]">
-      {/* Left — mobile menu trigger + breadcrumb location context */}
-      <div className="flex min-w-0 items-center gap-2">
+    <header className="relative z-30 flex h-16 items-center justify-between gap-3 bg-[var(--adm-chrome)] px-4 lg:px-6">
+      {/* Left — mobile menu trigger */}
+      <div className="flex min-w-0 items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
+          className="rounded-md p-1.5 text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)] lg:hidden"
           aria-label="Open menu"
         >
-          <Menu className="h-4 w-4" strokeWidth={1.75} />
+          <Menu className="h-5 w-5" strokeWidth={1.75} />
         </button>
-        <Breadcrumb items={crumbs} className="hidden min-w-0 lg:flex" />
       </div>
 
-      {/* Center — global search (full-access only; self-service users have no
-          records to search and shouldn't see other people's data). */}
-      {selfServiceOnly ? (
-        <div aria-hidden className="hidden lg:block lg:justify-self-center" />
-      ) : (
-      <div ref={searchRef} className="relative w-full max-w-md lg:justify-self-center">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={1.75} />
+      {/* Center — absolutely centered global search (full-access only;
+          self-service users have no records to search and shouldn't see
+          other people's data). */}
+      {!selfServiceOnly && (
+      <div className="absolute left-1/2 top-1/2 hidden w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 px-14 md:block">
+      <div ref={searchRef} className="relative mx-auto w-full max-w-md">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--adm-ink-subtle)]" strokeWidth={1.75} />
         <input
           type="text"
           role="combobox"
@@ -167,14 +132,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           onFocus={() => query && setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder="Search people, clients, vendors…"
-          className="w-full rounded-full border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+          className="w-full rounded-[8px] border border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] py-1.5 pl-8 pr-3 text-sm text-[var(--adm-ink)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:bg-white focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
         />
 
         {open && q && (
           <>
             <div
               role="listbox"
-              className="surface absolute left-0 right-0 z-20 mt-2 max-h-[70vh] overflow-y-auto p-1.5 animate-in fade-in slide-in-from-top-1 duration-150"
+              className="absolute left-0 right-0 z-20 mt-1.5 max-h-[70vh] overflow-y-auto rounded-[8px] border border-[var(--adm-line)] bg-white p-1.5 shadow-[var(--adm-shadow-pop)] animate-in fade-in slide-in-from-top-1 duration-150"
             >
               {results.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-slate-400">No matches for &ldquo;{query.trim()}&rdquo;</p>
@@ -222,40 +187,45 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           </>
         )}
       </div>
+      </div>
       )}
 
-      <div className="ml-auto flex items-center justify-end gap-1.5 sm:gap-2 lg:ml-0">
+      <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2.5">
         {/* Notifications → recent activity side sheet (full-access only) */}
         {!selfServiceOnly && (
         <button
           onClick={() => setActivityOpen(true)}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+          className="relative rounded-lg p-2 text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]"
           aria-label="Recent activity"
           title="Recent activity"
         >
-          <Bell className="h-4 w-4" strokeWidth={1.75} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-500" />
+          <Bell className="h-5 w-5" strokeWidth={1.75} />
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--adm-accent)]" />
         </button>
         )}
+
+        <div className="mx-1 hidden h-6 w-px bg-[var(--adm-line-strong)] md:block" aria-hidden />
 
         {/* User dropdown */}
         <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-2 transition-colors hover:bg-slate-50"
+            className={cn(
+              'flex items-center rounded-full border border-transparent p-0.5 transition-colors hover:border-[var(--adm-line-strong)] hover:bg-[var(--adm-row-hover)]',
+              menuOpen && 'border-[var(--adm-line-strong)] bg-[var(--adm-row-hover)]',
+            )}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
+            aria-label="Open profile menu"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white ring-2 ring-white/80 shadow-sm">
               {initials}
             </span>
-            <span className="hidden max-w-[120px] truncate text-sm font-semibold text-slate-700 sm:block">{name}</span>
-            <ChevronDown className={cn('hidden h-4 w-4 text-slate-400 transition-transform sm:block', menuOpen && 'rotate-180')} strokeWidth={1.75} />
           </button>
 
           {menuOpen && (
             <>
-              <div className="surface absolute right-0 z-20 mt-2 w-60 overflow-hidden p-0 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white shadow-[var(--adm-shadow-pop)] animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">
                     {initials}
@@ -266,26 +236,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   </div>
                 </div>
                 <div className="p-1.5">
-                  {/* Display density preference */}
-                  <div className="px-2 pb-2 pt-1">
-                    <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Display density</p>
-                    <div className="flex gap-1 rounded-lg bg-slate-100 p-0.5">
-                      {(['comfortable', 'compact'] as const).map((d) => (
-                        <button
-                          key={d}
-                          onClick={() => setDensity(d)}
-                          aria-pressed={density === d}
-                          className={cn(
-                            'flex-1 rounded-md px-2 py-1 text-xs font-semibold capitalize transition-colors',
-                            density === d ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-700',
-                          )}
-                        >
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="my-1 border-t border-slate-100" />
                   <button
                     onClick={() => { setMenuOpen(false); router.push('/profile'); }}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"

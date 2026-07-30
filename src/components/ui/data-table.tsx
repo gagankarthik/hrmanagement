@@ -224,13 +224,13 @@ export function DataTable<T>({
             onClick={() => setColMenuOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={colMenuOpen}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[13px] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Columns
           </button>
           {colMenuOpen && (
-            <div role="menu" className="surface absolute right-3 top-full z-20 mt-1 w-52 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100">
-              <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Show columns</p>
+            <div role="menu" className="absolute right-3 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100">
+              <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Show columns</p>
               {hideableCols.map((c) => {
                 const shown = !hidden.has(c.id);
                 return (
@@ -240,10 +240,10 @@ export function DataTable<T>({
                     role="menuitemcheckbox"
                     aria-checked={shown}
                     onClick={() => toggleHidden(c.id)}
-                    className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                    className="flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[13.5px] font-medium text-[var(--adm-ink)] transition-colors hover:bg-[var(--adm-row-hover)]"
                   >
                     {colLabel(c)}
-                    <span className={cn('flex h-4 w-4 items-center justify-center rounded border', shown ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300')}>
+                    <span className={cn('flex h-4 w-4 items-center justify-center rounded-[4px] border', shown ? 'border-[var(--adm-accent)] bg-[var(--adm-accent)] text-white' : 'border-[var(--adm-line-strong)]')}>
                       {shown && <Check className="h-3 w-3" strokeWidth={3} />}
                     </span>
                   </button>
@@ -255,18 +255,18 @@ export function DataTable<T>({
       )}
 
       <div className="overflow-x-auto">
-        <table className={cn('w-full border-collapse', minWidth)}>
+        <table className={cn('w-full border-separate border-spacing-0 [font-variant-numeric:tabular-nums]', minWidth)}>
           <caption className="sr-only">{caption}</caption>
           <thead>
-            <tr className={cn('border-b border-slate-100 bg-slate-50/60', stickyHeader && 'sticky top-0 z-10')}>
+            <tr className={cn(stickyHeader && 'sticky top-0 z-10')}>
               {selection && (
-                <th scope="col" className="w-10 px-5 py-3">
+                <th scope="col" className="w-10 border-b border-[var(--adm-line)] bg-[var(--adm-head)] px-4 pl-5">
                   <input
                     type="checkbox"
                     aria-label="Select all rows"
                     checked={selection.allSelected}
                     onChange={selection.onToggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-2 focus:ring-brand-200"
+                    className="h-4 w-4 rounded-[5px] border-[var(--adm-line)] accent-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                   />
                 </th>
               )}
@@ -279,7 +279,7 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500',
+                      'h-12 whitespace-nowrap border-b border-[var(--adm-line)] bg-[var(--adm-head)] px-4 text-[13px] font-medium text-[var(--adm-head-ink)] first:pl-5 last:pr-5',
                       alignClass[col.align ?? 'left'],
                       col.width,
                       col.hideBelow && hideClass[col.hideBelow],
@@ -291,8 +291,8 @@ export function DataTable<T>({
                         type="button"
                         onClick={() => toggleSort(col)}
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200',
-                          active && 'text-slate-700',
+                          'inline-flex items-center gap-1 transition-colors hover:text-[var(--adm-ink)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)]',
+                          active && 'font-semibold text-[var(--adm-accent)]',
                         )}
                       >
                         {col.header}
@@ -304,30 +304,30 @@ export function DataTable<T>({
                   </th>
                 );
               })}
-              {rowActions && <th scope="col" className="w-16 px-5 py-3" />}
+              {rowActions && <th scope="col" className="w-16 border-b border-[var(--adm-line)] bg-[var(--adm-head)] px-4 pr-5" />}
             </tr>
           </thead>
 
           <tbody>
             {isLoading
               ? Array.from({ length: 6 }).map((_, r) => (
-                  <tr key={`sk-${r}`} className="border-b border-slate-50 last:border-0">
+                  <tr key={`sk-${r}`} className="group/row">
                     {selection && (
-                      <td className="px-5 py-3.5">
-                        <div className="h-4 w-4 animate-pulse rounded bg-slate-100" />
+                      <td className="border-b border-[var(--adm-line-soft)] px-4 py-4 pl-5 group-last/row:border-b-0">
+                        <div className="h-4 w-4 animate-pulse rounded bg-[var(--adm-surface-2)]" />
                       </td>
                     )}
                     {visibleColumns.map((col) => (
                       <td
                         key={col.id}
-                        className={cn('px-5 py-3.5', col.hideBelow && hideClass[col.hideBelow])}
+                        className={cn('border-b border-[var(--adm-line-soft)] px-4 py-4 first:pl-5 last:pr-5 group-last/row:border-b-0', col.hideBelow && hideClass[col.hideBelow])}
                       >
-                        <div className={cn('h-4 animate-pulse rounded bg-slate-100', r % 2 ? 'w-1/2' : 'w-3/4')} />
+                        <div className={cn('h-4 animate-pulse rounded bg-[var(--adm-surface-2)]', r % 2 ? 'w-1/2' : 'w-3/4')} />
                       </td>
                     ))}
                     {rowActions && (
-                      <td className="px-5 py-3.5">
-                        <div className="ml-auto h-4 w-4 animate-pulse rounded bg-slate-100" />
+                      <td className="border-b border-[var(--adm-line-soft)] px-4 py-4 pr-5 group-last/row:border-b-0">
+                        <div className="ml-auto h-4 w-4 animate-pulse rounded bg-[var(--adm-surface-2)]" />
                       </td>
                     )}
                   </tr>
@@ -353,20 +353,20 @@ export function DataTable<T>({
                       tabIndex={clickable ? 0 : undefined}
                       role={clickable ? 'button' : undefined}
                       className={cn(
-                        'border-b border-slate-50 transition-colors last:border-0',
+                        'group/row bg-white transition-colors duration-100',
                         clickable &&
-                          'cursor-pointer hover:bg-slate-50 focus:outline-none focus-visible:bg-brand-50/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200',
-                        selected && 'bg-brand-50/50',
+                          'cursor-pointer hover:bg-[var(--adm-row-hover)] hover:shadow-[inset_3px_0_0_var(--adm-accent-soft)] focus:outline-none focus-visible:bg-[var(--adm-accent-tint)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--adm-focus-ring)]',
+                        selected && '!bg-[var(--adm-accent-tint)] shadow-[inset_3px_0_0_var(--adm-accent)]',
                       )}
                     >
                       {selection && (
-                        <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                        <td className="border-b border-[var(--adm-line-soft)] px-4 py-3.5 pl-5 group-last/row:border-b-0" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             aria-label="Select row"
                             checked={selected}
                             onChange={() => selection.onToggleRow(id)}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-2 focus:ring-brand-200"
+                            className="h-4 w-4 rounded-[5px] border-[var(--adm-line)] accent-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                           />
                         </td>
                       )}
@@ -374,7 +374,7 @@ export function DataTable<T>({
                         <td
                           key={col.id}
                           className={cn(
-                            'px-5 py-3.5 text-sm text-slate-600',
+                            'border-b border-[var(--adm-line-soft)] px-4 py-3.5 text-[14px] text-[var(--adm-ink-mute)] first:pl-5 last:pr-5 group-last/row:border-b-0',
                             alignClass[col.align ?? 'left'],
                             col.hideBelow && hideClass[col.hideBelow],
                             col.cellClassName,
@@ -384,8 +384,8 @@ export function DataTable<T>({
                         </td>
                       ))}
                       {rowActions && (
-                        <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end">{rowActions(row)}</div>
+                        <td className="border-b border-[var(--adm-line-soft)] px-4 py-3.5 pr-5 group-last/row:border-b-0" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100">{rowActions(row)}</div>
                         </td>
                       )}
                     </tr>

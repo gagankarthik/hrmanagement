@@ -6,28 +6,18 @@ import Image from 'next/image';
 import { Menu, X, LayoutDashboard, LogOut, ChevronDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { BrandMark } from '@/components/ui/brand-mark';
 import { BRAND } from '@/config/brand';
 
 const navLinks = [
-  { href: '#culture', label: 'Why us' },
-  { href: '#benefits', label: 'Benefits' },
-  { href: '#join', label: 'Join us' },
+  { href: '#platform', label: 'Platform' },
+  { href: '#ess', label: 'Self-service' },
+  { href: '#access', label: 'Get access' },
 ];
 
-function Logo({ className, onDark = false }: { className?: string; onDark?: boolean }) {
+function Logo({ className }: { className?: string }) {
   return (
-    <Link href="/" className={cn('flex items-center gap-2.5', className)} aria-label={`${BRAND.name} home`}>
-      {onDark ? (
-        <>
-          <BrandMark size={36} variant="light" className="shadow-sm" />
-          <span className="font-display text-lg font-bold tracking-tight text-white">
-            {BRAND.name}
-          </span>
-        </>
-      ) : (
-        <Image src="/logo.png" alt={BRAND.name} width={277} height={76} priority className="h-9 w-auto" />
-      )}
+    <Link href="/" className={cn('flex items-center', className)} aria-label={`${BRAND.name} home`}>
+      <Image src="/logo.png" alt={BRAND.name} width={277} height={76} priority className="h-7 w-auto object-contain md:h-9" />
     </Link>
   );
 }
@@ -44,7 +34,8 @@ function initialsFrom(name?: string, email?: string) {
 function Avatar({ name, email }: { name?: string; email?: string }) {
   return (
     <span
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-900 text-xs font-bold text-white ring-1 ring-brand-700"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--hz-cobalt)] text-xs font-bold text-white"
+      style={{ boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3)' }}
       aria-hidden
     >
       {initialsFrom(name, email)}
@@ -97,7 +88,7 @@ function UserMenu({ name, email, onSignOut }: { name?: string; email?: string; o
       {open && (
         <div
           role="menu"
-          className="surface absolute right-0 mt-2 w-64 overflow-hidden p-0 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-2 w-64 overflow-hidden rounded-2xl border border-[var(--hz-line)] bg-white shadow-[var(--hz-shadow-md)] animate-in fade-in zoom-in-95 duration-100"
         >
           <div className="flex items-center gap-3 border-b border-slate-100 px-3.5 py-3">
             <Avatar name={name} email={email} />
@@ -140,14 +131,20 @@ function UserMenu({ name, email, onSignOut }: { name?: string; email?: string; o
 }
 
 /**
- * Landing site navigation — sticky, on-brand, mobile-responsive, auth-aware.
- * Lives inside AuthProvider (wired in src/app/layout.tsx), so useAuth is safe here.
+ * Landing site navigation — fixed, white at rest, frosted glass once scrolled
+ * (the company-site header treatment), mobile floating panel, auth-aware.
  */
 export function SiteNav() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, isLoading, user, signOut } = useAuth();
 
-  const displayName = user?.name || user?.email;
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleSignOut = async () => {
     setOpen(false);
@@ -159,9 +156,17 @@ export function SiteNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e2e8f0] bg-white/85 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
-        <Logo />
+    <header
+      className={cn(
+        'fixed left-0 right-0 top-0 z-50 transition-all duration-300 ease-out',
+        scrolled
+          ? 'border-b border-white/40 bg-white/60 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.18)] backdrop-blur-xl backdrop-saturate-150'
+          : 'border-b border-gray-100 bg-white',
+      )}
+    >
+      <nav className="relative mx-auto w-full max-w-7xl px-6 sm:px-8 2xl:max-w-[96rem]" aria-label="Global">
+        <div className="flex h-16 items-center justify-between md:h-[72px]">
+          <Logo />
 
           {/* Center links */}
           <div className="hidden items-center gap-1 lg:flex">
@@ -169,7 +174,7 @@ export function SiteNav() {
               <a
                 key={l.href}
                 href={l.href}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-brand-50 hover:text-brand-900"
+                className="rounded-lg px-3.5 py-2 text-[14px] font-medium text-gray-700 transition-colors hover:text-[var(--hz-cobalt)]"
               >
                 {l.label}
               </a>
@@ -179,10 +184,9 @@ export function SiteNav() {
           {/* Right: auth-aware actions (desktop) */}
           <div className="hidden items-center gap-2 lg:flex">
             {isLoading ? (
-              // Neutral placeholder while auth resolves — no flicker, no crash
               <div className="flex items-center gap-2" aria-hidden>
-                <div className="h-4 w-14 animate-pulse rounded-full bg-black/5" />
-                <div className="h-9 w-28 animate-pulse rounded-full bg-black/5" />
+                <div className="h-4 w-20 animate-pulse rounded-full bg-black/5" />
+                <div className="h-9 w-24 animate-pulse rounded-full bg-black/5" />
               </div>
             ) : isAuthenticated ? (
               <UserMenu name={user?.name} email={user?.email} onSignOut={handleSignOut} />
@@ -190,11 +194,14 @@ export function SiteNav() {
               <>
                 <Link
                   href="/signup"
-                  className="rounded-full px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-brand-900"
+                  className="rounded-lg px-3.5 py-2 text-[14px] font-medium text-gray-700 transition-colors hover:text-[var(--hz-cobalt)]"
                 >
                   Request access
                 </Link>
-                <Link href="/login" className="btn-primary">
+                <Link
+                  href="/login"
+                  className="hz-btn-fill rounded-full bg-[var(--hz-cobalt)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-shadow hover:shadow-md"
+                >
                   Sign in
                 </Link>
               </>
@@ -204,26 +211,27 @@ export function SiteNav() {
           {/* Hamburger (mobile) */}
           <button
             onClick={() => setOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-brand-900 hover:bg-black/5 lg:hidden"
+            className="grid h-11 w-11 place-items-center rounded-lg bg-gray-100 text-[var(--hz-text)] lg:hidden"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" strokeWidth={1.75} />
           </button>
-        </nav>
+        </div>
+      </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile floating panel */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="lg:hidden">
           <div
-            className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-[#e2e8f0] bg-[#f8fafc] p-5 shadow-2xl">
+          <div className="fixed left-4 right-4 top-20 z-50 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-3xl border border-gray-100 bg-white p-5 shadow-2xl sm:left-auto sm:w-96">
             <div className="mb-4 flex items-center justify-between">
               <Logo />
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-slate-500 hover:bg-black/5"
+                className="grid h-10 w-10 place-items-center rounded-lg text-slate-500 hover:bg-black/5"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" strokeWidth={1.75} />
@@ -243,26 +251,26 @@ export function SiteNav() {
               ))}
             </div>
 
-            <div className="mt-4 border-t border-[#e2e8f0] pt-4">
+            <div className="mt-4 border-t border-gray-100 pt-4">
               {isLoading ? (
                 <div className="space-y-3" aria-hidden>
-                  <div className="h-9 w-full animate-pulse rounded-full bg-black/5" />
-                  <div className="h-9 w-full animate-pulse rounded-full bg-black/5" />
+                  <div className="h-10 w-full animate-pulse rounded-full bg-black/5" />
+                  <div className="h-10 w-full animate-pulse rounded-full bg-black/5" />
                 </div>
               ) : isAuthenticated ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2.5 px-1">
                     <Avatar name={user?.name} email={user?.email} />
-                    {displayName && (
+                    {(user?.name || user?.email) && (
                       <span className="truncate text-sm font-medium text-slate-700">
-                        {displayName}
+                        {user?.name || user?.email}
                       </span>
                     )}
                   </div>
                   <Link
                     href="/dashboard"
                     onClick={() => setOpen(false)}
-                    className="btn-primary w-full"
+                    className="hz-btn-fill inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--hz-cobalt)] px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     <LayoutDashboard className="h-4 w-4" strokeWidth={1.75} />
                     Go to dashboard
@@ -270,7 +278,7 @@ export function SiteNav() {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="btn-ghost w-full"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--hz-line-2)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--hz-text)] transition-colors hover:border-[var(--hz-cobalt)] hover:text-[var(--hz-cobalt)]"
                   >
                     <LogOut className="h-4 w-4" strokeWidth={1.75} />
                     Sign out
@@ -279,18 +287,18 @@ export function SiteNav() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <Link
-                    href="/signup"
-                    onClick={() => setOpen(false)}
-                    className="btn-ghost w-full"
-                  >
-                    Request access
-                  </Link>
-                  <Link
                     href="/login"
                     onClick={() => setOpen(false)}
-                    className="btn-primary w-full"
+                    className="hz-btn-fill inline-flex w-full items-center justify-center rounded-full bg-[var(--hz-cobalt)] px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-[var(--hz-line-2)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--hz-text)] transition-colors hover:border-[var(--hz-cobalt)] hover:text-[var(--hz-cobalt)]"
+                  >
+                    Request access
                   </Link>
                 </div>
               )}

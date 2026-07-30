@@ -22,7 +22,7 @@ export default function EditSubcontractorPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-5">
+      <div className="w-full max-w-3xl space-y-5">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-20 w-full rounded-2xl" />
         <Skeleton className="h-72 w-full rounded-2xl" />

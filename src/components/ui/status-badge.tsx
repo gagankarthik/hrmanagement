@@ -9,12 +9,12 @@ import { cn } from '@/lib/utils';
  */
 export type StatusTone = 'success' | 'danger' | 'warning' | 'neutral' | 'info';
 
-const tones: Record<StatusTone, { cls: string; Icon: React.ElementType }> = {
-  success: { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', Icon: CheckCircle2 },
-  danger: { cls: 'bg-red-50 text-red-600 ring-red-200', Icon: XCircle },
-  warning: { cls: 'bg-amber-50 text-amber-700 ring-amber-200', Icon: AlertTriangle },
-  info: { cls: 'bg-brand-50 text-brand-700 ring-brand-200', Icon: Circle },
-  neutral: { cls: 'bg-slate-100 text-slate-600 ring-slate-200', Icon: Circle },
+const tones: Record<StatusTone, { cls: string; dot: string; Icon: React.ElementType }> = {
+  success: { cls: 'bg-[var(--adm-success-soft)] text-[var(--adm-success)]', dot: 'bg-emerald-500', Icon: CheckCircle2 },
+  danger: { cls: 'bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]', dot: 'bg-rose-500', Icon: XCircle },
+  warning: { cls: 'bg-[var(--adm-warning-soft)] text-[var(--adm-warning)]', dot: 'bg-amber-500', Icon: AlertTriangle },
+  info: { cls: 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)]', dot: 'bg-[var(--adm-accent)]', Icon: Circle },
+  neutral: { cls: 'bg-[var(--adm-surface-sunken)] text-[var(--adm-ink-mute)]', dot: 'bg-slate-400', Icon: Circle },
 };
 
 export function StatusBadge({
@@ -31,16 +31,18 @@ export function StatusBadge({
   className?: string;
 }) {
   const t = tones[tone];
-  const Icon = icon ?? t.Icon;
+  const Icon = icon;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
+        'inline-flex items-center gap-1.5 rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold uppercase tracking-[0.03em]',
         t.cls,
         className,
       )}
     >
-      {showIcon && <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />}
+      {showIcon && (Icon
+        ? <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
+        : <span className={cn('h-1.5 w-1.5 rounded-full', t.dot)} aria-hidden />)}
       {label}
     </span>
   );

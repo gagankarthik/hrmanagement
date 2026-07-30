@@ -17,7 +17,6 @@ import { I983Provider } from '@/context/I983Context';
 import { EmployeeDocsProvider } from '@/context/EmployeeDocsContext';
 import { OnboardingProvider } from '@/context/OnboardingContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { PreferencesProvider } from '@/context/PreferencesContext';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
 
@@ -30,7 +29,6 @@ export default function DashboardLayout({
 
   return (
     <ProtectedRoute>
-      <PreferencesProvider>
       <ClientProvider>
         <EndClientProvider>
         <VendorProvider>
@@ -46,14 +44,22 @@ export default function DashboardLayout({
                 <I983Provider>
                 <EmployeeDocsProvider>
                 <OnboardingProvider>
-                  <div className="flex min-h-screen bg-slate-50">
+                  {/* Console shell: sidebar + topbar share one borderless chrome
+                      surface; the content is a rounded canvas card that is its
+                      own scroll container (same shell as the company admin). */}
+                  <div className="adm-scope flex min-h-screen bg-[var(--adm-chrome)]">
                     <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
-                    <main id="main" className="app-canvas relative flex-1 min-w-0">
+                    <div className="min-w-0 flex-1 bg-[var(--adm-chrome)]">
                       <Topbar onMenuClick={() => setMobileNavOpen(true)} />
-                      <div className="mx-auto w-full max-w-[1360px] px-3.5 py-5 sm:px-5 lg:px-7 lg:py-6">
-                        {children}
-                      </div>
-                    </main>
+                      <main
+                        id="main"
+                        className="flex h-[calc(100vh-4rem)] min-w-0 flex-col overflow-y-auto overflow-x-hidden rounded-tl-2xl bg-[var(--adm-canvas)]"
+                      >
+                        <div className="w-full px-3.5 py-5 sm:px-5 lg:px-6 lg:py-6">
+                          {children}
+                        </div>
+                      </main>
+                    </div>
                   </div>
                 </OnboardingProvider>
                 </EmployeeDocsProvider>
@@ -70,7 +76,6 @@ export default function DashboardLayout({
         </VendorProvider>
         </EndClientProvider>
       </ClientProvider>
-      </PreferencesProvider>
     </ProtectedRoute>
   );
 }

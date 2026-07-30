@@ -41,7 +41,7 @@ export function FilterSelect<T extends string>({
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         aria-label={label}
-        className="w-full appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
+        className="h-8 w-full appearance-none rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] pl-2.5 pr-8 text-[13px] font-medium text-[var(--adm-ink-mute)] outline-none transition-colors hover:border-[var(--adm-line-strong)] hover:text-[var(--adm-ink)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -49,7 +49,7 @@ export function FilterSelect<T extends string>({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" strokeWidth={2} />
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--adm-ink-subtle)]" strokeWidth={2} />
     </div>
   );
 }

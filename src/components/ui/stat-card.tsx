@@ -47,15 +47,18 @@ export function StatCard({
 
   const content = (
     <>
-      <div className="flex items-center justify-between">
-        <div className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl ring-1 ring-inset ring-black/[0.04]', t.iconBg)}>
-          <Icon className={cn('h-5 w-5', t.iconColor)} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid h-6 w-6 flex-none place-items-center rounded-[6px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)] transition-colors group-hover/kpi:bg-[var(--adm-accent-soft)] group-hover/kpi:text-[var(--adm-accent)]">
+            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </span>
+          <p className="truncate text-[13px] font-medium text-[var(--adm-ink-mute)]">{label}</p>
         </div>
         {trend && (
           <span
             className={cn(
-              'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold',
-              trend.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+              'inline-flex flex-none items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums',
+              trend.up ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
             )}
           >
             {trend.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -64,12 +67,10 @@ export function StatCard({
         )}
       </div>
 
-      <p className="mt-3 min-w-0 truncate font-display text-[1.65rem] font-bold leading-none text-slate-900">{value}</p>
-
-      <div className="mt-1.5 flex items-end justify-between gap-2">
+      <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-slate-500">{label}</p>
-          {hint && <p className="mt-0.5 truncate text-[11px] text-slate-400">{hint}</p>}
+          <p className="min-w-0 truncate text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-[var(--adm-ink)]">{value}</p>
+          {hint && <p className="mt-1.5 truncate text-[12px] text-[var(--adm-ink-subtle)]">{hint}</p>}
         </div>
         {spark && spark.length > 1 && (
           <Sparkline
@@ -85,7 +86,7 @@ export function StatCard({
     </>
   );
 
-  const base = 'surface p-4 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-fill-mode:both]';
+  const base = 'surface group/kpi p-5 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-fill-mode:both]';
 
   if (interactive) {
     return (

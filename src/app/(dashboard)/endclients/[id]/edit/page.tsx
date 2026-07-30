@@ -17,7 +17,7 @@ export default function EditEndClientPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-5">
+      <div className="w-full max-w-3xl space-y-5">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="h-20 w-full rounded-2xl" />
         <Skeleton className="h-80 w-full rounded-2xl" />

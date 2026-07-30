@@ -160,7 +160,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
 
   if (!emp && !isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="max-w-3xl space-y-4">
         <button onClick={() => router.push('/i983')} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-brand-700"><ArrowLeft className="h-4 w-4" /> Back to Form I-983</button>
         <div className="surface p-10 text-center text-sm text-slate-500">Employee not found.</div>
       </div>

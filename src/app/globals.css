@@ -299,3 +299,291 @@
   font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HORIZON — the shared marketing design language with oceanbluecorp.com.
+   Light canvas + dark navy cinematic bands. Cobalt used with restraint, amber
+   reserved for eyebrows/accents. No gradient text, no glassmorphism, no orbs.
+   Scoped to pages wrapped in `.horizon` (landing/marketing surfaces).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Light surfaces */
+  --hz-canvas: #ffffff;
+  --hz-surface: #f8fafc;
+  --hz-surface-2: #f1f5f9;
+  --hz-line: #e2e8f0;
+  --hz-line-2: #cbd5e1;
+
+  /* Dark bands — deep, futuristic near-black blue */
+  --hz-ink: #050912;
+  --hz-navy: #0a1730;
+  --hz-navy-2: #0e2147;
+
+  /* Text */
+  --hz-text: #0f172a;
+  --hz-text-mute: #475569;
+  --hz-text-subtle: #64748b;
+  --hz-on-dark: #f1f5f9;
+  --hz-on-dark-mute: #94a3b8;
+  --hz-line-dark: rgba(226, 232, 240, 0.12);
+
+  /* Accent — one decisive cobalt, cyan only on dark backgrounds */
+  --hz-cobalt: #1d4ed8;
+  --hz-cobalt-600: #1740ad;
+  --hz-cobalt-100: #dbe6fe;
+  --hz-cyan: #2ad8ef;
+  --hz-cyan-400: #5ce0f7;
+
+  /* Alternating section band — cool slate */
+  --hz-band: #f4f7fb;
+  --hz-band-line: #e6ecf4;
+
+  /* Amber highlight — the single warm accent (eyebrows, rules, suffixes) */
+  --hz-amber: #d97706;
+  --hz-amber-600: #b45309;
+
+  /* Cool-tinted shadows */
+  --hz-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --hz-shadow-md: 0 10px 30px -12px rgba(15, 23, 42, 0.16), 0 4px 10px -6px rgba(15, 23, 42, 0.08);
+  --hz-shadow-lg: 0 30px 60px -24px rgba(10, 37, 64, 0.35), 0 12px 24px -12px rgba(15, 23, 42, 0.12);
+}
+
+.horizon {
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  color: var(--hz-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display — tight modern grotesque */
+.hz-display {
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  letter-spacing: -0.035em;
+  line-height: 1.03;
+  font-weight: 600;
+}
+
+/* Eyebrow — mono, uppercase, tracked */
+.hz-eyebrow {
+  font-family: var(--font-jb-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Tabular numerals for stats */
+.hz-tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Fill-up hover: a darker layer scales up from the bottom edge behind the text. */
+.hz-btn-fill {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+.hz-btn-fill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--hz-cobalt-600);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hz-btn-fill:hover::before {
+  transform: scaleY(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hz-btn-fill::before {
+    transition: none;
+  }
+}
+
+/* Quiet card — hairline border, cobalt-tinted lift on hover */
+.hz-card {
+  background: var(--hz-canvas);
+  border: 1px solid var(--hz-line);
+  border-radius: 16px;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease,
+    border-color 0.25s ease;
+}
+.hz-card:hover {
+  border-color: var(--hz-cobalt-100);
+  box-shadow: var(--hz-shadow-md);
+}
+
+/* Ambient aurora wash — a soft, drifting color field behind dark heroes */
+@keyframes hz-aurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+.hz-aurora {
+  animation: hz-aurora 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Word-by-word headline reveal (pairs with an overflow-hidden word wrapper) */
+@keyframes hz-rise {
+  from {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.hz-rise {
+  animation: hz-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Infinite logo/content marquee — content is duplicated once, shifts by -50% */
+@keyframes hz-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.hz-marquee {
+  animation: hz-marquee 50s linear infinite;
+}
+.hz-marquee:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hz-marquee,
+  .hz-aurora,
+  .hz-rise {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADM — the admin console language shared with oceanbluecorp.com/admin.
+   One borderless #edeff2 chrome surface for sidebar + topbar; the content
+   area is a #fafafa canvas card tucked under it with a rounded top-left
+   corner. Cobalt accent, quiet hairlines, Conduktor-style light theme.
+   Scoped to shells wrapped in `.adm-scope`.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --adm-surface: #ffffff;
+  --adm-surface-sunken: #f8fafc;
+  --adm-line-strong: #cbd5e1;
+  --adm-line-soft: #eef1f6;
+  --adm-head: #fbfcfd;
+  --adm-head-ink: #64748b;
+  --adm-ink: #0f172a;
+  --adm-ink-mute: #64748b;
+  --adm-ink-subtle: #94a3b8;
+  --adm-success: #059669;
+  --adm-warning: #d97706;
+  --adm-danger: #e11d48;
+
+  --adm-shadow-sm: 0 1px 2px -1px rgba(16, 24, 40, 0.06), 0 1px 3px 0 rgba(16, 24, 40, 0.04);
+  --adm-shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+  --adm-shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.16), 0 2px 8px -3px rgba(16, 24, 40, 0.08);
+  --adm-shadow-accent:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 1px 2px 0 rgba(29, 78, 216, 0.32),
+    0 4px 10px -3px rgba(29, 78, 216, 0.28);
+
+  --adm-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.adm-scope {
+  --adm-accent: #1d4ed8;
+  --adm-accent-strong: #1e40af;
+  --adm-accent-soft: rgba(29, 78, 216, 0.1);
+  --adm-accent-tint: rgba(29, 78, 216, 0.07);
+  --adm-focus-ring: rgba(29, 78, 216, 0.28);
+  --adm-canvas: #fafafa; /* content area */
+  --adm-chrome: #edeff2; /* sidebar + top bar, one borderless surface */
+  --adm-line: #ececf0;
+  --adm-surface-2: #f1f5f9;
+  --adm-row-hover: #f5f8ff;
+  --adm-success-soft: rgba(5, 150, 105, 0.1);
+  --adm-warning-soft: rgba(217, 119, 6, 0.1);
+  --adm-danger-soft: rgba(225, 29, 72, 0.1);
+  background: var(--adm-canvas);
+  color: var(--adm-ink);
+  color-scheme: light;
+}
+
+/* Console re-skins for the shared utility classes, so every dashboard page
+   picks up the oceanblue admin look without per-page edits. */
+.adm-scope .surface {
+  border-radius: 12px;
+  border-color: var(--adm-line);
+  box-shadow: var(--adm-shadow-sm);
+}
+.adm-scope .surface-hover:hover {
+  border-color: var(--adm-line-strong);
+  box-shadow: var(--adm-shadow-md);
+  transform: translateY(-1px);
+}
+.adm-scope .btn-primary {
+  height: 36px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  background-color: var(--adm-accent);
+  box-shadow: var(--adm-shadow-accent);
+  transition: all 150ms var(--adm-ease);
+}
+.adm-scope .btn-primary:hover {
+  background-color: var(--adm-accent-strong);
+  box-shadow: var(--adm-shadow-accent);
+  transform: translateY(-1px);
+}
+.adm-scope .btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.adm-scope .btn-ghost,
+.adm-scope .btn-accent {
+  height: 36px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  background-color: var(--adm-surface);
+  color: var(--adm-ink-mute);
+  border: 1px solid var(--adm-line);
+  box-shadow: var(--adm-shadow-sm);
+  transition: all 150ms var(--adm-ease);
+}
+.adm-scope .btn-ghost:hover,
+.adm-scope .btn-accent:hover {
+  border-color: var(--adm-line-strong);
+  background-color: var(--adm-row-hover);
+  color: var(--adm-ink);
+  box-shadow: var(--adm-shadow-md);
+  transform: translateY(-1px);
+}
+.adm-scope .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--adm-ink-subtle);
+}
+.adm-scope :is(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--adm-accent);
+  outline-offset: 1px;
+}
