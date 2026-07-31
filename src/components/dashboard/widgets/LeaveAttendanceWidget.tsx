@@ -90,12 +90,12 @@ export function LeaveAttendanceWidget() {
       emptyCta={{ label: 'Go to Leave', href: '/leaves' }}
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="grid min-w-0 grid-cols-1 gap-2.5">
           <Tile icon={Clock} label="Pending approvals" value={pending} tone="bg-accent-50 text-accent-700" />
           <Tile icon={Plane} label="On leave today" value={onLeaveToday} tone="bg-violet-50 text-violet-700" />
           <Tile icon={UserCheck} label="Attendance rate" value={hasAttendance ? `${attendanceRate}%` : '—'} tone="bg-emerald-50 text-emerald-700" />
         </div>
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">Leave by type</p>
           {typeDonut.length ? (
             <DonutChart data={typeDonut} height={180} />

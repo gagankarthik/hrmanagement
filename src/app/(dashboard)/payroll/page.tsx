@@ -9,6 +9,7 @@ import { useClients } from '@/context/ClientContext';
 import { exportToCsv } from '@/lib/export';
 import { money } from '@/lib/format';
 import type { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 const HOURS_MONTH = 160;
 
@@ -100,9 +101,7 @@ export default function PayrollPage() {
                 <tr key={e.id} className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                        {e.name?.charAt(0)?.toUpperCase() ?? '?'}
-                      </span>
+                      <Avatar name={e.name} />
                       <p className="text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</p>
                     </div>
                   </td>

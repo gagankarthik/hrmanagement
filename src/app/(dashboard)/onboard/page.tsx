@@ -495,16 +495,12 @@ export default function OnboardPage() {
             ? `Step 2 of 3 — ${selectedType} employee details`
             : 'Step 3 of 3 — Review & confirm'
         }
+        backHref="/employees"
+        backLabel="Back to Employees"
         actions={
-          <>
-            <button onClick={() => setImportOpen(true)} className="btn-ghost">
-              <Upload className="h-4 w-4" /> Import
-            </button>
-            <Link href="/employees" className="btn-ghost">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
-          </>
+          <button onClick={() => setImportOpen(true)} className="btn-ghost">
+            <Upload className="h-4 w-4" /> Import
+          </button>
         }
       />
 

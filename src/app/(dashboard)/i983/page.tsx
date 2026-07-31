@@ -13,6 +13,7 @@ import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { I983Status, deriveI983Status, nextEvaluationDue } from '@/types/i983';
 import type { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 const I983_BADGE: Record<I983Status, string> = {
   Draft: 'bg-slate-100 text-slate-500 ring-slate-200',
@@ -115,7 +116,7 @@ export default function I983Page() {
                 const wa = workAuthOf(e);
                 return (
                   <button key={e.id} onMouseDown={() => router.push(`/i983/${e.id}`)} className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-slate-50">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                    <Avatar name={e.name} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
                       <span className="block truncate text-xs text-slate-500">{e.type} · {wa || 'no work auth'}</span>
@@ -151,7 +152,7 @@ export default function I983Page() {
                   <tr key={e.id} role="button" tabIndex={0} onClick={() => router.push(`/i983/${e.id}`)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); router.push(`/i983/${e.id}`); } }} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                        <Avatar name={e.name} />
                         <p className="text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</p>
                       </div>
                     </td>

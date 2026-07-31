@@ -24,6 +24,7 @@ import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBul
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { SUBCONTRACTOR_IMPORT } from '@/lib/bulk-import/configs';
 import { friendlyError } from '@/lib/errors';
+import { Avatar } from '@/components/ui/avatar';
 
 type SubcontractorRow = Subcontractor & { status: 'Active' | 'Inactive'; autoInactive: boolean; empCount: number };
 
@@ -119,9 +120,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       sortValue: (s) => s.name?.toLowerCase(),
       cell: (subcontractor) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-sm font-bold text-teal-700">
-            {subcontractor.name?.charAt(0) ?? '?'}
-          </div>
+          <Avatar name={subcontractor.name} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{subcontractor.name}</p>
             {subcontractor.address && (

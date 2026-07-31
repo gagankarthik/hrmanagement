@@ -97,7 +97,7 @@ function NetworkTable({ title, items, icon: Icon, accent }: { title: string; ite
     <ReportCard title={`Top ${title}`} subtitle={`${items.length} ${title.toLowerCase()} · ${total} placements total`} icon={Icon}>
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
             <th className="py-2.5 pr-4">Rank</th>
             <th className="py-2.5 pr-4">{title}</th>
             <th className="py-2.5 pr-4">Placements</th>
@@ -116,7 +116,7 @@ function NetworkTable({ title, items, icon: Icon, accent }: { title: string; ite
                 <td className="py-2.5 pr-4 tabular-nums text-emerald-700">{item.active}</td>
                 <td className="py-2.5 min-w-[140px]">
                   <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--adm-surface-2)]">
                       <div className="h-full rounded-full" style={{ width: `${share}%`, backgroundColor: accent }} />
                     </div>
                     <span className="w-10 text-right text-xs tabular-nums text-slate-500">{share.toFixed(0)}%</span>

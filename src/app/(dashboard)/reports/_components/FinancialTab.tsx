@@ -84,7 +84,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
       <ReportCard title="Monthly Run-Rate by Class" subtitle="Billable revenue contribution per employee class" icon={DollarSign}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
               <th className="py-3 pr-4">Class</th>
               <th className="py-3 pr-4">Active</th>
               <th className="py-3 pr-4">Billable</th>
@@ -100,7 +100,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
               return (
                 <tr key={r.type} className="border-b border-slate-50 last:border-0">
                   <td className="py-3 pr-4">
-                    <span className={cn('inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1', TYPE_COLOR[r.type].bg, TYPE_COLOR[r.type].text, TYPE_COLOR[r.type].ring)}>
+                    <span className={cn('inline-flex items-center gap-2 rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold', TYPE_COLOR[r.type].bg, TYPE_COLOR[r.type].text, TYPE_COLOR[r.type].ring)}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLOR[r.type].hex }} />
                       {TYPE_LABEL[r.type]}
                     </span>
@@ -110,7 +110,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
                   <td className="py-3 pr-4 tabular-nums text-slate-700">{avg > 0 ? compactCurrency(avg) : '—'}</td>
                   <td className="py-3 pr-4 font-bold tabular-nums text-emerald-700">{compactCurrency(r.revenue)}</td>
                   <td className="py-3 min-w-[140px]">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--adm-surface-2)]">
                       <div className="h-full rounded-full" style={{ width: `${w}%`, backgroundColor: TYPE_COLOR[r.type].hex }} />
                     </div>
                   </td>
@@ -138,7 +138,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
                   <th className="py-2.5 pr-4">Rank</th>
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
@@ -157,7 +157,7 @@ export function FinancialTab({ filtered, metrics }: TabProps & { metrics: { reve
                       <td className="py-2.5 pr-4 font-mono text-xs text-slate-500">#{String(i + 1).padStart(2, '0')}</td>
                       <td className="py-2.5 pr-4 font-medium text-slate-900">{e.name}</td>
                       <td className="py-2.5 pr-4">
-                        <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ring-1', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
+                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[10.5px] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
                           {TYPE_LABEL[e.type]}
                         </span>
                       </td>

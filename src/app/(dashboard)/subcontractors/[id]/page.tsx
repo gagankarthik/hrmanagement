@@ -34,6 +34,7 @@ import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { AssignEmployeesModal } from '@/components/dashboard/AssignEmployeesModal';
+import { Avatar } from '@/components/ui/avatar';
 
 const typeBadge: Record<string, string> = {
   W2: 'bg-blue-100 text-blue-700',
@@ -248,9 +249,7 @@ function SubcontractorDetailPageContent() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 p-6 text-white shadow-lg">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-5">
-          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm text-3xl font-bold">
-            {subcontractor.name?.charAt(0) ?? '?'}
-          </div>
+          <Avatar name={subcontractor.name} size="xl" />
           <div className="flex-1 min-w-0">
             <h1 className="font-display text-2xl font-bold truncate">{subcontractor.name}</h1>
             {subcontractor.address && (
@@ -488,9 +487,7 @@ function SubcontractorDetailPageContent() {
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/employees/${emp.id}`); } }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white">
-                      {emp.name?.charAt(0) ?? '?'}
-                    </div>
+                    <Avatar name={emp.name} size="md" />
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-slate-900">{emp.name}</p>
                       {emp.personalEmail && <p className="truncate text-xs text-slate-500">{emp.personalEmail}</p>}

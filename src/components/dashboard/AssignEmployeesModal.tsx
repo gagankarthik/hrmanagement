@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
 import { Employee } from '@/types/employee';
 import { useToast } from '@/components/ui/toast';
+import { Avatar } from '@/components/ui/avatar';
 
 export type PartnerKind = 'clients' | 'endclients' | 'vendors' | 'subcontractors';
 
@@ -199,9 +200,7 @@ export function AssignEmployeesModal({
                   >
                     {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
                   </span>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600">
-                    {emp.name?.charAt(0)?.toUpperCase() ?? '?'}
-                  </span>
+                  <Avatar name={emp.name} size="md" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-slate-800">{emp.name}</span>
                     <span className="block truncate text-xs text-slate-400">{emp.position || emp.personalEmail || '—'}</span>

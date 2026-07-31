@@ -39,6 +39,7 @@ import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
 import type { UploadedDoc } from '@/types/uploads';
+import { Avatar } from '@/components/ui/avatar';
 
 /** Label-over-value field used in the tabbed detail grids. */
 function Field({ label, value }: { label: string; value?: React.ReactNode }) {
@@ -77,7 +78,7 @@ function AssignmentCard({ title, icon: Icon, tone, items }: { title: string; ico
             return (
               <div key={i} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white">{a.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                  <Avatar name={a.name} />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{a.name}</p>
                     {(a.startDate || a.endDate) && <p className="text-xs text-slate-500">{a.startDate || '—'} → {a.endDate || 'Present'}</p>}
@@ -537,7 +538,7 @@ function EmployeeDetailPageContent() {
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <div className="surface p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 font-display text-xl font-bold text-white">{employee.name?.charAt(0)?.toUpperCase() ?? '?'}</div>
+              <Avatar name={employee.name} size="xl" />
               <div className="min-w-0">
                 <p className="truncate font-display text-lg font-bold text-brand-900">{employee.name}</p>
                 <p className="truncate text-sm text-slate-500">{employee.position || '—'}</p>

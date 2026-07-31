@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 import { friendlyError } from '@/lib/errors';
+import { Avatar } from '@/components/ui/avatar';
 
 type VendorRow = Vendor & { status: 'Active' | 'Inactive'; autoInactive: boolean; empCount: number };
 
@@ -115,9 +116,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
       sortValue: (v) => v.name?.toLowerCase(),
       cell: (vendor) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">
-            {vendor.name?.charAt(0) ?? '?'}
-          </div>
+          <Avatar name={vendor.name} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{vendor.name}</p>
             {vendor.address && (

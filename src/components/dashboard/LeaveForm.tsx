@@ -13,6 +13,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input, Textarea, NativeSelect } from '@/components/ui/input';
+import { Avatar } from '@/components/ui/avatar';
 
 /** Identity of a user filing leave for themselves (ESS). `employeeId` is
  *  optional — recruiter / sales users may have no employee record. */
@@ -117,9 +118,7 @@ export function LeaveForm({
       <FormField label="Employee" required error={selfApply ? undefined : errors.employeeId}>
         {selfApply ? (
           <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">
-              {(selfApply.name || '?').charAt(0).toUpperCase()}
-            </span>
+            <Avatar name={selfApply.name} />
             <div className="min-w-0">
               <span className="block truncate text-sm font-medium text-slate-800">{selfApply.name}</span>
               <span className="block truncate text-xs text-slate-400">{selfApply.email}</span>

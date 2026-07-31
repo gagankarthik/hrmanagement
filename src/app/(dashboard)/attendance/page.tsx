@@ -21,6 +21,7 @@ import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { formatDate } from '@/lib/format';
+import { Avatar } from '@/components/ui/avatar';
 
 const STATUS_FILTERS: ('all' | AttendanceStatus)[] = ['all', 'Present', 'Remote', 'Half-day', 'Absent', 'Leave'];
 
@@ -87,9 +88,7 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
         const name = nameOf(r.employeeId);
         return (
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-              {name?.charAt(0)?.toUpperCase() ?? '?'}
-            </div>
+            <Avatar name={name} />
             <p className="text-sm font-semibold text-slate-900">{name}</p>
           </div>
         );

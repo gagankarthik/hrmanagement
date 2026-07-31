@@ -81,3 +81,12 @@ export function formatDateTime(
   const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return `${formatDate(d)} · ${time}`;
 }
+
+/** Up to two initials from a person's name ("Gagan Karthik" → "GK", "" → "?"). */
+export function initials(name?: string | null): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0].charAt(0);
+  const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+  return (first + last).toUpperCase() || '?';
+}

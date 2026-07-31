@@ -56,7 +56,7 @@ export function ProgressRing({
 }
 
 /* ── Sparkline ────────────────────────────────────────────────────────────── */
-export function Sparkline({ data, color = '#266b55', width = 96, height = 32 }: { data: number[]; color?: string; width?: number; height?: number }) {
+export function Sparkline({ data, color = '#1d4ed8', width = 96, height = 32 }: { data: number[]; color?: string; width?: number; height?: number }) {
   if (!data.length) return <div style={{ width, height }} />;
   const max = Math.max(...data, 1);
   const min = Math.min(...data, 0);
@@ -85,8 +85,8 @@ export function DeltaIndicator({ delta, period }: { delta: KpiDelta; period?: st
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ring-1',
-        good ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-red-50 text-red-600 ring-red-100',
+        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+        good ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700',
       )}
       title={period ? `${delta.direction === 'up' ? '+' : '−'}${Math.abs(delta.value).toFixed(1)}% ${period}` : undefined}
     >
@@ -117,50 +117,49 @@ export function KpiCard({
   /** Human label for the comparison window, e.g. "vs last 30 days". */
   period?: string;
 }) {
-  const toneStyles = {
-    brand: 'bg-brand-50 text-brand-700 ring-brand-100',
-    emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-    amber: 'bg-accent-50 text-accent-700 ring-accent-100',
-    red: 'bg-red-50 text-red-600 ring-red-100',
-  }[tone];
-
-  const sparkColor = { brand: '#15847a', emerald: '#059669', amber: '#d97706', red: '#dc2626' }[tone];
+  const sparkColor = { brand: '#1d4ed8', emerald: '#059669', amber: '#d97706', red: '#e11d48' }[tone];
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        'group surface relative overflow-hidden p-5 transition-all',
-        onClick && 'cursor-pointer hover:-translate-y-0.5',
-        alert && 'ring-2 ring-red-300',
+        'group/kpi surface relative overflow-hidden p-5 transition-all',
+        onClick && 'cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--adm-line-strong)] hover:shadow-[var(--adm-shadow-md)]',
+        alert && 'border-[var(--adm-danger)]/40',
       )}
     >
-      {alert && <span className="pointer-events-none absolute inset-0 animate-pulse rounded-2xl ring-2 ring-red-300/60" aria-hidden />}
       <div className="flex items-start justify-between gap-3">
-        <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl ring-1', toneStyles)}>
-          <Icon className="h-5 w-5" strokeWidth={1.75} />
-        </span>
-        {accessory}
-      </div>
-      <div className="mt-4 flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="tnum min-w-0 truncate font-display text-3xl font-bold leading-none text-slate-900">{value}</p>
-            {delta && <DeltaIndicator delta={delta} period={period} />}
-          </div>
-          <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-slate-500">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className={cn(
+              'grid h-6 w-6 flex-none place-items-center rounded-[6px] transition-colors',
+              alert
+                ? 'bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]'
+                : 'bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)] group-hover/kpi:bg-[var(--adm-accent-soft)] group-hover/kpi:text-[var(--adm-accent)]',
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </span>
+          <p className="flex min-w-0 items-center gap-1 truncate text-[13px] font-medium text-[var(--adm-ink-mute)]">
             {label}
             <span className="group/tip relative inline-flex" tabIndex={0} aria-label={why}>
-              <Info className="h-3 w-3 cursor-help text-slate-300 transition-colors group-hover/tip:text-slate-500" strokeWidth={2} />
-              <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-44 -translate-x-1/2 rounded-lg bg-brand-950 px-2.5 py-1.5 text-[11px] font-normal leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100">
+              <Info className="h-3 w-3 cursor-help text-[var(--adm-ink-subtle)] transition-colors group-hover/tip:text-[var(--adm-ink-mute)]" strokeWidth={2} />
+              <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-44 -translate-x-1/2 rounded-[8px] bg-[var(--adm-ink)] px-2.5 py-1.5 text-[11px] font-normal leading-snug text-white opacity-0 shadow-[var(--adm-shadow-pop)] transition-opacity duration-150 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100">
                 {why}
               </span>
             </span>
           </p>
-          {period && !delta && <p className="mt-0.5 text-[11px] text-slate-400">{period}</p>}
         </div>
+        {delta && <DeltaIndicator delta={delta} period={period} />}
+      </div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="tnum min-w-0 truncate text-[26px] font-bold leading-none tracking-[-0.02em] text-[var(--adm-ink)]">{value}</p>
+          {period && !delta && <p className="mt-1.5 text-[11px] text-[var(--adm-ink-subtle)]">{period}</p>}
+        </div>
+        {accessory}
         {sub}
-        {spark && spark.length > 0 && !sub && <Sparkline data={spark} color={sparkColor} />}
+        {spark && spark.length > 0 && !sub && !accessory && <Sparkline data={spark} color={sparkColor} />}
       </div>
     </div>
   );
@@ -197,16 +196,16 @@ export function SectionCard({
 }) {
   return (
     <section className={cn('surface flex flex-col', className)}>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--adm-line)] px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+            <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
               <Icon className="h-4 w-4" strokeWidth={1.75} />
             </span>
           )}
           <div>
-            <h2 className="font-display text-base font-bold text-slate-900">{title}</h2>
-            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+            <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h2>
+            {subtitle && <p className="text-[12.5px] text-[var(--adm-ink-mute)]">{subtitle}</p>}
           </div>
         </div>
         {action}

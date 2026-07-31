@@ -61,7 +61,7 @@ function HeaderButton({
       onClick={onClick}
       title={title}
       aria-label={title}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] text-[var(--adm-ink-subtle)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]"
     >
       {children}
     </button>
@@ -142,19 +142,15 @@ export function ChartFrame({
   if (isError) {
     body = (
       <div className="flex flex-col items-center justify-center gap-3 text-center" style={{ minHeight: height }}>
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-500 ring-1 ring-red-100">
-          <AlertTriangle className="h-5 w-5" strokeWidth={1.75} />
+        <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]">
+          <AlertTriangle className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
         <div>
-          <p className="text-sm font-semibold text-slate-700">Couldn&apos;t load this data</p>
-          {error && <p className="mt-0.5 max-w-xs text-xs text-slate-400">{error}</p>}
+          <p className="text-[14px] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this data</p>
+          {error && <p className="mt-0.5 max-w-xs text-xs text-[var(--adm-ink-mute)]">{error}</p>}
         </div>
         {onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-          >
+          <button type="button" onClick={onRetry} className="btn-ghost">
             <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} /> Retry
           </button>
         )}
@@ -165,16 +161,13 @@ export function ChartFrame({
   } else if (isEmpty) {
     body = (
       <div className="flex flex-col items-center justify-center gap-2 text-center" style={{ minHeight: height }}>
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-50 text-slate-300 ring-1 ring-slate-100">
-          <Inbox className="h-5 w-5" strokeWidth={1.75} />
+        <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
+          <Inbox className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
-        <p className="text-sm font-medium text-slate-500">{emptyLabel}</p>
-        {emptyHint && <p className="max-w-xs text-xs text-slate-400">{emptyHint}</p>}
+        <p className="text-[14px] font-medium text-[var(--adm-ink-mute)]">{emptyLabel}</p>
+        {emptyHint && <p className="max-w-xs text-xs text-[var(--adm-ink-subtle)]">{emptyHint}</p>}
         {emptyCta && (
-          <Link
-            href={emptyCta.href}
-            className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-700"
-          >
+          <Link href={emptyCta.href} className="btn-primary mt-1">
             {emptyCta.label}
           </Link>
         )}
@@ -186,19 +179,19 @@ export function ChartFrame({
 
   return (
     <section className={cn('surface flex flex-col', className)}>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--adm-line)] px-5 py-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
           {Icon && (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
               <Icon className="h-4 w-4" strokeWidth={1.75} />
             </span>
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="truncate font-display text-base font-bold text-slate-900">{title}</h2>
+              <h2 className="truncate text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h2>
               {badge}
             </div>
-            {subtitle && <p className="truncate text-xs text-slate-500">{subtitle}</p>}
+            {subtitle && <p className="truncate text-[12.5px] text-[var(--adm-ink-mute)]">{subtitle}</p>}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -230,21 +223,20 @@ export function FreshnessBadge({ updatedAt }: { updatedAt: number | null }) {
 
   if (!updatedAt) return null;
   const mins = Math.floor((Date.now() - updatedAt) / 60_000);
-  const fresh = mins < 5;
   const stale = mins >= 15;
   const label = mins < 1 ? 'just now' : `${mins}m ago`;
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1',
+        'inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-px text-[10.5px] font-semibold uppercase tracking-[0.03em]',
         stale
-          ? 'bg-accent-50 text-accent-700 ring-accent-200'
-          : 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+          ? 'bg-[var(--adm-warning-soft)] text-[var(--adm-warning)]'
+          : 'bg-[var(--adm-success-soft)] text-[var(--adm-success)]',
       )}
       title={`Updated ${label}`}
     >
-      <span className={cn('h-1.5 w-1.5 rounded-full', fresh ? 'animate-pulse bg-emerald-500' : stale ? 'bg-accent-500' : 'bg-emerald-400')} />
+      <span className={cn('h-1.5 w-1.5 rounded-full', stale ? 'bg-amber-500' : 'bg-emerald-500')} />
       {stale ? 'Delayed' : 'Updated'} {label}
     </span>
   );

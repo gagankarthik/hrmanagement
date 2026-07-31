@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  X, UsersRound, Building2, Package, UserRoundCheck, CalendarOff, HeartPulse, Inbox,
+  UsersRound, Building2, Package, UserRoundCheck, CalendarOff, HeartPulse, Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/context/EmployeeContext';
@@ -24,13 +23,14 @@ type Activity = {
   time: number;
 };
 
+// Translucent tone wells, matching the company console's notification rows.
 const toneClasses: Record<string, string> = {
-  brand: 'bg-brand-50 text-brand-600',
-  emerald: 'bg-emerald-50 text-emerald-600',
-  purple: 'bg-purple-50 text-purple-600',
-  teal: 'bg-teal-50 text-teal-600',
-  amber: 'bg-amber-50 text-amber-600',
-  pink: 'bg-pink-50 text-pink-600',
+  brand: 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)]',
+  emerald: 'bg-emerald-500/15 text-emerald-600',
+  purple: 'bg-violet-500/15 text-violet-500',
+  teal: 'bg-teal-500/15 text-teal-600',
+  amber: 'bg-amber-500/15 text-amber-600',
+  pink: 'bg-pink-500/15 text-pink-600',
 };
 
 function timeAgo(ms: number): string {
@@ -114,89 +114,66 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
 
   const go = (href: string) => { onClose(); router.push(href); };
 
-  // Render to <body> so the panel escapes the Topbar's `backdrop-blur`
-  // ancestor, which otherwise becomes the containing block for our
-  // `position: fixed` layers and clips the drawer to the header's height.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Close on Escape + lock background scroll while open.
+  // Close on Escape while open.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  if (!mounted) return null;
+  if (!open) return null;
 
-  return createPortal(
-    <>
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity duration-300',
-          open ? 'opacity-100' : 'pointer-events-none opacity-0',
-        )}
-        onClick={onClose}
-        aria-hidden
-      />
-      <aside
-        role="dialog"
-        aria-label="Recent activity"
-        className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-full max-w-sm transform flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300',
-          open ? 'translate-x-0' : 'translate-x-full',
-        )}
-      >
-        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div>
-            <h2 className="font-display text-base font-bold text-slate-900">Recent activity</h2>
-            <p className="text-xs text-slate-400">{items.length} update{items.length !== 1 ? 's' : ''} across your workspace</p>
+  // Anchored dropdown panel (the console pattern) — expects a `relative`
+  // wrapper around the bell button; click-outside dismissal lives there.
+  return (
+    <div
+      role="dialog"
+      aria-label="Notifications"
+      className="absolute right-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white shadow-[var(--adm-shadow-pop)] animate-in fade-in slide-in-from-top-1 duration-150 sm:w-96"
+    >
+      <header className="flex items-center justify-between border-b border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] px-4 py-3">
+        <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Notifications</h2>
+        <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--adm-ink-mute)]">
+          {items.length}
+        </span>
+      </header>
+
+      <div className="max-h-96 overflow-y-auto">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
+              <Inbox className="h-4.5 w-4.5" strokeWidth={1.75} />
+            </span>
+            <p className="text-[14px] font-semibold text-[var(--adm-ink)]">No recent activity</p>
+            <p className="text-xs text-[var(--adm-ink-mute)]">Changes across employees, leaves and partners will show up here.</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Close">
-            <X className="h-4.5 w-4.5" strokeWidth={1.75} />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-2">
-          {items.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                <Inbox className="h-6 w-6" strokeWidth={1.75} />
-              </span>
-              <p className="text-sm font-medium text-slate-600">No recent activity</p>
-              <p className="text-xs text-slate-400">Changes across employees, leaves and partners will show up here.</p>
-            </div>
-          ) : (
-            items.map((a) => {
-              const Icon = a.icon;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => go(a.href)}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
-                >
-                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', toneClasses[a.tone] || toneClasses.brand)}>
-                    <Icon className="h-4 w-4" strokeWidth={1.75} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-slate-800">{a.title}</span>
-                    <span className="block truncate text-xs text-slate-400">{a.meta}</span>
-                  </span>
-                  <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(a.time)}</span>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </aside>
-    </>,
-    document.body,
+        ) : (
+          items.map((a, i) => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => go(a.href)}
+                className={cn(
+                  'flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[var(--adm-row-hover)]',
+                  i > 0 && 'border-t border-[var(--adm-line-soft)]',
+                )}
+              >
+                <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]', toneClasses[a.tone] || toneClasses.brand)}>
+                  <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold text-[var(--adm-ink)]">{a.title}</span>
+                  <span className="block truncate text-[12px] text-[var(--adm-ink-mute)]">{a.meta}</span>
+                </span>
+                <span className="shrink-0 pt-0.5 text-[11px] tabular-nums text-[var(--adm-ink-subtle)]">{timeAgo(a.time)}</span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }

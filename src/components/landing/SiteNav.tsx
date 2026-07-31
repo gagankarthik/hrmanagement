@@ -9,9 +9,9 @@ import { useAuth } from '@/context/AuthContext';
 import { BRAND } from '@/config/brand';
 
 const navLinks = [
-  { href: '#platform', label: 'Platform' },
-  { href: '#ess', label: 'Self-service' },
-  { href: '#access', label: 'Get access' },
+  { href: '/#platform', label: 'Platform' },
+  { href: '/#ess', label: 'Self-service' },
+  { href: '/why-us', label: 'Why work with us' },
 ];
 
 function Logo({ className }: { className?: string }) {

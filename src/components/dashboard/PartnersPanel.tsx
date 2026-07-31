@@ -12,6 +12,7 @@ import { useSubcontractors } from '@/context/SubcontractorContext';
 import { useTimesheets } from '@/context/TimesheetContext';
 import { money } from '@/lib/format';
 import type { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 type PartnerRow = { id: string; name: string; contact?: string; status?: string; people: number; revenue?: number };
 type TabKey = 'clients' | 'vendors' | 'endclients' | 'subcontractors';
@@ -111,7 +112,7 @@ export default function PartnersPanel() {
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{r.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                      <Avatar name={r.name} />
                       <p className="text-sm font-semibold text-slate-900">{r.name}</p>
                     </div>
                   </td>

@@ -7,6 +7,7 @@ import { isSelfServiceOnly, SELF_SERVICE_HOME } from "@/config/access";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { BRAND } from "@/config/brand";
 import { Users, ShieldCheck, BarChart3, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
@@ -92,18 +93,18 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left brand panel */}
       <div className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[46%]">
-        {/* Brand atmosphere — deep ocean wash with radial bloom + faint grid */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-800 to-brand-950" aria-hidden />
+        {/* Brand atmosphere — the HORIZON deep navy with cobalt/cyan radial mesh */}
+        <div className="absolute inset-0" style={{ background: "#07142b" }} aria-hidden />
         <div
           className="absolute inset-0"
           aria-hidden
           style={{
-            backgroundImage:
-              "radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.16) 0%, transparent 45%), radial-gradient(90% 90% at 0% 100%, rgba(255,255,255,0.22) 0%, transparent 50%)",
+            background:
+              "radial-gradient(52% 56% at 85% 20%, rgba(42,216,239,0.18) 0%, transparent 60%), radial-gradient(58% 62% at 10% 90%, rgba(29,78,216,0.4) 0%, transparent 62%)",
           }}
         />
         <div
-          className="absolute inset-0 opacity-[0.18]"
+          className="absolute inset-0 opacity-[0.12]"
           aria-hidden
           style={{
             backgroundImage:
@@ -122,11 +123,12 @@ export default function LoginPage() {
 
         <div className="relative space-y-10">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-200">Workforce platform</p>
-            <h1 className="font-display mt-3 text-[2.6rem] font-bold leading-[1.05] text-white">
-              Your whole workforce,<br />one secure platform
+            <p className="hz-eyebrow text-white/60">Workforce platform</p>
+            <h1 className="hz-display mt-4 text-[2.6rem] text-white">
+              Your whole workforce,<br />
+              <span className="text-[var(--hz-cyan-400)]">one secure platform</span>
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-brand-100/90">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-white/70">
               One secure place for your people, clients, compliance, billing, and reporting.
             </p>
           </div>
@@ -139,21 +141,21 @@ export default function LoginPage() {
             ].map(({ icon: Icon, title, body }) => (
               <div
                 key={title}
-                className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3.5 backdrop-blur-sm transition-colors hover:bg-white/[0.12]"
+                className="flex items-start gap-4 rounded-2xl bg-white/[0.04] px-4 py-3.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                  <Icon className="h-4.5 w-4.5 text-white" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-[var(--hz-cyan-400)] ring-1 ring-white/10">
+                  <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-sm text-brand-100/80">{body}</p>
+                  <p className="text-sm text-white/60">{body}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative text-xs text-brand-200/80">© {new Date().getFullYear()} Ocean Blue Corporation · Secure workforce platform</p>
+        <p className="relative text-xs text-white/45">© {new Date().getFullYear()} Ocean Blue Corporation · Secure workforce platform</p>
       </div>
 
       {/* Right sign-in panel */}
@@ -197,13 +199,13 @@ export default function LoginPage() {
             <>
               <div>
                 <p className="eyebrow">Almost there</p>
-                <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Set a new password</h2>
-                <p className="mt-1.5 text-sm text-slate-500">Your account was created with a temporary password. Choose a new one to continue.</p>
+                <h2 className="hz-display mt-2 text-[1.6rem] text-[var(--adm-ink)]">Set a new password</h2>
+                <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">Your account was created with a temporary password. Choose a new one to continue.</p>
               </div>
 
               <form onSubmit={handleSetNewPassword} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="fullName" className="block text-sm font-medium text-slate-700">Full name</label>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-[var(--adm-ink)]">Full name</label>
                   <input
                     id="fullName"
                     type="text"
@@ -212,11 +214,11 @@ export default function LoginPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Doe"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Phone number</label>
+                  <label htmlFor="phone" className="block text-sm font-medium text-[var(--adm-ink)]">Phone number</label>
                   <input
                     id="phone"
                     type="tel"
@@ -225,12 +227,12 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+1 415 555 2671"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                   />
                   <p className="text-xs text-slate-400">Include your country code (e.g. +1 for the US).</p>
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700">New password</label>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-[var(--adm-ink)]">New password</label>
                   <div className="relative">
                     <input
                       id="newPassword"
@@ -240,7 +242,7 @@ export default function LoginPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                      className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 pr-10 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                     />
                     <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" tabIndex={-1}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -248,7 +250,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmPwd" className="block text-sm font-medium text-slate-700">Confirm password</label>
+                  <label htmlFor="confirmPwd" className="block text-sm font-medium text-[var(--adm-ink)]">Confirm password</label>
                   <input
                     id="confirmPwd"
                     type={showPassword ? "text" : "password"}
@@ -257,12 +259,12 @@ export default function LoginPage() {
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                   />
                 </div>
 
                 {error && (
-                  <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+                  <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">{error}</div>
                 )}
 
                 <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
@@ -275,13 +277,13 @@ export default function LoginPage() {
           <>
           <div>
             <p className="eyebrow">Welcome back</p>
-            <h2 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Sign in to your account</h2>
-            <p className="mt-1.5 text-sm text-slate-500">Access your HR dashboard and live workforce insights.</p>
+            <h2 className="hz-display mt-2 text-[1.6rem] text-[var(--adm-ink)]">Sign in to your account</h2>
+            <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">Access your HR dashboard and live workforce insights.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="email" className="block text-sm font-medium text-[var(--adm-ink)]">
                 Email
               </label>
               <input
@@ -293,13 +295,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
               />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="password" className="block text-sm font-medium text-[var(--adm-ink)]">
                   Password
                 </label>
                 <Link href="/forgot-password" className="text-xs font-medium text-brand-600 hover:text-brand-700">
@@ -316,7 +318,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 pr-10 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
                 />
                 <button
                   type="button"
@@ -330,7 +332,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">
                 {error}
               </div>
             )}
@@ -354,10 +356,8 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <p className="text-center text-xs text-slate-400">
-            By continuing you agree to our{" "}
-            <span className="cursor-pointer underline decoration-slate-300">Terms</span> and{" "}
-            <span className="cursor-pointer underline decoration-slate-300">Privacy Policy</span>.
+          <p className="text-center text-xs text-[var(--adm-ink-subtle)]">
+            {BRAND.legalName} internal system. Authorized access only.
           </p>
           </>
           )}

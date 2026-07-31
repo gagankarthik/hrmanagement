@@ -6,6 +6,7 @@ import { format, differenceInDays, differenceInYears } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Employee } from '@/types/employee';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
+import { Avatar } from '@/components/ui/avatar';
 
 interface MilestonesPanelProps {
   employees: Employee[];
@@ -214,9 +215,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
               const years = showYears && valid && d ? differenceInYears(now, d) + (thisYear && thisYear.getFullYear() > now.getFullYear() ? 1 : 0) : null;
               return (
                 <li key={p.id} className="flex items-center gap-3">
-                  <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white', t.avatar)}>
-                    {p.name?.charAt(0) ?? '?'}
-                  </div>
+                  <Avatar name={p.name} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{p.name}</p>
                     <p className="truncate text-[11px] text-slate-500 sm:text-xs">

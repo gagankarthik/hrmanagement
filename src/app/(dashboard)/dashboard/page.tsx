@@ -25,10 +25,7 @@ import { ArAgingWidget } from '@/components/dashboard/widgets/ArAgingWidget';
 import { LeaveAttendanceWidget } from '@/components/dashboard/widgets/LeaveAttendanceWidget';
 import { ComplianceFunnelWidget } from '@/components/dashboard/widgets/ComplianceFunnelWidget';
 import { PartnerConcentrationWidget } from '@/components/dashboard/widgets/PartnerConcentrationWidget';
-import { DashboardDetailTable } from '@/components/dashboard/widgets/DetailTable';
-import type { DataTableColumn } from '@/components/ui/data-table';
 import { FilterSelect } from '@/components/ui/filter-select';
-import { fullUsd } from '@/lib/format';
 import { DashboardFilterProvider, useDashboardFilters } from '@/context/DashboardFilterContext';
 import { useAuth } from '@/context/AuthContext';
 import { isAdminRole } from '@/lib/dashboard/views';
@@ -52,8 +49,8 @@ const hasClient = (e: Employee) => {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 pt-2">
-      <h2 className="font-display text-sm font-bold uppercase tracking-wider text-slate-400">{label}</h2>
-      <div className="h-px flex-1 bg-slate-100" />
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-mute)]">{label}</h2>
+      <div className="h-px flex-1 bg-[var(--adm-line)]" />
     </div>
   );
 }
@@ -266,8 +263,6 @@ function DashboardOverview() {
   };
 
   const handleRefresh = async () => { if (refreshing) return; setRefreshing(true); try { await Promise.all([fetchEmployees(), fetchTimesheets()]); } finally { setRefreshing(false); } };
-  const fmtDate = (s?: string) => { if (!s) return '—'; const d = new Date(s); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
-  const tsMargin = (t: Timesheet) => { const bill = (t.billRate || 0) * (t.hours || 0); const pay = (t.payRate || 0) * (t.hours || 0); return bill > 0 ? ((bill - pay) / bill) * 100 : 0; };
 
   const ctxExpiry = (e: Employee) => {
     const ed = 'expiryDate' in e ? (e as { expiryDate?: string }).expiryDate : undefined;
@@ -383,7 +378,7 @@ function DashboardOverview() {
         >
           <ul className="space-y-2">
             {expiryTimeline.slice(0, 6).map(({ id, name, days, sub, href }) => {
-              const tone = days < 7 ? { bar: 'bg-red-500', chip: 'bg-red-50 text-red-600 ring-red-200' } : days < 30 ? { bar: 'bg-accent-400', chip: 'bg-accent-50 text-accent-700 ring-accent-200' } : { bar: 'bg-slate-300', chip: 'bg-slate-50 text-slate-500 ring-slate-200' };
+              const tone = days < 7 ? { bar: 'bg-rose-500', chip: 'bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]' } : days < 30 ? { bar: 'bg-amber-500', chip: 'bg-[var(--adm-warning-soft)] text-[var(--adm-warning)]' } : { bar: 'bg-slate-300', chip: 'bg-[var(--adm-surface-sunken)] text-[var(--adm-ink-mute)]' };
               const fill = Math.max(6, Math.min(100, 100 - (days / 90) * 100));
               return (
                 <li key={`${href}-${id}`}>
@@ -391,7 +386,7 @@ function DashboardOverview() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-sm font-semibold text-slate-900">{name}</span>
-                        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
+                        <span className={cn('tnum shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] font-semibold', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
                       </div>
                       <p className="truncate text-[11px] text-slate-400">{sub}</p>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
@@ -410,64 +405,6 @@ function DashboardOverview() {
     </React.Fragment>
   );
 
-  /* ── Tier-3 detail tables — recent records with sort + CSV/PDF export ──── */
-  const statusChip = (s: string) => (
-    <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', s === 'Terminated' ? 'bg-red-50 text-red-600 ring-red-200' : 'bg-emerald-50 text-emerald-700 ring-emerald-200')}>{s}</span>
-  );
-
-  const employeeColumns: DataTableColumn<Employee>[] = [
-    { id: 'name', header: 'Name', cell: (e) => <span className="font-semibold text-slate-900">{e.name || 'Unnamed'}</span>, sortValue: (e) => e.name?.toLowerCase() ?? '' },
-    { id: 'type', header: 'Type', cell: (e) => <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-slate-600">{CLASS_LABEL[e.type]}</span>, sortValue: (e) => e.type },
-    { id: 'position', header: 'Position', hideBelow: 'md', cell: (e) => e.position || '—', sortValue: (e) => e.position ?? '' },
-    { id: 'hireDate', header: 'Hire date', hideBelow: 'sm', cell: (e) => fmtDate(e.hireDate), sortValue: (e) => e.hireDate ?? '' },
-    { id: 'status', header: 'Status', align: 'right', cell: (e) => statusChip(statusOf(e)), sortValue: (e) => statusOf(e) },
-  ];
-
-  const timesheetColumns: DataTableColumn<Timesheet>[] = [
-    { id: 'worker', header: 'Worker', cell: (t) => <span className="font-semibold text-slate-900">{t.employeeName}</span>, sortValue: (t) => t.employeeName?.toLowerCase() ?? '' },
-    { id: 'client', header: 'Client', hideBelow: 'md', cell: (t) => t.clientName || 'Unassigned', sortValue: (t) => t.clientName ?? '' },
-    { id: 'period', header: 'Period', hideBelow: 'lg', cell: (t) => `${fmtDate(t.periodStart)} – ${fmtDate(t.periodEnd)}`, sortValue: (t) => t.periodEnd ?? '' },
-    { id: 'hours', header: 'Hours', align: 'right', cell: (t) => t.hours ?? 0, sortValue: (t) => t.hours ?? 0 },
-    { id: 'billed', header: 'Billed', align: 'right', cell: (t) => fullUsd((t.billRate || 0) * (t.hours || 0)), sortValue: (t) => (t.billRate || 0) * (t.hours || 0) },
-    { id: 'margin', header: 'Margin', align: 'right', cell: (t) => { const m = tsMargin(t); return <span className={cn('font-semibold', m >= 25 ? 'text-emerald-600' : 'text-accent-600')}>{m.toFixed(0)}%</span>; }, sortValue: (t) => tsMargin(t) },
-    { id: 'status', header: 'Status', align: 'right', hideBelow: 'sm', cell: (t) => <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{t.status}</span>, sortValue: (t) => t.status },
-  ];
-
-  // All detail tables render together (no view switch): recent hires for everyone,
-  // recent timesheets for admins. Compliance expiry lives in its section widget above.
-  const detailTables = (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <DashboardDetailTable<Employee>
-        title="Recent hires" subtitle="Most recent additions in view" icon={Users}
-        columns={employeeColumns}
-        data={[...emps].sort((a, b) => (b.hireDate || '').localeCompare(a.hireDate || ''))}
-        getRowId={(e) => e.id} caption="Recent employees" isLoading={empLoadingInitial}
-        onRowClick={(e) => router.push(`/employees/${e.id}`)} viewAllHref="/employees"
-        exportName="dashboard-employees" initialSort={{ columnId: 'hireDate', dir: 'desc' }}
-        empty={{ title: 'No employees match the filters' }}
-        serialize={{
-          headers: ['Name', 'Type', 'Position', 'Hire date', 'Status'],
-          row: (e) => [e.name || 'Unnamed', CLASS_LABEL[e.type], e.position || '—', fmtDate(e.hireDate), statusOf(e)],
-        }}
-      />
-      {isAdmin && (
-        <DashboardDetailTable<Timesheet>
-          title="Recent timesheets" subtitle="Latest billing entries in range" icon={Building2}
-          columns={timesheetColumns}
-          data={[...tsInRange].sort((a, b) => (b.periodEnd || '').localeCompare(a.periodEnd || ''))}
-          getRowId={(t) => t.id} caption="Recent timesheets" isLoading={revLoadingInitial}
-          onRowClick={() => router.push('/timesheets')} viewAllHref="/timesheets"
-          exportName="dashboard-timesheets" initialSort={{ columnId: 'period', dir: 'desc' }}
-          empty={{ title: 'No timesheets in this period' }}
-          serialize={{
-            headers: ['Worker', 'Client', 'Period', 'Hours', 'Billed', 'Paid', 'Margin %', 'Status'],
-            row: (t) => [t.employeeName, t.clientName || 'Unassigned', `${fmtDate(t.periodStart)} – ${fmtDate(t.periodEnd)}`, t.hours || 0, Math.round((t.billRate || 0) * (t.hours || 0)), Math.round((t.payRate || 0) * (t.hours || 0)), `${tsMargin(t).toFixed(0)}%`, t.status],
-          }}
-        />
-      )}
-    </div>
-  );
-
   return (
     <PageContainer>
       <PageHeader
@@ -479,7 +416,7 @@ function DashboardOverview() {
         actions={
           <>
             <DateRangePicker />
-            <button onClick={() => setFiltersOpen((v) => !v)} className={cn('inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all', filtersOpen || filtersOn ? 'btn-primary' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+            <button onClick={() => setFiltersOpen((v) => !v)} className={cn(filtersOpen || filtersOn ? 'btn-primary' : 'btn-ghost')}>
               <Filter className="h-4 w-4" strokeWidth={1.75} /> Filters
               {filtersOn && <span className="h-1.5 w-1.5 rounded-full bg-white/70" />}
             </button>
@@ -502,15 +439,15 @@ function DashboardOverview() {
         <div className="surface animate-in fade-in slide-in-from-top-2 p-5 duration-200">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Status</p>
+              <p className="eyebrow mb-2">Status</p>
               <FilterSelect className="w-full" label="Status" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'all', label: 'All statuses' }, { value: 'Active', label: 'Active' }, { value: 'Terminated', label: 'Terminated' }]} />
             </div>
             <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Revenue</p>
+              <p className="eyebrow mb-2">Revenue</p>
               <FilterSelect className="w-full" label="Revenue" value={revenueFilter} onChange={setRevenueFilter} options={[{ value: 'all', label: 'All revenue' }, { value: 'B', label: 'Billable' }, { value: 'NB', label: 'Non-billable' }]} />
             </div>
             <div className="sm:col-span-2">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Employment class</p>
+              <p className="eyebrow mb-2">Employment class</p>
               <div className="flex flex-wrap gap-1.5">
                 {CLASSES.map((c) => <button key={c} onClick={() => toggleClass(c)} className={cn('rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', classFilter.has(c) ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>{CLASS_LABEL[c]}</button>)}
               </div>
@@ -530,10 +467,6 @@ function DashboardOverview() {
       {workforceBlock}
       {complianceBlock}
 
-      {/* ── TIER-3 DETAIL — recent records with sort + CSV/PDF export ── */}
-      <SectionDivider label="Details" />
-      {detailTables}
-
       {isLoading && employees.length === 0 && (
         <p className="flex items-center justify-center gap-2 py-6 text-sm text-slate-400"><RefreshCw className="h-4 w-4 animate-spin" /> Loading workforce…</p>
       )}
@@ -551,39 +484,39 @@ function DashboardOverview() {
 
       {clientModal && drillClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-brand-950/40 backdrop-blur-sm" onClick={() => setClientModal(null)} />
+          <div className="absolute inset-0 bg-slate-900/45" onClick={() => setClientModal(null)} />
           <div className="surface relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden p-0">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-[var(--adm-line)] px-5 py-3.5">
               <div>
-                <h3 className="font-display text-lg font-bold text-slate-900">{drillClient.name}</h3>
-                <p className="text-xs text-slate-500">Hours billed vs. paid · {usd0(drillClient.revenue)} revenue</p>
+                <h3 className="text-[15px] font-semibold text-[var(--adm-ink)]">{drillClient.name}</h3>
+                <p className="text-[12.5px] text-[var(--adm-ink-mute)]">Hours billed vs. paid · {usd0(drillClient.revenue)} revenue</p>
               </div>
-              <button onClick={() => setClientModal(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Close"><X className="h-4 w-4" /></button>
+              <button onClick={() => setClientModal(null)} className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[var(--adm-ink-subtle)] hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]" aria-label="Close"><X className="h-4 w-4" /></button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-wider text-slate-400">
+                <thead><tr className="border-b border-[var(--adm-line)] bg-[var(--adm-head)] text-[13px] font-medium text-[var(--adm-head-ink)]">
                   <th className="px-5 py-2.5 text-left">Worker</th><th className="px-3 py-2.5 text-right">Hours</th><th className="px-3 py-2.5 text-right">Billed</th><th className="px-3 py-2.5 text-right">Paid</th><th className="px-5 py-2.5 text-right">Margin</th>
                 </tr></thead>
                 <tbody>
                   {drillRows.map((r) => {
                     const margin = r.bill > 0 ? ((r.bill - r.pay) / r.bill) * 100 : 0;
                     return (
-                      <tr key={r.name} className="border-b border-slate-50 last:border-0">
-                        <td className="px-5 py-2.5 font-medium text-slate-800">{r.name}</td>
-                        <td className="tnum px-3 py-2.5 text-right text-slate-600">{r.hours}</td>
-                        <td className="tnum px-3 py-2.5 text-right font-semibold text-slate-900">{usd0(r.bill)}</td>
-                        <td className="tnum px-3 py-2.5 text-right text-slate-500">{usd0(r.pay)}</td>
-                        <td className={cn('tnum px-5 py-2.5 text-right font-semibold', margin >= 25 ? 'text-emerald-600' : 'text-accent-600')}>{margin.toFixed(0)}%</td>
+                      <tr key={r.name} className="border-b border-[var(--adm-line-soft)] last:border-0">
+                        <td className="px-5 py-2.5 font-medium text-[var(--adm-ink)]">{r.name}</td>
+                        <td className="tnum px-3 py-2.5 text-right text-[var(--adm-ink-mute)]">{r.hours}</td>
+                        <td className="tnum px-3 py-2.5 text-right font-semibold text-[var(--adm-ink)]">{usd0(r.bill)}</td>
+                        <td className="tnum px-3 py-2.5 text-right text-[var(--adm-ink-mute)]">{usd0(r.pay)}</td>
+                        <td className={cn('tnum px-5 py-2.5 text-right font-semibold', margin >= 25 ? 'text-emerald-600' : 'text-amber-600')}>{margin.toFixed(0)}%</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-5 py-3 text-sm">
-              <span className="text-slate-500">{drillClient.hours} hrs · gross profit</span>
-              <span className="font-display text-lg font-bold text-emerald-700">{usd0(drillClient.revenue - drillClient.cost)}</span>
+            <div className="flex items-center justify-between border-t border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] px-5 py-3 text-sm">
+              <span className="text-[var(--adm-ink-mute)]">{drillClient.hours} hrs · gross profit</span>
+              <span className="tnum text-[16px] font-bold text-emerald-700">{usd0(drillClient.revenue - drillClient.cost)}</span>
             </div>
           </div>
         </div>

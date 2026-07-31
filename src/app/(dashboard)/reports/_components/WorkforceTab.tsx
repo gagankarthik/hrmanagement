@@ -75,7 +75,7 @@ export function WorkforceTab({ filtered }: TabProps) {
       <ReportCard title="Headcount by Class" subtitle="Class distribution + status breakdown" icon={Users}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
               <th className="py-3 pr-4">Class</th>
               <th className="py-3 pr-4">Total</th>
               <th className="py-3 pr-4">Active</th>
@@ -93,7 +93,7 @@ export function WorkforceTab({ filtered }: TabProps) {
               return (
                 <tr key={t.label} className="border-b border-slate-50 last:border-0">
                   <td className="py-3 pr-4">
-                    <span className={cn('inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1', TYPE_COLOR[t.label].bg, TYPE_COLOR[t.label].text, TYPE_COLOR[t.label].ring)}>
+                    <span className={cn('inline-flex items-center gap-2 rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold', TYPE_COLOR[t.label].bg, TYPE_COLOR[t.label].text, TYPE_COLOR[t.label].ring)}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLOR[t.label].hex }} />
                       {TYPE_LABEL[t.label]}
                     </span>
@@ -103,7 +103,7 @@ export function WorkforceTab({ filtered }: TabProps) {
                   <td className="py-3 pr-4 tabular-nums text-red-600">{x}</td>
                   <td className="py-3 pr-4 tabular-nums text-slate-600">{share.toFixed(1)}%</td>
                   <td className="py-3 min-w-[120px]">
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--adm-surface-2)]">
                       <div className="h-full rounded-full" style={{ width: `${share}%`, backgroundColor: TYPE_COLOR[t.label].hex }} />
                     </div>
                   </td>
@@ -130,7 +130,7 @@ export function WorkforceTab({ filtered }: TabProps) {
         ) : (
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
                 <th className="py-2.5 pr-4">Rank</th>
                 <th className="py-2.5 pr-4">State</th>
                 <th className="py-2.5 pr-4">Employees</th>
@@ -147,7 +147,7 @@ export function WorkforceTab({ filtered }: TabProps) {
                     <td className="py-2.5 pr-4 font-bold tabular-nums text-slate-900">{s.value}</td>
                     <td className="py-2.5 min-w-[140px]">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--adm-surface-2)]">
                           <div className="h-full rounded-full bg-sky-500" style={{ width: `${share}%` }} />
                         </div>
                         <span className="w-10 text-right text-xs tabular-nums text-slate-500">{share.toFixed(0)}%</span>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { X, ChevronRight, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 type Tone = 'red' | 'amber' | 'yellow' | 'emerald' | 'sky' | 'pink' | 'purple' | 'brand' | 'slate';
 
@@ -126,9 +127,7 @@ export function PeopleListModal({
                       onClick={onClose}
                       className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50 sm:px-6"
                     >
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
-                        {emp.name?.charAt(0) ?? '?'}
-                      </div>
+                      <Avatar name={emp.name} size="lg" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold text-slate-900">{emp.name}</p>

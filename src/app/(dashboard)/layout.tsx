@@ -53,7 +53,7 @@ export default function DashboardLayout({
                       <Topbar onMenuClick={() => setMobileNavOpen(true)} />
                       <main
                         id="main"
-                        className="flex h-[calc(100vh-4rem)] min-w-0 flex-col overflow-y-auto overflow-x-hidden rounded-tl-2xl bg-[var(--adm-canvas)]"
+                        className="relative flex h-[calc(100vh-4rem)] min-w-0 flex-col overflow-y-auto overflow-x-hidden rounded-tl-2xl bg-[var(--adm-canvas)]"
                       >
                         <div className="w-full px-3.5 py-5 sm:px-5 lg:px-6 lg:py-6">
                           {children}

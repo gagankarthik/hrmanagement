@@ -9,6 +9,7 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { useEmployeeDocs } from '@/context/EmployeeDocsContext';
 import { exportToCsv } from '@/lib/export';
 import type { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 export default function EmployeeDocumentsPage() {
   const router = useRouter();
@@ -94,7 +95,7 @@ export default function EmployeeDocumentsPage() {
                   <tr key={e.id} role="button" tabIndex={0} onClick={() => router.push(`/documents/${e.id}`)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); router.push(`/documents/${e.id}`); } }} className="group cursor-pointer border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-200">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">{e.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+                        <Avatar name={e.name} />
                         <p className="text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</p>
                       </div>
                     </td>

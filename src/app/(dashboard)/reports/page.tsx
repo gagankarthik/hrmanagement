@@ -226,7 +226,7 @@ export default function ReportsPage() {
               )}
             </button>
             <button onClick={exportCurrentCSV} className="btn-ghost">
-              <Download className="h-4 w-4 text-emerald-600" />
+              <Download className="h-4 w-4" />
               CSV
             </button>
             <button onClick={exportPDF} className="btn-primary">
@@ -261,12 +261,12 @@ export default function ReportsPage() {
               { value: 'all', label: 'All vendors' }, ...allVendorOptions.map((v) => ({ value: v.id, label: v.name })),
             ]} />
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-            <p className="text-xs text-slate-500">
-              <span className="font-semibold tabular-nums text-slate-900">{filtered.length.toLocaleString()}</span> of {employees.length.toLocaleString()} employees in scope
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--adm-line)] pt-3">
+            <p className="text-xs text-[var(--adm-ink-mute)]">
+              <span className="font-semibold tabular-nums text-[var(--adm-ink)]">{filtered.length.toLocaleString()}</span> of {employees.length.toLocaleString()} employees in scope
             </p>
             {hasFilters && (
-              <button onClick={clearFilters} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+              <button onClick={clearFilters} className="inline-flex items-center gap-1 rounded-[6px] px-3 py-1.5 text-xs font-semibold text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]">
                 <X className="h-3 w-3" /> Clear all
               </button>
             )}
@@ -279,15 +279,15 @@ export default function ReportsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow">Executive Summary</p>
-            <h2 className="mt-1 font-display text-lg font-bold text-slate-900 sm:text-xl">
-              Workforce snapshot — {formatDate(new Date(), { long: true })}
+            <h2 className="mt-1 text-[16px] font-semibold text-[var(--adm-ink)]">
+              Workforce snapshot · {formatDate(new Date(), { long: true })}
             </h2>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            <p className="mt-1 text-[12.5px] text-[var(--adm-ink-mute)]">
               Live numbers across {filtered.length.toLocaleString()} {filtered.length === 1 ? 'employee' : 'employees'}{hasFilters ? ' (filtered)' : ''}.
             </p>
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--adm-line)] pt-5 sm:grid-cols-4 sm:gap-4 lg:grid-cols-6">
           <SummaryStat icon={Users} label="Headcount" value={metrics.total.toLocaleString()} sub={`${metrics.active} active`} tone="brand" />
           <SummaryStat icon={DollarSign} label="Run-rate" value={compactCurrency(metrics.revenue)} sub="monthly billable" tone="emerald" />
           <SummaryStat icon={UserCheck} label="Utilization" value={`${metrics.utilization}%`} sub={`${metrics.billable} billable`} tone="purple" />

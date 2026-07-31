@@ -13,6 +13,7 @@ import { money } from '@/lib/format';
 import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import type { Employee } from '@/types/employee';
+import { Avatar } from '@/components/ui/avatar';
 
 function marginTone(pct: number) {
   if (pct >= 30) return { badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200', bar: 'bg-emerald-500' };
@@ -160,9 +161,7 @@ export default function MarginsPage() {
                   <tr key={e.id} className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                          {e.name?.charAt(0)?.toUpperCase() ?? '?'}
-                        </span>
+                        <Avatar name={e.name} />
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</p>
                           <p className="truncate text-xs text-slate-500">{e.type}</p>

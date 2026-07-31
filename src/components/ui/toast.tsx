@@ -109,31 +109,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const variantStyles: Record<ToastVariant, { ring: string; iconBg: string; iconColor: string; icon: React.ElementType }> = {
-  success: {
-    ring: 'ring-emerald-200',
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    icon: CheckCircle2,
-  },
-  error: {
-    ring: 'ring-red-200',
-    iconBg: 'bg-red-50',
-    iconColor: 'text-red-600',
-    icon: AlertCircle,
-  },
-  warning: {
-    ring: 'ring-amber-200',
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-    icon: AlertTriangle,
-  },
-  info: {
-    ring: 'ring-brand-200',
-    iconBg: 'bg-brand-50',
-    iconColor: 'text-brand-600',
-    icon: Info,
-  },
+const variantStyles: Record<ToastVariant, { iconColor: string; icon: React.ElementType }> = {
+  success: { iconColor: 'text-[var(--adm-success)]', icon: CheckCircle2 },
+  error: { iconColor: 'text-[var(--adm-danger)]', icon: AlertCircle },
+  warning: { iconColor: 'text-[var(--adm-warning)]', icon: AlertTriangle },
+  info: { iconColor: 'text-[var(--adm-accent)]', icon: Info },
 };
 
 function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
@@ -151,22 +131,19 @@ function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: strin
             key={t.id}
             role="status"
             className={cn(
-              'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl bg-white p-4 shadow-lg ring-1 ring-slate-200',
+              'pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-[10px] border border-[var(--adm-line)] bg-white p-3.5 shadow-[var(--adm-shadow-pop)]',
               'animate-in slide-in-from-right-5 fade-in duration-200',
-              v.ring
             )}
           >
-            <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl', v.iconBg)}>
-              <Icon className={cn('h-5 w-5', v.iconColor)} />
-            </div>
-            <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-sm font-semibold text-slate-900">{t.title}</p>
-              {t.description && <p className="mt-0.5 text-xs text-slate-500">{t.description}</p>}
+            <Icon className={cn('mt-0.5 h-4.5 w-4.5 flex-shrink-0', v.iconColor)} strokeWidth={1.75} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[var(--adm-ink)]">{t.title}</p>
+              {t.description && <p className="mt-0.5 text-xs text-[var(--adm-ink-mute)]">{t.description}</p>}
             </div>
             <button
               type="button"
               onClick={() => onDismiss(t.id)}
-              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[6px] text-[var(--adm-ink-subtle)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]"
               aria-label="Dismiss"
             >
               <X className="h-4 w-4" />

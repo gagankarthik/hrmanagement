@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { cn } from '@/lib/utils';
 
@@ -10,8 +8,8 @@ type Tone = 'brand' | 'emerald' | 'purple' | 'teal' | 'sky' | 'amber' | 'pink' |
 
 /**
  * Consistent scaffold for routed create / edit / detail-form pages:
- * a back link, the standard PageHeader, and a centered content column.
- * Render the form card(s) as children.
+ * the standard PageHeader (with its left-aligned back link) and a content
+ * column. Render the form card(s) as children.
  */
 export function FormPageShell({
   icon,
@@ -37,14 +35,17 @@ export function FormPageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn('mx-auto w-full space-y-5', maxWidth)}>
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-brand-700"
-      >
-        <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> {backLabel}
-      </Link>
-      <PageHeader icon={icon} eyebrow={eyebrow} title={title} description={description} tone={tone} actions={actions} />
+    <div className={cn('w-full space-y-5', maxWidth)}>
+      <PageHeader
+        icon={icon}
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        tone={tone}
+        actions={actions}
+        backHref={backHref}
+        backLabel={backLabel}
+      />
       {children}
     </div>
   );

@@ -28,6 +28,7 @@ import { SectionCard } from '@/components/ui/section-card';
 import { ActionMenu, ActionMenuItem } from '@/components/ui/action-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
+import { Avatar } from '@/components/ui/avatar';
 
 const typeChipStyles: Record<BenefitType, string> = {
   Medical: 'bg-rose-50 text-rose-700 ring-rose-200',
@@ -325,9 +326,7 @@ function BenefitDetailPageContent() {
                   }
                 }}
               >
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 text-sm font-bold text-white">
-                  {emp.name?.charAt(0) ?? '?'}
-                </div>
+                <Avatar name={emp.name} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-900">{emp.name}</p>
                   {emp.position && <p className="truncate text-xs text-slate-500">{emp.position}</p>}

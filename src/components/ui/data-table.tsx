@@ -184,12 +184,12 @@ export function DataTable<T>({
   // ── Error ──────────────────────────────────────────────────────────────
   if (error && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-14 text-center" role="alert">
-        <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-4 ring-white">
-          <AlertTriangle className="h-7 w-7" strokeWidth={1.75} />
+      <div className="flex flex-col items-center justify-center px-6 py-12 text-center" role="alert">
+        <span className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]">
+          <AlertTriangle className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
-        <h3 className="font-display text-lg font-bold text-slate-900">Couldn&apos;t load this list</h3>
-        <p className="mt-1 max-w-sm text-sm text-slate-500">{error}</p>
+        <h3 className="text-[14px] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this list</h3>
+        <p className="mt-1 max-w-sm text-[13px] text-[var(--adm-ink-mute)]">{error}</p>
         {onRetry && (
           <button onClick={onRetry} className="btn-ghost mt-5">
             <RefreshCw className="h-4 w-4" /> Try again
@@ -314,7 +314,7 @@ export function DataTable<T>({
                   <tr key={`sk-${r}`} className="group/row">
                     {selection && (
                       <td className="border-b border-[var(--adm-line-soft)] px-4 py-4 pl-5 group-last/row:border-b-0">
-                        <div className="h-4 w-4 animate-pulse rounded bg-[var(--adm-surface-2)]" />
+                        <div className="h-4 w-4 skeleton rounded" />
                       </td>
                     )}
                     {visibleColumns.map((col) => (
@@ -322,12 +322,12 @@ export function DataTable<T>({
                         key={col.id}
                         className={cn('border-b border-[var(--adm-line-soft)] px-4 py-4 first:pl-5 last:pr-5 group-last/row:border-b-0', col.hideBelow && hideClass[col.hideBelow])}
                       >
-                        <div className={cn('h-4 animate-pulse rounded bg-[var(--adm-surface-2)]', r % 2 ? 'w-1/2' : 'w-3/4')} />
+                        <div className={cn('h-4 skeleton rounded', r % 2 ? 'w-1/2' : 'w-3/4')} />
                       </td>
                     ))}
                     {rowActions && (
                       <td className="border-b border-[var(--adm-line-soft)] px-4 py-4 pr-5 group-last/row:border-b-0">
-                        <div className="ml-auto h-4 w-4 animate-pulse rounded bg-[var(--adm-surface-2)]" />
+                        <div className="ml-auto h-4 w-4 skeleton rounded" />
                       </td>
                     )}
                   </tr>
@@ -385,7 +385,8 @@ export function DataTable<T>({
                       ))}
                       {rowActions && (
                         <td className="border-b border-[var(--adm-line-soft)] px-4 py-3.5 pr-5 group-last/row:border-b-0" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100">{rowActions(row)}</div>
+                          {/* Hover-revealed on pointer devices; always visible on touch. */}
+                          <div className="flex items-center justify-end transition-opacity md:opacity-0 md:focus-within:opacity-100 md:group-hover/row:opacity-100">{rowActions(row)}</div>
                         </td>
                       )}
                     </tr>

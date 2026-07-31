@@ -24,13 +24,13 @@ export function SectionCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
               <Icon className="h-4 w-4" strokeWidth={1.75} />
             </span>
           )}
           <div className="min-w-0">
-            <h3 className="font-display text-sm font-bold text-slate-900">{title}</h3>
-            {description && <p className="text-xs text-slate-400">{description}</p>}
+            <h3 className="text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h3>
+            {description && <p className="text-[12.5px] text-[var(--adm-ink-mute)]">{description}</p>}
           </div>
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
@@ -53,8 +53,8 @@ export function DetailField({
   const empty = value === undefined || value === null || value === '';
   return (
     <div className={cn('min-w-0', className)}>
-      <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</dt>
-      <dd className={cn('mt-0.5 text-sm', empty ? 'text-slate-300' : 'font-medium text-slate-800')}>
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--adm-ink-subtle)]">{label}</dt>
+      <dd className={cn('mt-0.5 text-sm', empty ? 'text-slate-300' : 'font-medium text-[var(--adm-ink)]')}>
         {empty ? '—' : value}
       </dd>
     </div>

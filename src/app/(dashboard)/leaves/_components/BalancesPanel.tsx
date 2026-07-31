@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LeaveType } from '@/types/leave';
 import { typeBadge } from './shared';
+import { Avatar } from '@/components/ui/avatar';
 
 export interface BalanceRow {
   emp: { id: string; name: string; type: import('@/types/employee').EmployeeType };
@@ -77,9 +78,7 @@ export function BalancesPanel({
                   <tr key={emp.id} className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                          {emp.name?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
+                        <Avatar name={emp.name} />
                         <p className="text-sm font-semibold text-slate-900">{emp.name || 'Unknown'}</p>
                       </div>
                     </td>

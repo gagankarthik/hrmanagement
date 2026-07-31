@@ -3,14 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import {
-  LayoutDashboard, UsersRound,
-  BarChart3, X,
-  PanelLeft, PanelLeftClose, BookOpen, ScrollText,
-  HeartPulse, ShieldCheck, ClipboardList, UserCog,
-  Wallet, CalendarDays, Network, FolderOpen,
-  ClipboardCheck, DatabaseBackup,
-} from 'lucide-react';
+  IconDashboard, IconEmployees, IconOnboarding, IconPartners, IconLeave,
+  IconBilling, IconReports, IconHandbook, IconProcedures, IconPolicies,
+  IconBenefits, IconCompliance, IconUsersAdmin, IconBackup, IconDocuments,
+} from '@/components/icons';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAccess } from '@/hooks/useAccess';
@@ -23,12 +21,12 @@ const selfServiceSections: NavSection[] = [
   {
     heading: 'My Portal',
     items: [
-      { label: 'My Leave', href: '/my-leave', icon: CalendarDays },
-      { label: 'My Documents', href: '/my-documents', icon: FolderOpen },
-      { label: 'Handbook', href: '/handbook', icon: BookOpen },
-      { label: 'Company Procedures', href: '/procedures', icon: ClipboardList },
-      { label: 'Policies', href: '/policies', icon: ScrollText },
-      { label: 'Benefits', href: '/benefits', icon: HeartPulse },
+      { label: 'My Leave', href: '/my-leave', icon: IconLeave },
+      { label: 'My Documents', href: '/my-documents', icon: IconDocuments },
+      { label: 'Handbook', href: '/handbook', icon: IconHandbook },
+      { label: 'Company Procedures', href: '/procedures', icon: IconProcedures },
+      { label: 'Policies', href: '/policies', icon: IconPolicies },
+      { label: 'Benefits', href: '/benefits', icon: IconBenefits },
     ],
   },
 ];
@@ -37,30 +35,30 @@ const sections: NavSection[] = [
   {
     heading: 'Workspace',
     items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
-      { label: 'Employees', href: '/employees', icon: UsersRound },
-      { label: 'Onboarding', href: '/onboard/packets', icon: ClipboardCheck },
-      { label: 'Partners', href: '/partners', icon: Network },
-      { label: 'Leave Management', href: '/leaves', icon: CalendarDays },
-      { label: 'Billing', href: '/billing', icon: Wallet },
+      { label: 'Dashboard', href: '/dashboard', icon: IconDashboard, exact: true },
+      { label: 'Employees', href: '/employees', icon: IconEmployees },
+      { label: 'Onboarding', href: '/onboard/packets', icon: IconOnboarding },
+      { label: 'Partners', href: '/partners', icon: IconPartners },
+      { label: 'Leave Management', href: '/leaves', icon: IconLeave },
+      { label: 'Billing', href: '/billing', icon: IconBilling },
     ],
   },
   {
     heading: 'Company',
     items: [
-      { label: 'Reports', href: '/reports', icon: BarChart3 },
-      { label: 'Handbook', href: '/handbook', icon: BookOpen },
-      { label: 'Company Procedures', href: '/procedures', icon: ClipboardList },
-      { label: 'Policies', href: '/policies', icon: ScrollText },
-      { label: 'Benefits', href: '/benefits', icon: HeartPulse },
-      { label: 'Compliance', href: '/compliance', icon: ShieldCheck },
+      { label: 'Reports', href: '/reports', icon: IconReports },
+      { label: 'Handbook', href: '/handbook', icon: IconHandbook },
+      { label: 'Company Procedures', href: '/procedures', icon: IconProcedures },
+      { label: 'Policies', href: '/policies', icon: IconPolicies },
+      { label: 'Benefits', href: '/benefits', icon: IconBenefits },
+      { label: 'Compliance', href: '/compliance', icon: IconCompliance },
     ],
   },
   {
     heading: 'Administration',
     items: [
-      { label: 'Users', href: '/users', icon: UserCog },
-      { label: 'Backups', href: '/backup', icon: DatabaseBackup, adminOnly: true },
+      { label: 'Users', href: '/users', icon: IconUsersAdmin },
+      { label: 'Backups', href: '/backup', icon: IconBackup, adminOnly: true },
     ],
   },
 ];
@@ -89,19 +87,22 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col bg-[var(--adm-chrome)]">
-      {/* Logo row — matches the topbar height */}
-      <div className={cn('flex h-16 items-center', collapsed ? 'justify-center px-2' : 'justify-between px-4')}>
-        <Link href="/dashboard" className="flex items-center gap-2" aria-label="Dashboard home">
-          {collapsed ? (
-            <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-6 w-auto" />
-          ) : (
-            <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-8 w-auto" />
-          )}
+      {/* Logo row — centered, matches the topbar height */}
+      <div className={cn('relative flex h-16 items-center justify-center', collapsed ? 'px-2' : 'px-4')}>
+        <Link href="/dashboard" className="flex items-center" aria-label="Dashboard home">
+          <Image
+            src="/logo.png"
+            alt="Ocean Blue"
+            width={277}
+            height={76}
+            priority
+            className={collapsed ? 'h-6 w-auto' : 'h-8 w-auto'}
+          />
         </Link>
         {!collapsed && onClose && (
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-[var(--adm-ink-subtle)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)] lg:hidden"
+            className="absolute right-3 rounded-md p-1.5 text-[var(--adm-ink-subtle)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)] lg:hidden"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
@@ -139,7 +140,6 @@ function SidebarContent({
                   )}
                 >
                   <Icon
-                    strokeWidth={1.75}
                     className={cn(
                       'flex-shrink-0 transition-colors',
                       collapsed ? 'h-[21px] w-[21px]' : 'h-[18px] w-[18px]',

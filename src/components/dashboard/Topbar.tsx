@@ -14,6 +14,7 @@ import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { ActivityDrawer } from '@/components/dashboard/ActivityDrawer';
+import { Avatar } from '@/components/ui/avatar';
 
 type Result = { key: string; label: string; sub?: string; group: string; href: string; icon: React.ElementType };
 
@@ -53,11 +54,10 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   const name = user?.name ?? user?.email?.split('@')[0] ?? 'User';
   const email = user?.email ?? '';
-  const initials = (user?.name ?? user?.email ?? 'U')
-    .split(/[ @]/).map((s) => s[0]).slice(0, 2).join('').toUpperCase();
 
   const searchRef = useClickOutside<HTMLDivElement>(open, useCallback(() => setOpen(false), []));
   const menuRef = useClickOutside<HTMLDivElement>(menuOpen, useCallback(() => setMenuOpen(false), []));
+  const notifRef = useClickOutside<HTMLDivElement>(activityOpen, useCallback(() => setActivityOpen(false), []));
 
   const q = query.trim().toLowerCase();
 
@@ -120,8 +120,8 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           other people's data). */}
       {!selfServiceOnly && (
       <div className="absolute left-1/2 top-1/2 hidden w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 px-14 md:block">
-      <div ref={searchRef} className="relative mx-auto w-full max-w-md">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--adm-ink-subtle)]" strokeWidth={1.75} />
+      <div ref={searchRef} className="relative mx-auto w-full max-w-lg">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--adm-ink-subtle)]" strokeWidth={1.75} />
         <input
           type="text"
           role="combobox"
@@ -132,7 +132,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           onFocus={() => query && setOpen(true)}
           onKeyDown={onKeyDown}
           placeholder="Search people, clients, vendors…"
-          className="w-full rounded-[8px] border border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] py-1.5 pl-8 pr-3 text-sm text-[var(--adm-ink)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:bg-white focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
+          className="h-9 w-full rounded-[8px] border border-[var(--adm-line-strong)]/60 bg-white pl-9 pr-3 text-sm text-[var(--adm-ink)] shadow-[var(--adm-shadow-sm)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
         />
 
         {open && q && (
@@ -191,17 +191,25 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       )}
 
       <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2.5">
-        {/* Notifications → recent activity side sheet (full-access only) */}
+        {/* Notifications → anchored dropdown panel (full-access only) */}
         {!selfServiceOnly && (
-        <button
-          onClick={() => setActivityOpen(true)}
-          className="relative rounded-lg p-2 text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]"
-          aria-label="Recent activity"
-          title="Recent activity"
-        >
-          <Bell className="h-5 w-5" strokeWidth={1.75} />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--adm-accent)]" />
-        </button>
+        <div ref={notifRef} className="relative">
+          <button
+            onClick={() => setActivityOpen((v) => !v)}
+            className={cn(
+              'relative rounded-lg p-2 text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]',
+              activityOpen && 'bg-[var(--adm-row-hover)] text-[var(--adm-ink)]',
+            )}
+            aria-label="Notifications"
+            aria-haspopup="dialog"
+            aria-expanded={activityOpen}
+            title="Notifications"
+          >
+            <Bell className="h-5 w-5" strokeWidth={1.75} />
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--adm-accent)]" />
+          </button>
+          <ActivityDrawer open={activityOpen} onClose={() => setActivityOpen(false)} />
+        </div>
         )}
 
         <div className="mx-1 hidden h-6 w-px bg-[var(--adm-line-strong)] md:block" aria-hidden />
@@ -218,18 +226,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             aria-expanded={menuOpen}
             aria-label="Open profile menu"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white ring-2 ring-white/80 shadow-sm">
-              {initials}
-            </span>
+            <Avatar name={user?.name || user?.email} className="h-7 w-7 ring-2 ring-white/80" />
           </button>
 
           {menuOpen && (
             <>
               <div className="absolute right-0 z-20 mt-2 w-60 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white shadow-[var(--adm-shadow-pop)] animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">
-                    {initials}
-                  </span>
+                  <Avatar name={user?.name || user?.email} size="md" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-800">{name}</p>
                     {email && <p className="truncate text-xs text-slate-400">{email}</p>}
@@ -258,7 +262,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
       </div>
 
-      <ActivityDrawer open={activityOpen} onClose={() => setActivityOpen(false)} />
     </header>
   );
 }

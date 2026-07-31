@@ -16,6 +16,7 @@ import { money, formatDate } from '@/lib/format';
 import { friendlyError } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { Timesheet, TimesheetStatus } from '@/types/timesheet';
+import { Avatar } from '@/components/ui/avatar';
 
 const STATUS_BADGE: Record<TimesheetStatus, string> = {
   Draft: 'bg-slate-100 text-slate-600 ring-slate-200',
@@ -138,9 +139,7 @@ export default function TimesheetsPage() {
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-                            {t.employeeName?.charAt(0)?.toUpperCase() ?? '?'}
-                          </span>
+                          <Avatar name={t.employeeName} />
                           <p className="text-sm font-semibold text-slate-900">{t.employeeName || 'Unnamed'}</p>
                         </div>
                       </td>

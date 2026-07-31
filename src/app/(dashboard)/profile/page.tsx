@@ -10,17 +10,13 @@ import { useSelfEmployee } from '@/hooks/useSelfEmployee';
 import { getFieldsByType, type FormField } from '@/types/employee';
 import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
 import { formatDate, money } from '@/lib/format';
+import { Avatar } from '@/components/ui/avatar';
 
 // Financial fields an employee must not see on their own profile: the client
 // bill rate (and technical relationship IDs). Pay / pay rate / salary stay.
 const HIDDEN_SELF_FIELDS = new Set(['billRate', 'clientId', 'vendorId']);
 
 const E164 = /^\+[1-9]\d{6,14}$/;
-
-function initialsOf(name?: string, email?: string) {
-  const src = (name?.trim() || email || 'U').split(/[ @]/).filter(Boolean);
-  return (src.map((s) => s[0]).slice(0, 2).join('') || 'U').toUpperCase();
-}
 
 export default function ProfilePage() {
   const { user, refreshSession, signOut } = useAuth();
@@ -158,9 +154,7 @@ export default function ProfilePage() {
 
       {/* Identity card */}
       <div className="surface flex items-center gap-4 p-5 sm:p-6">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-xl font-bold text-white">
-          {initialsOf(name || user?.name, user?.email)}
-        </span>
+        <Avatar name={name || user?.name || user?.email} size="xl" />
         <div className="min-w-0">
           <p className="font-display text-xl font-bold text-slate-900">{name || user?.name || 'Your account'}</p>
           {user?.email && <p className="truncate text-sm text-slate-500">{user.email}</p>}

@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { ROLE_LABELS, type AppRole } from '@/config/access';
 import { friendlyError } from '@/lib/errors';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { Avatar } from '@/components/ui/avatar';
 
 const EMPLOYEE_TYPES = ['W2', 'Contract', '1099', 'Offshore'] as const;
 type EmployeeType = (typeof EMPLOYEE_TYPES)[number];
@@ -194,9 +195,7 @@ export default function UsersPage() {
       sortValue: (u) => (u.name || u.email || '').toLowerCase(),
       cell: (u) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-sm font-bold text-brand-700">
-            {(u.name || u.email || '?').charAt(0).toUpperCase()}
-          </div>
+          <Avatar name={u.name || u.email} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{u.name || u.email?.split('@')[0] || 'User'}</p>
             <p className="flex items-center gap-1.5 truncate text-xs text-slate-400">
