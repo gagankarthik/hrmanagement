@@ -365,6 +365,41 @@
   }
 }
 
+/* Bathymetric hero tide — contour rings breathe (rotate+scale reads as a
+   morph on irregular closed paths), a dash "current" travels the lines, and
+   a sonar ping swells from the depth center. Compositor-only properties. */
+@keyframes hz-tide {
+  from {
+    transform: rotate(-2deg) scale(0.985);
+  }
+  to {
+    transform: rotate(2.4deg) scale(1.02);
+  }
+}
+@keyframes hz-current-a {
+  to {
+    stroke-dashoffset: -1400;
+  }
+}
+@keyframes hz-current-b {
+  to {
+    stroke-dashoffset: -2250;
+  }
+}
+@keyframes hz-ping {
+  0% {
+    transform: scale(0.15);
+    opacity: 0.5;
+  }
+  80% {
+    opacity: 0.06;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
 /* Word-by-word headline reveal (pairs with an overflow-hidden word wrapper) */
 @keyframes hz-rise {
   from {
@@ -408,6 +443,23 @@
   --adm-warning: #d97706;
   --adm-danger: #e11d48;
 
+  /* Accent + surface tokens live at :root so shared components (.btn-*,
+     .surface, inputs, badges, Avatar) render correctly on every page —
+     login, landing modals, print — not only inside the dashboard shell. */
+  --adm-accent: #1d4ed8;
+  --adm-accent-strong: #1e40af;
+  --adm-accent-soft: rgba(29, 78, 216, 0.1);
+  --adm-accent-tint: rgba(29, 78, 216, 0.07);
+  --adm-focus-ring: rgba(29, 78, 216, 0.28);
+  --adm-canvas: #fafafa;
+  --adm-chrome: #edeff2;
+  --adm-line: #ececf0;
+  --adm-surface-2: #f1f5f9;
+  --adm-row-hover: #f5f8ff;
+  --adm-success-soft: rgba(5, 150, 105, 0.1);
+  --adm-warning-soft: rgba(217, 119, 6, 0.1);
+  --adm-danger-soft: rgba(225, 29, 72, 0.1);
+
   --adm-shadow-sm: 0 1px 2px -1px rgba(16, 24, 40, 0.06), 0 1px 3px 0 rgba(16, 24, 40, 0.04);
   --adm-shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
   --adm-shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.16), 0 2px 8px -3px rgba(16, 24, 40, 0.08);
@@ -420,19 +472,6 @@
 }
 
 .adm-scope {
-  --adm-accent: #1d4ed8;
-  --adm-accent-strong: #1e40af;
-  --adm-accent-soft: rgba(29, 78, 216, 0.1);
-  --adm-accent-tint: rgba(29, 78, 216, 0.07);
-  --adm-focus-ring: rgba(29, 78, 216, 0.28);
-  --adm-canvas: #fafafa; /* content area */
-  --adm-chrome: #edeff2; /* sidebar + top bar, one borderless surface */
-  --adm-line: #ececf0;
-  --adm-surface-2: #f1f5f9;
-  --adm-row-hover: #f5f8ff;
-  --adm-success-soft: rgba(5, 150, 105, 0.1);
-  --adm-warning-soft: rgba(217, 119, 6, 0.1);
-  --adm-danger-soft: rgba(225, 29, 72, 0.1);
   background: var(--adm-canvas);
   color: var(--adm-ink);
   color-scheme: light;

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Cta, Eyebrow, WordsReveal } from '@/components/landing/ui';
+import { HeroTide } from '@/components/landing/HeroTide';
 
 /** Auth-aware hero actions in the shared Cta pill vocabulary. */
 function HeroCtas() {
@@ -205,6 +206,8 @@ export function Hero() {
             'radial-gradient(46% 38% at 82% 12%, rgba(29,78,216,0.07) 0%, transparent 65%)',
         }}
       />
+      {/* The living bathymetric chart — Ocean Blue's own topography */}
+      <HeroTide tone="light" />
 
       <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 px-6 pb-20 pt-28 sm:px-8 md:pt-32 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16 lg:pb-28 lg:pt-36 2xl:max-w-[96rem]">
         <div className="max-w-xl">

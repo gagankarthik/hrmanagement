@@ -8,7 +8,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { BRAND } from "@/config/brand";
-import { Users, ShieldCheck, BarChart3, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+
+const inputCls =
+  "h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]";
+const labelCls = "block text-sm font-medium text-[var(--adm-ink)]";
 
 export default function LoginPage() {
   const { isAuthenticated, isLoading, signIn, newPasswordRequired, confirmNewPassword, roles } = useAuth();
@@ -30,14 +34,6 @@ export default function LoginPage() {
       router.push(isSelfServiceOnly(roles) ? SELF_SERVICE_HOME : "/dashboard");
     }
   }, [isAuthenticated, roles, router]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
-        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-200 border-t-brand-600" />
-      </div>
-    );
-  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -89,278 +85,219 @@ export default function LoginPage() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen">
-      {/* Left brand panel */}
-      <div className="relative hidden flex-col justify-between overflow-hidden px-12 py-10 lg:flex lg:w-[46%]">
-        {/* Brand atmosphere — the HORIZON deep navy with cobalt/cyan radial mesh */}
-        <div className="absolute inset-0" style={{ background: "#07142b" }} aria-hidden />
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(52% 56% at 85% 20%, rgba(42,216,239,0.18) 0%, transparent 60%), radial-gradient(58% 62% at 10% 90%, rgba(29,78,216,0.4) 0%, transparent 62%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.12]"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
-            backgroundSize: "34px 34px",
-            maskImage: "radial-gradient(120% 120% at 30% 20%, black 0%, transparent 75%)",
-            WebkitMaskImage: "radial-gradient(120% 120% at 30% 20%, black 0%, transparent 75%)",
-          }}
-        />
-
-        <div className="relative">
-          <span className="inline-flex items-center rounded-xl bg-white px-3.5 py-2.5 shadow-lg shadow-brand-950/30">
-            <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-8 w-auto" />
-          </span>
-        </div>
-
-        <div className="relative space-y-10">
-          <div>
-            <p className="hz-eyebrow text-white/60">Workforce platform</p>
-            <h1 className="hz-display mt-4 text-[2.6rem] text-white">
-              Your whole workforce,<br />
-              <span className="text-[var(--hz-cyan-400)]">one secure platform</span>
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-white/70">
-              One secure place for your people, clients, compliance, billing, and reporting.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { icon: Users, title: "Workforce Management", body: "W2, Contract, 1099 & Offshore employees" },
-              { icon: ShieldCheck, title: "Compliance Tracking", body: "Work authorization alerts & expiry monitoring" },
-              { icon: BarChart3, title: "Real-time Analytics", body: "Insights across your entire workforce" },
-            ].map(({ icon: Icon, title, body }) => (
-              <div
-                key={title}
-                className="flex items-start gap-4 rounded-2xl bg-white/[0.04] px-4 py-3.5 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08]"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-[var(--hz-cyan-400)] ring-1 ring-white/10">
-                  <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-sm text-white/60">{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="relative text-xs text-white/45">© {new Date().getFullYear()} Ocean Blue Corporation · Secure workforce platform</p>
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--hz-surface)]">
+        <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-[var(--adm-line)] border-t-[var(--adm-accent)]" />
       </div>
+    );
+  }
 
-      {/* Right sign-in panel */}
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto bg-[#f8fafc] px-5 py-16 sm:px-8 sm:py-12">
-        {/* Back to home */}
+  return (
+    <div className="horizon relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--hz-surface)]">
+      {/* Quiet canvas — faint grid fading from the top + one soft cobalt tint */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.035) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+          maskImage: "radial-gradient(75% 60% at 50% 0%, black 0%, transparent 85%)",
+          WebkitMaskImage: "radial-gradient(75% 60% at 50% 0%, black 0%, transparent 85%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(50% 40% at 50% 0%, rgba(29,78,216,0.06) 0%, transparent 65%)",
+        }}
+      />
+
+      {/* Top bar — back to the landing */}
+      <div className="relative z-10 px-5 pt-5 sm:px-8">
         <Link
           href="/"
-          className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-brand-700 sm:left-6 sm:top-6"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--adm-line)] bg-white px-3.5 py-2 text-[13px] font-semibold text-[var(--adm-ink-mute)] shadow-[var(--adm-shadow-sm)] transition-colors hover:border-[var(--adm-line-strong)] hover:text-[var(--adm-ink)]"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to home
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Back to home
         </Link>
+      </div>
 
-        {/* Subtle light-theme atmosphere behind the card */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "radial-gradient(110% 80% at 50% -10%, rgba(29,78,216,0.10) 0%, transparent 55%), radial-gradient(80% 70% at 100% 110%, rgba(42,216,239,0.08) 0%, transparent 50%)",
-          }}
-        />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.5]"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(15,23,42,0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.025) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-            maskImage: "radial-gradient(80% 60% at 50% 40%, black 0%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(80% 60% at 50% 40%, black 0%, transparent 80%)",
-          }}
-        />
+      {/* Centered gateway card */}
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[400px]">
+          <div className="rounded-[14px] border border-[var(--adm-line)] bg-white p-6 shadow-[0_18px_50px_-22px_rgba(15,23,42,0.25)] animate-in fade-in slide-in-from-bottom-3 duration-500 sm:p-8">
+            <Image src="/logo.png" alt={BRAND.name} width={277} height={76} priority className="h-8 w-auto" />
 
-        {/* Mobile logo */}
-        <div className="relative mb-8 flex items-center gap-2.5 lg:hidden">
-          <Image src="/logo.png" alt="Ocean Blue" width={277} height={76} priority className="h-9 w-auto" />
-        </div>
+            {newPasswordRequired ? (
+              <>
+                <h1 className="hz-display mt-6 text-[1.45rem] text-[var(--adm-ink)]">Set a new password</h1>
+                <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">
+                  Your account was created with a temporary password. Choose a new one to continue.
+                </p>
 
-        <div className="surface relative w-full max-w-[400px] space-y-6 p-7 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {newPasswordRequired ? (
-            <>
-              <div>
-                <p className="eyebrow">Almost there</p>
-                <h2 className="hz-display mt-2 text-[1.6rem] text-[var(--adm-ink)]">Set a new password</h2>
-                <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">Your account was created with a temporary password. Choose a new one to continue.</p>
-              </div>
-
-              <form onSubmit={handleSetNewPassword} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="fullName" className="block text-sm font-medium text-[var(--adm-ink)]">Full name</label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Jane Doe"
-                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="phone" className="block text-sm font-medium text-[var(--adm-ink)]">Phone number</label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 415 555 2671"
-                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
-                  />
-                  <p className="text-xs text-slate-400">Include your country code (e.g. +1 for the US).</p>
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-[var(--adm-ink)]">New password</label>
-                  <div className="relative">
+                <form onSubmit={handleSetNewPassword} className="mt-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="fullName" className={labelCls}>Full name</label>
                     <input
-                      id="newPassword"
+                      id="fullName"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Jane Doe"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="phone" className={labelCls}>Phone number</label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      autoComplete="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 415 555 2671"
+                      className={inputCls}
+                    />
+                    <p className="text-xs text-[var(--adm-ink-subtle)]">Include your country code (e.g. +1 for the US).</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="newPassword" className={labelCls}>New password</label>
+                    <div className="relative">
+                      <input
+                        id="newPassword"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={`${inputCls} pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="confirmPwd" className={labelCls}>Confirm password</label>
+                    <input
+                      id="confirmPwd"
                       type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
                       required
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      value={confirmPwd}
+                      onChange={(e) => setConfirmPwd(e.target.value)}
                       placeholder="••••••••"
-                      className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 pr-10 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
+                      className={inputCls}
                     />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" tabIndex={-1}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="confirmPwd" className="block text-sm font-medium text-[var(--adm-ink)]">Confirm password</label>
-                  <input
-                    id="confirmPwd"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    value={confirmPwd}
-                    onChange={(e) => setConfirmPwd(e.target.value)}
-                    placeholder="••••••••"
-                    className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
-                  />
-                </div>
 
-                {error && (
-                  <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">{error}</div>
-                )}
+                  {error && (
+                    <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">
+                      {error}
+                    </div>
+                  )}
 
-                <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
-                  {submitting ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : null}
-                  {submitting ? "Saving…" : "Set password & continue"}
-                </button>
-              </form>
-            </>
-          ) : (
-          <>
-          <div>
-            <p className="eyebrow">Welcome back</p>
-            <h2 className="hz-display mt-2 text-[1.6rem] text-[var(--adm-ink)]">Sign in to your account</h2>
-            <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">Access your HR dashboard and live workforce insights.</p>
+                  <button type="submit" disabled={submitting} className="btn-primary h-10 w-full">
+                    {submitting ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    ) : null}
+                    {submitting ? "Saving…" : "Set password & continue"}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <h1 className="hz-display mt-6 text-[1.45rem] text-[var(--adm-ink)]">Sign in to {BRAND.name}</h1>
+                <p className="mt-1.5 text-sm text-[var(--adm-ink-mute)]">Your workforce, one secure place.</p>
+
+                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                  <div className="space-y-1.5">
+                    <label htmlFor="email" className={labelCls}>Email</label>
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      aria-invalid={!!error}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@company.com"
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="password" className={labelCls}>Password</label>
+                      <Link href="/forgot-password" className="text-xs font-medium text-[var(--adm-accent)] hover:text-[var(--adm-accent-strong)]">
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        required
+                        aria-invalid={!!error}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={`${inputCls} pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">
+                      {error}
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={submitting} className="btn-primary h-10 w-full">
+                    {submitting ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    ) : null}
+                    {submitting ? "Signing in…" : "Sign in"}
+                  </button>
+                </form>
+
+                <p className="mt-5 text-center text-sm text-[var(--adm-ink-mute)]">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/signup" className="font-semibold text-[var(--adm-accent)] hover:text-[var(--adm-accent-strong)]">
+                    Request access
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--adm-ink)]">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                aria-invalid={!!error}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium text-[var(--adm-ink)]">
-                  Password
-                </label>
-                <Link href="/forgot-password" className="text-xs font-medium text-brand-600 hover:text-brand-700">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  aria-invalid={!!error}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="h-10 w-full rounded-[8px] border border-[var(--adm-line)] bg-white px-3 pr-10 text-sm text-[var(--adm-ink)] shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div role="alert" className="rounded-[8px] border border-rose-200 bg-[var(--adm-danger-soft)] px-3.5 py-2.5 text-sm text-[var(--adm-danger)]">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="btn-primary w-full py-3"
-            >
-              {submitting ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : null}
-              {submitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-slate-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-brand-600 hover:text-brand-700">
-              Request access
-            </Link>
+          <p className="mt-6 text-center text-xs leading-relaxed text-[var(--adm-ink-subtle)]">
+            © {new Date().getFullYear()} {BRAND.legalName} · Internal system · Authorized access only
           </p>
-
-          <p className="text-center text-xs text-[var(--adm-ink-subtle)]">
-            {BRAND.legalName} internal system. Authorized access only.
-          </p>
-          </>
-          )}
         </div>
       </div>
     </div>
