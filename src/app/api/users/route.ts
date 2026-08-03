@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listUsers, inviteUser, APP_INVITE_ROLES, type AppRole } from '@/lib/cognito';
 import { authorize } from '@/shared/server/auth/guards';
+import { denyRoleEscalation } from '@/shared/server/auth/role-limits';
 
-// GET - list all app users (Cognito)
+// GET - list all app users (Cognito). HR and Admin both administer accounts.
 export async function GET(request: NextRequest) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   try {
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 // POST - invite a user (creates the Cognito account; Cognito emails the temp password)
 export async function POST(request: NextRequest) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   try {
@@ -35,6 +36,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
     }
     const role = (rawRole || 'employee') as AppRole;
+    // HR invites people; only an admin mints another admin or HR account.
+    const escalation = denyRoleEscalation(auth.session, role);
+    if (escalation) return escalation;
+
     const data = await inviteUser({ email, name: body.name, role, resend: !!body.resend });
     return NextResponse.json({ success: true, data });
   } catch (error) {

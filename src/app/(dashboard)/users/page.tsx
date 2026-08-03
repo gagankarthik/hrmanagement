@@ -55,7 +55,7 @@ function statusInfo(u: AppUser): { label: string; tone: StatusTone; Icon: React.
 export default function UsersPage() {
   const toast = useToast();
   const { employees, fetchEmployees } = useEmployees();
-  const { admin } = useAccess();
+  const { admin, canManage } = useAccess();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [linkingFor, setLinkingFor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,15 +86,20 @@ export default function UsersPage() {
     }
   }, [toast]);
 
-  // Account administration is admin-only, both here and at /api/users — don't
-  // even ask for the list as an hr user, the answer is 403.
-  useEffect(() => { if (admin) fetchUsers(); else setIsLoading(false); }, [admin, fetchUsers]);
+  useEffect(() => { if (canManage) fetchUsers(); else setIsLoading(false); }, [canManage, fetchUsers]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) => [u.name, u.email].some((f) => f?.toLowerCase().includes(q)));
   }, [users, search]);
+
+  /**
+   * HR administers ordinary accounts; admin and HR accounts are an admin's to
+   * change. The API enforces this too — this only keeps HR from clicking
+   * controls that would come back 403.
+   */
+  const isLocked = (u: AppUser) => !admin && (u.role === 'admin' || u.role === 'hr');
 
   const activeCount = users.filter((u) => u.enabled && u.status === 'CONFIRMED').length;
   const pendingCount = users.filter((u) => u.status === 'FORCE_CHANGE_PASSWORD').length;
@@ -318,7 +323,7 @@ export default function UsersPage() {
         <div onClick={(e) => e.stopPropagation()} className="flex items-center">
           <Switch
             checked={u.hrAccess}
-            disabled={savingFor === u.username}
+            disabled={savingFor === u.username || isLocked(u)}
             onChange={(v) => updateMeta(u, { hrAccess: v })}
             label={<span className="text-xs">{u.hrAccess ? 'Allowed' : 'Blocked'}</span>}
           />
@@ -335,20 +340,18 @@ export default function UsersPage() {
     },
   ];
 
-  // ── Admin-only surface ──────────────────────────────────────────────────
-  // Accounts, roles and portal access decide who can see the whole company's
-  // data, so only admins manage them. /api/users enforces the same thing.
-  if (!admin) {
+  // HR and Admin both administer accounts; everyone else never reaches this
+  // route (ProtectedRoute) and would be refused by /api/users anyway.
+  if (!canManage) {
     return (
       <PageContainer>
         <div className="surface flex flex-col items-center px-6 py-14 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
             <ShieldAlert className="h-6 w-6" strokeWidth={1.75} />
           </span>
-          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Admins only</h1>
+          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Not available</h1>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600">
-            Sign-in accounts, roles and portal access are managed by administrators. To invite
-            someone or change what they can reach, ask an admin on your team.
+            Sign-in accounts are managed by HR and administrators.
           </p>
         </div>
       </PageContainer>
@@ -361,7 +364,11 @@ export default function UsersPage() {
         icon={UserCog}
         eyebrow="Administration"
         title="Users"
-        description="Invite people, set the role each one holds, and link their sign-in to an employee record so they see their own leave, attendance and documents."
+        description={
+          admin
+            ? 'Invite people, set the role each one holds, and link their sign-in to an employee record so they see their own leave, attendance and documents.'
+            : 'Invite people and link their sign-in to an employee record so they see their own leave, attendance and documents. Admin and HR accounts are changed by an administrator.'
+        }
         tone="brand"
         actions={
           <button onClick={() => setInviteOpen(true)} className="btn-primary">
@@ -414,7 +421,10 @@ export default function UsersPage() {
                 <ActionMenu
                   items={[
                     ...(pending ? [{ label: 'Resend invite', icon: RotateCw, onClick: () => handleResend(u) }] : []),
-                    { label: 'Remove access', icon: Trash2, danger: true, separatorBefore: pending, onClick: () => setDeleteTarget(u) },
+                    // Removing an admin or HR account is an admin decision.
+                    ...(isLocked(u)
+                      ? []
+                      : [{ label: 'Remove access', icon: Trash2, danger: true, separatorBefore: pending, onClick: () => setDeleteTarget(u) }]),
                   ]}
                 />
               </div>

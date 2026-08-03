@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorize } from '@/shared/server/auth/guards';
+import { denyElevatedTarget, denyRoleEscalation } from '@/shared/server/auth/role-limits';
 import {
   deleteUser,
   updateUserMeta,
@@ -11,7 +12,7 @@ import {
 // PATCH - update HR-portal metadata (role, portal access)
 export async function PATCH(request: NextRequest,
   { params }: { params: Promise<{ username: string }> }) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   try {
@@ -25,12 +26,19 @@ export async function PATCH(request: NextRequest,
 
     const uname = decodeURIComponent(username);
 
+    // An hr user administers ordinary accounts, not admin/hr ones — in either
+    // direction: they cannot touch an elevated account, nor promote into one.
+    const protectedTarget = await denyElevatedTarget(auth.session, uname);
+    if (protectedTarget) return protectedTarget;
+
     // Role change is a group operation (not just an attribute), handled separately.
     if ('role' in body) {
       const rawRole = (body.role || '').toLowerCase().trim();
       if (!APP_INVITE_ROLES.includes(rawRole as AppRole)) {
         return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
       }
+      const escalation = denyRoleEscalation(auth.session, rawRole);
+      if (escalation) return escalation;
       await setUserRole(uname, rawRole as AppRole);
     }
 
@@ -53,12 +61,17 @@ export async function PATCH(request: NextRequest,
 // DELETE - remove a user from the pool
 export async function DELETE(request: NextRequest,
   { params }: { params: Promise<{ username: string }> }) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   try {
     const { username } = await params;
-    await deleteUser(decodeURIComponent(username));
+    const uname = decodeURIComponent(username);
+
+    const protectedTarget = await denyElevatedTarget(auth.session, uname);
+    if (protectedTarget) return protectedTarget;
+
+    await deleteUser(uname);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting user:', error);

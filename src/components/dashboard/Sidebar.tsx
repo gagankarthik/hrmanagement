@@ -59,7 +59,7 @@ const sections: NavSection[] = [
   {
     heading: 'Administration',
     items: [
-      { label: 'Users', href: '/users', icon: IconUsersAdmin, adminOnly: true },
+      { label: 'Users', href: '/users', icon: IconUsersAdmin },
       { label: 'Backups', href: '/backup', icon: IconBackup, adminOnly: true },
     ],
   },

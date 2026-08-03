@@ -40,11 +40,12 @@ function statusOf(u: AppUser): { label: string; tone: StatusTone; Icon: React.El
  * card also links the new account to this employee record, which is what makes
  * their leave, attendance and documents resolve to them.
  *
- * Accounts are an admin surface (so is /api/users), so non-admins see the state
- * of play in words rather than controls they cannot use.
+ * HR and admins both administer accounts, so both get the controls here. An
+ * admin or HR account itself is only changeable by an admin, matching the rule
+ * /api/users enforces; anyone else just reads the state of play.
  */
 export function EmployeePortalAccess({ employee }: { employee: Employee }) {
-  const { admin } = useAccess();
+  const { admin, canManage } = useAccess();
   const { fetchEmployees } = useEmployees();
   const toast = useToast();
 
@@ -53,7 +54,7 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
   const [busy, setBusy] = useState(false);
 
   const loadUsers = useCallback(async () => {
-    if (!admin) {
+    if (!canManage) {
       setLoading(false);
       return;
     }
@@ -67,7 +68,7 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
     } finally {
       setLoading(false);
     }
-  }, [admin]);
+  }, [canManage]);
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
@@ -105,6 +106,9 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
       .map((e) => e!.toLowerCase().trim());
     return users.find((u) => candidates.includes(u.email?.toLowerCase().trim()));
   }, [users, employee.cognitoSub, employee.loginEmail, emailChoices]);
+
+  /** An admin/HR account is an admin's to change, in the UI and at the API. */
+  const accountLocked = !admin && (account?.role === 'admin' || account?.role === 'hr');
 
   const setAccess = async (allowed: boolean) => {
     if (!account) return;
@@ -169,10 +173,9 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
         <h2 className="font-display text-sm font-bold text-slate-900">Portal access</h2>
       </div>
 
-      {!admin ? (
+      {!canManage ? (
         <p className="text-sm text-slate-500">
-          Sign-in accounts are managed by administrators. Ask an admin to invite this person or
-          change what they can reach.
+          Sign-in accounts are managed by HR and administrators.
         </p>
       ) : loading ? (
         <p className="flex items-center gap-2 text-sm text-slate-400">
@@ -201,7 +204,7 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
           <div className="border-t border-slate-100 pt-3">
             <Switch
               checked={account.hrAccess}
-              disabled={busy}
+              disabled={busy || accountLocked}
               onChange={setAccess}
               label={
                 <span className="text-xs font-medium text-slate-600">
@@ -210,7 +213,9 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
               }
             />
             <p className="mt-1.5 text-xs text-slate-400">
-              Blocking keeps the account but shuts this person out of the portal.
+              {accountLocked
+                ? 'This is an Admin or HR account — only an administrator can change its access.'
+                : 'Blocking keeps the account but shuts this person out of the portal.'}
             </p>
           </div>
         </div>

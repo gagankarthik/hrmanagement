@@ -112,7 +112,7 @@ function toAppUser(user: UserType): AppUser {
  * resolves to undefined on error so one failure never breaks the whole list.
  */
 const ROLE_DISPLAY_PRIORITY: AppRole[] = ['admin', 'hr', 'recruiter', 'sales', 'employee'];
-async function groupRoleFor(username: string): Promise<AppRole | undefined> {
+export async function groupRoleFor(username: string): Promise<AppRole | undefined> {
   try {
     const res = await client.send(
       new AdminListGroupsForUserCommand({ UserPoolId: USER_POOL_ID, Username: username }),
