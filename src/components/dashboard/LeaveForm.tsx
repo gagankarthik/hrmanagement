@@ -128,7 +128,15 @@ export function LeaveForm({
           <Combobox
             value={form.employeeId}
             onChange={(v) => set('employeeId', v)}
-            options={employees.map((e) => ({ value: e.id, label: e.name, sublabel: e.type }))}
+            options={employees
+              // Only active staff can be picked; keep whoever is already on the
+              // request so editing an older one never loses its employee.
+              .filter((e) => e.status !== 'Terminated' || e.id === form.employeeId)
+              .map((e) => ({
+                value: e.id,
+                label: e.name,
+                sublabel: e.status === 'Terminated' ? `${e.type} · Terminated` : e.type,
+              }))}
             placeholder="Select an employee…"
             className={cn(errors.employeeId && '[&>button]:border-red-300 [&>button]:focus:border-red-400 [&>button]:focus:ring-red-50')}
           />

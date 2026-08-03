@@ -33,6 +33,12 @@ import { CalendarPanel } from './_components/CalendarPanel';
 import { Avatar } from '@/components/ui/avatar';
 
 type TabKey = 'requested' | 'balances' | 'calendar' | 'attendance';
+type EmployeeScope = 'active' | 'all';
+
+const SCOPE_OPTIONS: { value: EmployeeScope; label: string }[] = [
+  { value: 'active', label: 'Active employees' },
+  { value: 'all', label: 'All employees' },
+];
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'requested', label: 'Requested', icon: Inbox },
@@ -50,6 +56,9 @@ export default function LeavesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | LeaveStatus>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | LeaveType>('all');
+  // Leave management is about the current workforce, so terminated employees
+  // (and their requests) are hidden by default. "All employees" brings them back.
+  const [empScope, setEmpScope] = useState<EmployeeScope>('active');
   const [calMonth, setCalMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -62,7 +71,30 @@ export default function LeavesPage() {
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const toast = useToast();
 
-  const validLeaves = leaves.filter((l) => l && l.id);
+  const allLeaves = leaves.filter((l) => l && l.id);
+
+  // Employees in scope, and the request set that belongs to them. Requests with
+  // no employee record (ESS users) or an unknown id are always kept so nothing
+  // silently disappears from the approval queue.
+  const scopedEmployees = useMemo(
+    () => (empScope === 'all' ? employees : employees.filter((e) => e.status !== 'Terminated')),
+    [employees, empScope]
+  );
+
+  const terminatedIds = useMemo(
+    () => new Set(employees.filter((e) => e.status === 'Terminated').map((e) => e.id)),
+    [employees]
+  );
+
+  const validLeaves = useMemo(
+    () => (empScope === 'all' ? allLeaves : allLeaves.filter((l) => !l.employeeId || !terminatedIds.has(l.employeeId))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allLeaves, empScope, terminatedIds]
+  );
+
+  const hiddenCount = allLeaves.length - validLeaves.length;
+  const isFiltered =
+    Boolean(searchQuery) || statusFilter !== 'all' || typeFilter !== 'all' || (empScope === 'active' && hiddenCount > 0);
 
   const nameOf = (employeeId: string) => resolveName(employeeId, employees, { unknown: 'Unknown employee' });
   // Self-service (ESS) requests may have no employeeId — fall back to the
@@ -105,7 +137,7 @@ export default function LeavesPage() {
   // ── Balances rows ───────────────────────────────────────────────────────────
   const balanceRows = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return employees
+    return scopedEmployees
       .filter((emp) => !q || emp.name?.toLowerCase().includes(q))
       .map((emp) => {
         const empApproved = approvedLeaves.filter((l) => l.employeeId === emp.id);
@@ -118,7 +150,7 @@ export default function LeavesPage() {
         const remaining = Math.max(0, allowance - used);
         return { emp, allowance, used, remaining, byType };
       });
-  }, [employees, approvedLeaves, searchQuery, getPolicy]);
+  }, [scopedEmployees, approvedLeaves, searchQuery, getPolicy]);
 
   // ── Calendar cells (only approved leaves shown) ───────────────────────────────
   const calCells = useMemo(() => {
@@ -281,35 +313,60 @@ export default function LeavesPage() {
           <StatCard label="Pending" value={totalPending} icon={Clock} tone="amber" hint="awaiting review" />
           <StatCard label="Approved" value={totalApproved} icon={CheckCircle2} tone="emerald" />
           <StatCard label="Rejected" value={totalRejected} icon={XCircle} tone="red" />
-          <StatCard label="Total requests" value={validLeaves.length} icon={Layers} tone="slate" hint="all on record" />
+          <StatCard
+            label="Total requests"
+            value={validLeaves.length}
+            icon={Layers}
+            tone="slate"
+            hint={empScope === 'active' ? 'active employees' : 'all on record'}
+          />
         </StatGrid>
       )}
 
       {/* Tab switcher (segmented control) — scrolls horizontally instead of
-          squeezing labels when all four tabs don't fit. */}
-      <div className="-mx-1 overflow-x-auto px-1">
-        <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
-          {TABS.map((tab) => {
-            const TabIcon = tab.icon;
-            const active = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'flex flex-none items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-display text-sm font-semibold transition-all sm:px-4',
-                  active
-                    ? 'bg-white text-brand-700 shadow-sm ring-1 ring-black/[0.04]'
-                    : 'text-slate-500 hover:text-slate-700'
-                )}
-                aria-pressed={active}
-              >
-                <TabIcon className="h-4 w-4 shrink-0" />
-                {tab.label}
-              </button>
-            );
-          })}
+          squeezing labels when all four tabs don't fit. The workforce scope
+          sits alongside it because it applies to every leave tab. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="-mx-1 overflow-x-auto px-1">
+          <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1">
+            {TABS.map((tab) => {
+              const TabIcon = tab.icon;
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'flex flex-none items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 font-display text-sm font-semibold transition-all sm:px-4',
+                    active
+                      ? 'bg-white text-brand-700 shadow-sm ring-1 ring-black/[0.04]'
+                      : 'text-slate-500 hover:text-slate-700'
+                  )}
+                  aria-pressed={active}
+                >
+                  <TabIcon className="h-4 w-4 shrink-0" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {activeTab !== 'attendance' && (
+          <div className="flex items-center gap-2">
+            <FilterSelect
+              label="Workforce scope"
+              value={empScope}
+              onChange={setEmpScope}
+              options={SCOPE_OPTIONS}
+            />
+            {empScope === 'active' && hiddenCount > 0 && (
+              <span className="whitespace-nowrap text-xs text-slate-400">
+                {hiddenCount} hidden
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── REQUESTED TAB ── */}
@@ -393,9 +450,13 @@ export default function LeavesPage() {
             empty={{
               icon: CalendarDays,
               tone: 'brand',
-              title: searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'No leave requests match your filters' : 'No leave requests yet',
-              description: searchQuery || statusFilter !== 'all' || typeFilter !== 'all' ? 'Try different keywords or clear filters.' : 'Apply for leave to start tracking time off.',
-              action: !searchQuery && statusFilter === 'all' && typeFilter === 'all' ? (
+              title: isFiltered ? 'No leave requests match your filters' : 'No leave requests yet',
+              description: isFiltered
+                ? empScope === 'active' && hiddenCount > 0
+                  ? 'Try different keywords, or switch to All employees to include terminated staff.'
+                  : 'Try different keywords or clear filters.'
+                : 'Apply for leave to start tracking time off.',
+              action: !isFiltered ? (
                 <button onClick={() => router.push('/leaves/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Apply Leave
                 </button>
@@ -407,6 +468,17 @@ export default function LeavesPage() {
             <div className="border-t border-slate-100 px-5 py-3">
               <p className="text-xs text-slate-500">
                 {filtered.length} of {validLeaves.length} request{validLeaves.length !== 1 ? 's' : ''}
+                {empScope === 'active' && hiddenCount > 0 && (
+                  <>
+                    {' · '}
+                    <button
+                      onClick={() => setEmpScope('all')}
+                      className="font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+                    >
+                      Show {hiddenCount} from terminated employees
+                    </button>
+                  </>
+                )}
               </p>
             </div>
           )}
