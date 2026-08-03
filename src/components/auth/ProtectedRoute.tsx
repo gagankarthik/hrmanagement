@@ -6,7 +6,6 @@ import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   hasAppAccess,
-  hasFullAccess,
   isSelfServiceOnly,
   isSelfServiceRouteAllowed,
   SELF_SERVICE_HOME,

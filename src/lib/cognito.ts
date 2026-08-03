@@ -14,10 +14,6 @@ import {
 
 import { INVITE_ROLE_OPTIONS, type AppRole } from '@/config/access';
 
-/** Employee classification stored on the Cognito user (display/category only). */
-export type UserEmployeeType = 'W2' | 'Contract' | '1099' | 'Offshore';
-export const USER_EMPLOYEE_TYPES: UserEmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
-
 /**
  * Application roles an admin may assign from the Users page — the canonical list
  * lives in `src/config/access.ts` (client-safe) and is re-exported here for the
@@ -66,13 +62,13 @@ const client = new CognitoIdentityProviderClient({
 
 export interface AppUser {
   username: string;
+  /** Immutable Cognito user id — what an employee record links to. */
+  sub?: string;
   email: string;
   name?: string;
   phoneNumber?: string;
   status?: string;
   enabled: boolean;
-  /** HR-portal employee classification (custom:employee_type). */
-  employeeType?: UserEmployeeType;
   /** HR-portal access. Defaults to true when the attribute is unset. */
   hrAccess: boolean;
   /**
@@ -90,20 +86,17 @@ function attr(user: UserType, name: string): string | undefined {
 }
 
 function toAppUser(user: UserType): AppUser {
-  const empType = attr(user, 'custom:employee_type');
   // hr_access defaults to allowed unless explicitly set to 'false'.
   const access = attr(user, 'custom:hr_access');
   const roleAttr = (attr(user, 'custom:role') || '').toLowerCase().trim();
   return {
     username: user.Username || '',
+    sub: attr(user, 'sub'),
     email: attr(user, 'email') || user.Username || '',
     name: attr(user, 'name'),
     phoneNumber: attr(user, 'phone_number'),
     status: user.UserStatus,
     enabled: user.Enabled ?? true,
-    employeeType: (USER_EMPLOYEE_TYPES as string[]).includes(empType || '')
-      ? (empType as UserEmployeeType)
-      : undefined,
     hrAccess: access !== 'false',
     role: APP_ROLE_SET.has(roleAttr) ? (roleAttr as AppRole) : undefined,
     createdAt: user.UserCreateDate ? user.UserCreateDate.toISOString() : undefined,
@@ -297,20 +290,17 @@ async function ensureCustomAttributes(names: string[]): Promise<void> {
 }
 
 /**
- * Update HR-portal metadata on a Cognito user: employee classification and/or
- * whether they may use the HR portal (custom:hr_access). These attributes are
+ * Update HR-portal metadata on a Cognito user: their role and whether they may
+ * use the HR portal (custom:hr_access). These attributes are
  * read only by the HR portal — the company website ignores them, so toggling
  * access here never affects the marketing-site login. If the custom attributes
  * aren't in the pool schema yet, we add them once and retry.
  */
 export async function updateUserMeta(
   username: string,
-  meta: { employeeType?: UserEmployeeType | null; hrAccess?: boolean; role?: AppRole },
+  meta: { hrAccess?: boolean; role?: AppRole },
 ): Promise<void> {
   const attrs: { Name: string; Value: string }[] = [];
-  if (meta.employeeType !== undefined) {
-    attrs.push({ Name: 'custom:employee_type', Value: meta.employeeType ?? '' });
-  }
   if (meta.hrAccess !== undefined) {
     attrs.push({ Name: 'custom:hr_access', Value: meta.hrAccess ? 'true' : 'false' });
   }

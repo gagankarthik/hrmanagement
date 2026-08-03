@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { vendorApi } from '../api/vendor.client';
 import type { Vendor, VendorFormData } from '../domain/vendor.types';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
 
 interface VendorContextType {
   vendors: Vendor[];
@@ -52,8 +53,7 @@ export function VendorProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getVendorById = useCallback((id: string) => vendors.find((v) => v.id === id), [vendors]);
-
-  useEffect(() => { fetchVendors(); }, [fetchVendors]);
+  useManagementFetch(fetchVendors);
 
   return (
     <VendorContext.Provider

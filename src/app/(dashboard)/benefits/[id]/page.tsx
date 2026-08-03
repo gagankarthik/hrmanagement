@@ -20,6 +20,7 @@ import { formatDate, money } from '@/lib/format';
 import { friendlyError } from '@/lib/errors';
 import { useBenefits } from '@/context/BenefitsContext';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useAccess } from '@/hooks/useAccess';
 import { BenefitType } from '@/types/benefits';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -52,6 +53,7 @@ function BenefitDetailPageContent() {
   const toast = useToast();
   const { plans, isLoading, deleteBenefit } = useBenefits();
   const { employees } = useEmployees();
+  const { canManage } = useAccess();
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -289,7 +291,9 @@ function BenefitDetailPageContent() {
         </SectionCard>
       </div>
 
-      {/* Enrolled employees */}
+      {/* Enrolled employees — management view only, matching the plan list:
+          a self-service user reads plan details, not who else is on them. */}
+      {canManage && (
       <div className="surface">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2">
@@ -346,6 +350,7 @@ function BenefitDetailPageContent() {
           <p className="text-xs text-slate-500">Showing {enrolled.length} enrolled employee{enrolled.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
+      )}
 
       <ConfirmDialog
         isOpen={confirmOpen}

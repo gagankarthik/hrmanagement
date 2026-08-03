@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { I9Record } from '@/types/i9';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface I9ContextType {
   records: I9Record[];
@@ -21,7 +23,7 @@ export function I9Provider({ children }: { children: React.ReactNode }) {
   const fetchRecords = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/i9');
+      const res = await apiFetch('/api/i9');
       const result = await res.json();
       if (result.success) setRecords(result.data || []);
     } catch (err) {
@@ -34,7 +36,7 @@ export function I9Provider({ children }: { children: React.ReactNode }) {
   const getByEmployee = useCallback((employeeId: string) => records.find((r) => r.employeeId === employeeId), [records]);
 
   const saveRecord = useCallback(async (record: Partial<I9Record> & { employeeId: string }) => {
-    const res = await fetch('/api/i9', {
+    const res = await apiFetch('/api/i9', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(record),
@@ -49,13 +51,12 @@ export function I9Provider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteRecord = useCallback(async (employeeId: string) => {
-    const res = await fetch(`/api/i9/${employeeId}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/i9/${employeeId}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete I-9 record');
     setRecords((prev) => prev.filter((r) => r.employeeId !== employeeId));
   }, []);
-
-  useEffect(() => { fetchRecords(); }, [fetchRecords]);
+  useManagementFetch(fetchRecords);
 
   return (
     <I9Context.Provider value={{ records, isLoading, fetchRecords, getByEmployee, saveRecord, deleteRecord }}>

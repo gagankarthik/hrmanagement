@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { UserPlus, ArrowLeft, ArrowRight, Check, Plus, Trash2, Briefcase, Users, UserCheck, Upload, Info, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { PageContainer } from '@/components/dashboard/page-container';
 import { Stepper } from '@/components/ui/stepper';
 import { SectionCard, DetailField, DetailGrid } from '@/components/ui/section-card';
 import { EMPLOYEE_FORM_SECTIONS, sectionForField } from '@/lib/employee-form-sections';
@@ -29,6 +30,18 @@ import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { EMPLOYEE_IMPORTS } from '@/lib/bulk-import/configs';
 import { employeeTypes, WIZARD_STEPS, WizardStep } from './_components/constants';
 import { ReviewAssignmentList } from './_components/ReviewAssignmentList';
+
+/**
+ * Wizard step controls, pinned to the bottom of the scroll area. Step 2 is a
+ * long form, and Back / Review shouldn't be a scroll away.
+ */
+function StepActions({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-3.5 flex items-center justify-between gap-3 border-t border-[var(--adm-line)] bg-[var(--adm-canvas)]/95 px-3.5 py-3 backdrop-blur sm:-mx-5 sm:px-5 lg:-mx-6 lg:px-6">
+      {children}
+    </div>
+  );
+}
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -482,7 +495,7 @@ export default function OnboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       {/* Header */}
       <PageHeader
         icon={UserPlus}
@@ -549,7 +562,7 @@ export default function OnboardPage() {
               );
             })}
           </div>
-          <div className="flex items-center justify-end gap-3">
+          <StepActions>
             <Link href="/employees" className="btn-ghost">Cancel</Link>
             <button
               type="button"
@@ -560,7 +573,7 @@ export default function OnboardPage() {
               Next
               <ArrowRight className="h-4 w-4" />
             </button>
-          </div>
+          </StepActions>
         </div>
       )}
 
@@ -594,7 +607,7 @@ export default function OnboardPage() {
           )}
 
           {draftRestored && (
-            <div className="flex items-center justify-between rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
               <p className="text-xs font-medium text-amber-800">
                 Draft restored from your last session. Continue when ready, or discard to start fresh.
               </p>
@@ -710,8 +723,7 @@ export default function OnboardPage() {
             </div>
           </SectionCard>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between gap-3">
+          <StepActions>
             <button
               type="button"
               onClick={() => { setStep(0); }}
@@ -724,7 +736,7 @@ export default function OnboardPage() {
               Review
               <ArrowRight className="h-4 w-4" />
             </button>
-          </div>
+          </StepActions>
         </div>
       )}
 
@@ -813,8 +825,7 @@ export default function OnboardPage() {
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex items-center justify-between gap-3">
+          <StepActions>
             <button
               type="button"
               onClick={() => setStep(1)}
@@ -842,9 +853,9 @@ export default function OnboardPage() {
                 </>
               )}
             </button>
-          </div>
+          </StepActions>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

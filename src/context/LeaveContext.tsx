@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Leave, LeaveFormData } from '@/types/leave';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface LeaveContextType {
   leaves: Leave[];
@@ -29,7 +30,7 @@ export function LeaveProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/leaves');
+      const response = await apiFetch('/api/leaves');
       const result = await response.json();
 
       if (result.success) {
@@ -48,7 +49,7 @@ export function LeaveProvider({ children }: { children: React.ReactNode }) {
   // Create new leave
   const createLeave = useCallback(async (leaveData: LeaveFormData) => {
     try {
-      const response = await fetch('/api/leaves', {
+      const response = await apiFetch('/api/leaves', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ export function LeaveProvider({ children }: { children: React.ReactNode }) {
         ...leaveData,
       };
 
-      const response = await fetch(`/api/leaves/${id}`, {
+      const response = await apiFetch(`/api/leaves/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ export function LeaveProvider({ children }: { children: React.ReactNode }) {
   // Delete leave
   const deleteLeave = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/leaves/${id}`, {
+      const response = await apiFetch(`/api/leaves/${id}`, {
         method: 'DELETE',
       });
 

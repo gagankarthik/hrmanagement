@@ -5,6 +5,8 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize, forbidden } from '@/shared/server/auth/guards';
+import { getSelfEmployeeId, ownsRecord } from '@/shared/server/auth/self';
 
 // Compute inclusive day count between two ISO date strings
 function computeDays(startDate: string, endDate: string): number {
@@ -18,8 +20,12 @@ function computeDays(startDate: string, endDate: string): number {
   return diff >= 0 ? diff + 1 : 0;
 }
 
-// GET - Fetch all leaves
-export async function GET() {
+// GET - Fetch leaves. HR/admin see every request; self-service users see only
+// their own, filtered server-side so the browser never receives anyone else's.
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -32,12 +38,16 @@ export async function GET() {
 
     const response = await docClient.send(command);
 
-    console.log('DynamoDB response - Leaves count:', response.Items?.length || 0);
+    let items = response.Items || [];
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      items = items.filter((item) => ownsRecord(item, auth.session, selfEmployeeId));
+    }
 
     return NextResponse.json({
       success: true,
-      data: response.Items || [],
-      count: response.Items?.length || 0,
+      data: items,
+      count: items.length,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -51,26 +61,47 @@ export async function GET() {
 
 // POST - Create new leave
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const id = uuidv4();
     const now = new Date().toISOString();
     const days = computeDays(body.startDate, body.endDate);
 
+    // Self-service users may only file for themselves, and may never approve
+    // their own request — identity and status come from the verified session,
+    // not the request body.
+    let employeeId = body.employeeId || '';
+    let status = body.status || 'Pending';
+    let requesterEmail = body.requesterEmail || '';
+    let requesterName = body.requesterName || '';
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      if (employeeId && employeeId !== selfEmployeeId) {
+        return forbidden('You can only file leave for yourself.');
+      }
+      employeeId = selfEmployeeId || '';
+      status = 'Pending';
+      requesterEmail = auth.session.email;
+      requesterName = auth.session.name || requesterName;
+    }
+
     const item = {
       id,
-      employeeId: body.employeeId,
+      employeeId,
       type: body.type,
       startDate: body.startDate,
       endDate: body.endDate,
       days,
       reason: body.reason || '',
-      status: body.status || 'Pending',
+      status,
       appliedDate: now,
       documents: body.documents || [],
       // Self-service requester identity (recruiter / sales ESS, no employee record).
-      requesterEmail: body.requesterEmail || '',
-      requesterName: body.requesterName || '',
+      requesterEmail,
+      requesterName,
       PK: `LEAVE#${id}`,
       SK: `LEAVE#${id}`,
       GSI1PK: 'LEAVES',

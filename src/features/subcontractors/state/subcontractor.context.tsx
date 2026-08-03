@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { subcontractorApi } from '../api/subcontractor.client';
 import type { Subcontractor, SubcontractorFormData } from '../domain/subcontractor.types';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
 
 /**
  * Subcontractor server-state holder. Thin by design — all transport lives in
@@ -61,10 +62,7 @@ export function SubcontractorProvider({ children }: { children: React.ReactNode 
     (id: string) => subcontractors.find((s) => s.id === id),
     [subcontractors],
   );
-
-  useEffect(() => {
-    fetchSubcontractors();
-  }, [fetchSubcontractors]);
+  useManagementFetch(fetchSubcontractors);
 
   return (
     <SubcontractorContext.Provider

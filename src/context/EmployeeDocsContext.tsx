@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { EmployeeDocsRecord } from '@/types/employee-docs';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface EmployeeDocsContextType {
   records: EmployeeDocsRecord[];
@@ -21,7 +22,7 @@ export function EmployeeDocsProvider({ children }: { children: React.ReactNode }
   const fetchRecords = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/employee-docs');
+      const res = await apiFetch('/api/employee-docs');
       const result = await res.json();
       if (result.success) setRecords(result.data || []);
     } catch (err) {
@@ -34,7 +35,7 @@ export function EmployeeDocsProvider({ children }: { children: React.ReactNode }
   const getByEmployee = useCallback((employeeId: string) => records.find((r) => r.employeeId === employeeId), [records]);
 
   const saveRecord = useCallback(async (record: Partial<EmployeeDocsRecord> & { employeeId: string }) => {
-    const res = await fetch('/api/employee-docs', {
+    const res = await apiFetch('/api/employee-docs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(record),
@@ -49,7 +50,7 @@ export function EmployeeDocsProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const deleteRecord = useCallback(async (employeeId: string) => {
-    const res = await fetch(`/api/employee-docs/${employeeId}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/employee-docs/${employeeId}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete employee document record');
     setRecords((prev) => prev.filter((r) => r.employeeId !== employeeId));

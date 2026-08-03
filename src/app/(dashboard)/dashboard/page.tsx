@@ -13,7 +13,7 @@ import { useTimesheets } from '@/context/TimesheetContext';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
 import {
-  DonutChart, CompareBarChart, TrendAreaChart, HBarChart,
+  DonutChart, CompareBarChart, HBarChart,
   TYPE_COLOR, VIZ, type DonutDatum,
 } from '@/components/dashboard/Charts';
 import { PeopleListModal } from '@/components/dashboard/PeopleListModal';
@@ -30,11 +30,9 @@ import { DashboardFilterProvider, useDashboardFilters } from '@/context/Dashboar
 import { useAuth } from '@/context/AuthContext';
 import { isAdminRole } from '@/lib/dashboard/views';
 import type { Employee, EmployeeType } from '@/types/employee';
-import type { Timesheet } from '@/types/timesheet';
 
 const CLASSES: EmployeeType[] = ['W2', 'Contract', '1099', 'Offshore'];
 const CLASS_LABEL: Record<EmployeeType, string> = { W2: 'W-2', Contract: 'Contract', '1099': '1099', Offshore: 'Offshore' };
-const CLASS_TONE: Record<EmployeeType, 'sky' | 'purple' | 'emerald' | 'pink'> = { W2: 'sky', Contract: 'purple', '1099': 'emerald', Offshore: 'pink' };
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const usd0 = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -95,7 +93,6 @@ function DashboardOverview() {
   const totalActive = empsActive.length;
   const billableCount = empsActive.filter(isBillable).length;
   const utilization = totalActive ? Math.round((billableCount / totalActive) * 100) : 0;
-  const benchCount = empsActive.filter((e) => !isBillable(e) || !hasClient(e)).length;
 
   const classCounts = useMemo(() => {
     const m: Record<EmployeeType, number> = { W2: 0, Contract: 0, '1099': 0, Offshore: 0 };

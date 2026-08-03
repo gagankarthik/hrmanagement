@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowUpRight, UsersRound, CalendarDays, Wallet, ShieldCheck,
-  FolderOpen, BookOpen, HeartPulse, BarChart3,
+  BookOpen, BarChart3,
 } from 'lucide-react';
 import { BRAND } from '@/config/brand';
 import { SiteNav } from '@/components/landing/SiteNav';
@@ -62,18 +62,24 @@ const essRows = [
   },
   {
     n: '02',
+    href: '/my-attendance',
+    title: 'My Attendance',
+    body: 'Clock in and out from any device, and see your own hours as they add up.',
+  },
+  {
+    n: '03',
     href: '/my-documents',
     title: 'My Documents',
     body: 'Paystubs, letters, and records, downloadable whenever you need them.',
   },
   {
-    n: '03',
+    n: '04',
     href: '/handbook',
     title: 'Handbook & Policies',
     body: 'Company procedures and policies, kept current so you never read a stale copy.',
   },
   {
-    n: '04',
+    n: '05',
     href: '/benefits',
     title: 'Benefits',
     body: 'Your coverage and enrollment, laid out in one view.',

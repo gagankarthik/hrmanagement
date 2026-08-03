@@ -15,23 +15,24 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/toast';
-import { cn } from '@/lib/utils';
 import { ROLE_LABELS, type AppRole } from '@/config/access';
 import { friendlyError } from '@/lib/errors';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Avatar } from '@/components/ui/avatar';
-
-const EMPLOYEE_TYPES = ['W2', 'Contract', '1099', 'Offshore'] as const;
-type EmployeeType = (typeof EMPLOYEE_TYPES)[number];
+import { Combobox } from '@/components/ui/combobox';
+import { useAccess } from '@/hooks/useAccess';
+import { useEmployees } from '@/context/EmployeeContext';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface AppUser {
   username: string;
+  /** Immutable Cognito user id — what an employee record links to. */
+  sub?: string;
   email: string;
   name?: string;
   phoneNumber?: string;
   status?: string;
   enabled: boolean;
-  employeeType?: EmployeeType;
   hrAccess: boolean;
   role?: AppRole;
   createdAt?: string;
@@ -53,7 +54,10 @@ function statusInfo(u: AppUser): { label: string; tone: StatusTone; Icon: React.
 
 export default function UsersPage() {
   const toast = useToast();
+  const { employees, fetchEmployees } = useEmployees();
+  const { admin } = useAccess();
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [linkingFor, setLinkingFor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -71,7 +75,7 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/users');
+      const res = await apiFetch('/api/users');
       const result = await res.json();
       if (result.success) setUsers(result.data as AppUser[]);
       else toast.error('Could not load users', result.error || 'Please try again.');
@@ -82,7 +86,9 @@ export default function UsersPage() {
     }
   }, [toast]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  // Account administration is admin-only, both here and at /api/users — don't
+  // even ask for the list as an hr user, the answer is 403.
+  useEffect(() => { if (admin) fetchUsers(); else setIsLoading(false); }, [admin, fetchUsers]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -99,7 +105,7 @@ export default function UsersPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch('/api/users', {
+      const res = await apiFetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), name: name.trim(), role: 'employee' }),
@@ -121,7 +127,7 @@ export default function UsersPage() {
   const handleResend = async (u: AppUser) => {
     setResendingFor(u.username);
     try {
-      const res = await fetch('/api/users', {
+      const res = await apiFetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: u.email, name: u.name, resend: true }),
@@ -136,18 +142,17 @@ export default function UsersPage() {
     }
   };
 
-  // Patch role / employee type / HR-portal access. Optimistic with revert on failure.
-  const updateMeta = async (u: AppUser, patch: Partial<Pick<AppUser, 'employeeType' | 'hrAccess' | 'role'>>) => {
+  // Patch role / HR-portal access. Optimistic with revert on failure.
+  const updateMeta = async (u: AppUser, patch: Partial<Pick<AppUser, 'hrAccess' | 'role'>>) => {
     const prev = users;
     setUsers((list) => list.map((x) => (x.username === u.username ? { ...x, ...patch } : x)));
     setSavingFor(u.username);
     try {
-      const res = await fetch(`/api/users/${encodeURIComponent(u.username)}`, {
+      const res = await apiFetch(`/api/users/${encodeURIComponent(u.username)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...('role' in patch ? { role: patch.role } : {}),
-          ...('employeeType' in patch ? { employeeType: patch.employeeType ?? '' } : {}),
           ...('hrAccess' in patch ? { hrAccess: patch.hrAccess } : {}),
         }),
       });
@@ -157,11 +162,9 @@ export default function UsersPage() {
         toast.success('Role updated', `${u.email} is now ${ROLE_LABELS[patch.role]}. They'll see the change next time they sign in.`);
       } else if ('hrAccess' in patch) {
         toast.success(
-          patch.hrAccess ? 'HR portal access granted' : 'HR portal access revoked',
-          `${u.email} ${patch.hrAccess ? 'can now use' : 'can no longer use'} the HR portal.`,
+          patch.hrAccess ? 'Portal access granted' : 'Portal access revoked',
+          `${u.email} ${patch.hrAccess ? 'can now use' : 'can no longer use'} the portal.`,
         );
-      } else {
-        toast.success('Employee type updated', `${u.email} set to ${patch.employeeType || 'none'}.`);
       }
     } catch (err) {
       setUsers(prev); // revert
@@ -171,11 +174,75 @@ export default function UsersPage() {
     }
   };
 
+  // ── Login ↔ employee link ───────────────────────────────────────────────────
+  // The company website and this portal share one Cognito pool, so a sign-in is
+  // not automatically a person in the HR database. Most links form themselves
+  // the first time someone signs in with the email already on their record;
+  // this is where HR fixes the rest.
+  const employeeOptions = useMemo(
+    () => [
+      { value: '', label: 'Not linked', sublabel: 'No employee record' },
+      ...employees
+        .filter((e) => e?.id)
+        .map((e) => ({
+          value: e.id,
+          label: e.name,
+          sublabel: [e.type, 'officeEmail' in e ? e.officeEmail : e.personalEmail].filter(Boolean).join(' · '),
+        })),
+    ],
+    [employees],
+  );
+
+  const linkedEmployeeId = useCallback(
+    (u: AppUser) => {
+      const email = u.email?.toLowerCase().trim();
+      const bySub = u.sub ? employees.find((e) => e.cognitoSub === u.sub) : undefined;
+      if (bySub) return bySub.id;
+      if (!email) return '';
+      const byEmail = employees.find((e) => {
+        if (e.loginEmail?.toLowerCase().trim() === email) return true;
+        const office = 'officeEmail' in e ? e.officeEmail : undefined;
+        return [office, e.personalEmail].some((x) => x?.toLowerCase().trim() === email);
+      });
+      return byEmail?.id ?? '';
+    },
+    [employees],
+  );
+
+  const linkEmployee = async (u: AppUser, employeeId: string) => {
+    if (!u.sub) {
+      toast.error('Cannot link this account', 'Cognito did not return a user id for it.');
+      return;
+    }
+    setLinkingFor(u.username);
+    try {
+      const res = await apiFetch('/api/employees/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sub: u.sub, email: u.email, employeeId: employeeId || null }),
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Link failed');
+      await fetchEmployees();
+      const name = employees.find((e) => e.id === employeeId)?.name;
+      toast.success(
+        employeeId ? 'Login linked' : 'Login unlinked',
+        employeeId
+          ? `${u.email} now sees ${name}'s leave, attendance and documents.`
+          : `${u.email} is no longer tied to an employee record.`,
+      );
+    } catch (err) {
+      toast.error('Could not link this login', friendlyError(err));
+    } finally {
+      setLinkingFor(null);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/users/${encodeURIComponent(deleteTarget.username)}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/users/${encodeURIComponent(deleteTarget.username)}`, { method: 'DELETE' });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to remove');
       toast.success('User removed', `${deleteTarget.email} can no longer sign in.`);
@@ -227,24 +294,20 @@ export default function UsersPage() {
       ),
     },
     {
-      id: 'employeeType',
-      header: 'Employee type',
+      id: 'employeeLink',
+      header: 'Employee record',
       hideBelow: 'lg',
-      sortValue: (u) => u.employeeType ?? '',
+      sortValue: (u) => employees.find((e) => e.id === linkedEmployeeId(u))?.name ?? '',
       cell: (u) => (
-        <select
-          value={u.employeeType ?? ''}
-          disabled={savingFor === u.username}
-          onChange={(e) => updateMeta(u, { employeeType: (e.target.value || undefined) as EmployeeType | undefined })}
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-50 disabled:opacity-50"
-          aria-label={`Employee type for ${u.email}`}
-        >
-          <option value="">—</option>
-          {EMPLOYEE_TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+        <div onClick={(e) => e.stopPropagation()} className="min-w-[200px]">
+          <Combobox
+            value={linkedEmployeeId(u)}
+            onChange={(v) => linkEmployee(u, v)}
+            options={employeeOptions}
+            disabled={linkingFor === u.username}
+            placeholder="Not linked"
+          />
+        </div>
       ),
     },
     {
@@ -272,13 +335,33 @@ export default function UsersPage() {
     },
   ];
 
+  // ── Admin-only surface ──────────────────────────────────────────────────
+  // Accounts, roles and portal access decide who can see the whole company's
+  // data, so only admins manage them. /api/users enforces the same thing.
+  if (!admin) {
+    return (
+      <PageContainer>
+        <div className="surface flex flex-col items-center px-6 py-14 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
+            <ShieldAlert className="h-6 w-6" strokeWidth={1.75} />
+          </span>
+          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Admins only</h1>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600">
+            Sign-in accounts, roles and portal access are managed by administrators. To invite
+            someone or change what they can reach, ask an admin on your team.
+          </p>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <PageHeader
         icon={UserCog}
         eyebrow="Administration"
         title="Users"
-        description="Invite team members to the self-service portal and see the role each person holds. HR and Admin have full access; everyone else is self-service. Invitees receive a temporary password and set their own on first sign-in."
+        description="Invite people, set the role each one holds, and link their sign-in to an employee record so they see their own leave, attendance and documents."
         tone="brand"
         actions={
           <button onClick={() => setInviteOpen(true)} className="btn-primary">
@@ -294,20 +377,19 @@ export default function UsersPage() {
       </StatGrid>
 
       <div className="surface">
-        <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-xs flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50"
-            />
-          </div>
-        </div>
-
         <DataTable<AppUser>
+          toolbar={
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50"
+              />
+            </div>
+          }
           columns={columns}
           data={filtered}
           getRowId={(u) => u.username}

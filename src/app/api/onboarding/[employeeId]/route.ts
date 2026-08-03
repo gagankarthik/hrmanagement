@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ employeeId: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { employeeId } = await params;
     const response = await docClient.send(
@@ -19,6 +23,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ employeeId: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { employeeId } = await params;
     await docClient.send(

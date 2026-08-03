@@ -27,7 +27,7 @@ import {
   FileText, Shield, Trash2, XCircle, Printer,
   CheckCircle2, AlertTriangle, CalendarCheck, Hourglass, Pencil, HeartPulse,
   BadgeCheck, GraduationCap, FolderArchive, ChevronRight, ChevronDown, Download, ExternalLink,
-  ClipboardCheck, Circle,
+  ClipboardCheck, Circle, CheckCheck, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { resolveName } from '@/lib/names';
@@ -38,6 +38,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton, SkeletonCard } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
 import { DocumentUploader } from '@/components/dashboard/DocumentUploader';
+import { EmployeePortalAccess } from '@/components/dashboard/EmployeePortalAccess';
+import { useAccess } from '@/hooks/useAccess';
 import type { UploadedDoc } from '@/types/uploads';
 import { Avatar } from '@/components/ui/avatar';
 
@@ -186,11 +188,13 @@ function EmployeeDetailPageContent() {
   const { getByEmployee: getI9Record } = useI9();
   const { getByEmployee: getI983Record } = useI983();
   const { getByEmployee: getDocsRecord } = useEmployeeDocs();
-  const { getByEmployee: getOnboardingPacket } = useOnboarding();
+  const { getByEmployee: getOnboardingPacket, savePacket } = useOnboarding();
+  const { canManage } = useAccess();
   const toast = useToast();
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [tab, setTab] = React.useState<TabKey>('details');
+  const [completingOnboarding, setCompletingOnboarding] = React.useState(false);
 
   const employee = useMemo(() => {
     if (!employeeId) return undefined;
@@ -298,6 +302,37 @@ function EmployeeDetailPageContent() {
     [getOnboardingPacket, employeeId],
   );
   const onboarding = packetProgress(onboardingItems);
+
+  /**
+   * Tick every outstanding checklist item at once. This lives on the profile
+   * (not only on the packets list) because the packets list is scoped to recent
+   * hires — people onboarded long before this system existed still need a way
+   * to be marked done.
+   */
+  const completeOnboarding = async () => {
+    if (!employee) return;
+    const now = new Date().toISOString();
+    const remaining = onboardingItems.filter((it) => !it.done).length;
+    if (remaining === 0) return;
+    setCompletingOnboarding(true);
+    try {
+      await savePacket({
+        employeeId: employee.id,
+        employeeName: employee.name || 'Employee',
+        employeeType: employee.type,
+        startDate: employee.hireDate,
+        items: onboardingItems.map((it) => (it.done ? it : { ...it, done: true, doneAt: now })),
+      });
+      toast.success(
+        'Onboarding marked complete',
+        `${remaining} remaining item${remaining !== 1 ? 's' : ''} ticked off for ${employee.name}.`,
+      );
+    } catch (err) {
+      toast.error('Could not update onboarding', friendlyError(err));
+    } finally {
+      setCompletingOnboarding(false);
+    }
+  };
 
   const handleDelete = () => setDeleteOpen(true);
 
@@ -566,6 +601,10 @@ function EmployeeDetailPageContent() {
             </div>
           </div>
 
+          {/* Sign-in access — shared Cognito pool, so this is where an employee
+              gets (or loses) their way into the self-service portal. */}
+          <EmployeePortalAccess employee={employee} />
+
           {/* Alerts */}
           <div className="surface p-5">
             <div className="mb-3 flex items-center gap-2">
@@ -701,7 +740,21 @@ function EmployeeDetailPageContent() {
                   <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
                     <div className={cn('h-full rounded-full transition-all', onboarding.pct === 100 ? 'bg-emerald-500' : 'bg-brand-500')} style={{ width: `${Math.max(onboarding.pct, onboarding.done > 0 ? 4 : 0)}%` }} />
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">{onboarding.pct}% complete</p>
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-slate-500">{onboarding.pct}% complete</p>
+                    {canManage && onboarding.pct < 100 && (
+                      <button
+                        onClick={completeOnboarding}
+                        disabled={completingOnboarding}
+                        className="btn-ghost h-8 px-2.5 text-xs disabled:opacity-50"
+                      >
+                        {completingOnboarding
+                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          : <CheckCheck className="h-3.5 w-3.5" />}
+                        Mark all as done
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-5">

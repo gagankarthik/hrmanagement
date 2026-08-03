@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
 
 // Canonical field label styling — identical to the inline `label` token used
 // across the dashboard forms.

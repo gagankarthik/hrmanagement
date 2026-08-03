@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { BenefitPlan, BenefitFormData } from '@/types/benefits';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface BenefitsContextType {
   plans: BenefitPlan[];
@@ -29,7 +30,7 @@ export function BenefitsProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/benefits');
+      const response = await apiFetch('/api/benefits');
       const result = await response.json();
 
       if (result.success) {
@@ -48,7 +49,7 @@ export function BenefitsProvider({ children }: { children: React.ReactNode }) {
   // Create new benefit plan
   const createBenefit = useCallback(async (benefitData: BenefitFormData) => {
     try {
-      const response = await fetch('/api/benefits', {
+      const response = await apiFetch('/api/benefits', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ export function BenefitsProvider({ children }: { children: React.ReactNode }) {
         ...benefitData,
       };
 
-      const response = await fetch(`/api/benefits/${id}`, {
+      const response = await apiFetch(`/api/benefits/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ export function BenefitsProvider({ children }: { children: React.ReactNode }) {
   // Delete benefit plan
   const deleteBenefit = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/benefits/${id}`, {
+      const response = await apiFetch(`/api/benefits/${id}`, {
         method: 'DELETE',
       });
 

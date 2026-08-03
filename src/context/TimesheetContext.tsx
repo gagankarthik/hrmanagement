@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Timesheet, TimesheetFormData } from '@/types/timesheet';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface TimesheetContextType {
   timesheets: Timesheet[];
@@ -25,7 +27,7 @@ export function TimesheetProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch('/api/timesheets');
+      const res = await apiFetch('/api/timesheets');
       const result = await res.json();
       if (result.success) setTimesheets(result.data || []);
       else setError(result.error || 'Failed to fetch timesheets');
@@ -38,7 +40,7 @@ export function TimesheetProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createTimesheet = useCallback(async (data: TimesheetFormData & { employeeName: string; clientName?: string }) => {
-    const res = await fetch('/api/timesheets', {
+    const res = await apiFetch('/api/timesheets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -50,7 +52,7 @@ export function TimesheetProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateTimesheet = useCallback(async (id: string, data: Partial<Timesheet>) => {
-    const res = await fetch(`/api/timesheets/${id}`, {
+    const res = await apiFetch(`/api/timesheets/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -61,17 +63,14 @@ export function TimesheetProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteTimesheet = useCallback(async (id: string) => {
-    const res = await fetch(`/api/timesheets/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/timesheets/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete timesheet');
     setTimesheets((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const getTimesheetById = useCallback((id: string) => timesheets.find((t) => t.id === id), [timesheets]);
-
-  useEffect(() => {
-    fetchTimesheets();
-  }, [fetchTimesheets]);
+  useManagementFetch(fetchTimesheets);
 
   return (
     <TimesheetContext.Provider

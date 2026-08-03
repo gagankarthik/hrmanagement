@@ -77,6 +77,18 @@ export interface BaseEmployee {
   gender?: string;
   department?: string;
   reportingManager?: string;
+  /**
+   * Sign-in identity. The company website and this portal share one Cognito
+   * pool, so a login has to be tied to a person here before the portal can show
+   * them their own leave, attendance or documents.
+   *
+   * `cognitoSub` is the immutable Cognito user id and is the authoritative link
+   * — it survives an email change. `loginEmail` records which address that
+   * account signs in with, which is how the link is first established (and what
+   * HR reads when they need to fix a mismatch by hand).
+   */
+  cognitoSub?: string;
+  loginEmail?: string;
   createdAt: string;
   updatedAt: string;
 }

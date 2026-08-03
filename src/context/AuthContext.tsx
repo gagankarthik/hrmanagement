@@ -98,6 +98,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
+  // Keep the session warm. The API verifies the Cognito token on every call and
+  // those expire hourly, so a tab left open would start failing. fetchAuthSession
+  // renews when needed and rewrites the cookies the server reads; it is a no-op
+  // while the current token is still valid.
+  useEffect(() => {
+    if (!user) return;
+    const renew = () => { fetchAuthSession().catch(() => {}); };
+    const timer = setInterval(renew, 10 * 60 * 1000);
+    window.addEventListener('focus', renew);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', renew);
+    };
+  }, [user]);
+
   const handleSignIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {

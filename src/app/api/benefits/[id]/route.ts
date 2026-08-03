@@ -5,12 +5,14 @@ import {
   DeleteCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 // GET - Fetch single benefit plan by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -46,10 +48,11 @@ export async function GET(
 }
 
 // PUT - Update benefit plan
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -86,10 +89,11 @@ export async function PUT(
 }
 
 // DELETE - Delete benefit plan
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 

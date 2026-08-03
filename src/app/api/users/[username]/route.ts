@@ -1,31 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authorize } from '@/shared/server/auth/guards';
 import {
   deleteUser,
   updateUserMeta,
   setUserRole,
-  USER_EMPLOYEE_TYPES,
   APP_INVITE_ROLES,
-  type UserEmployeeType,
   type AppRole,
 } from '@/lib/cognito';
 
-// PATCH - update HR-portal metadata (employee type, portal access)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ username: string }> },
-) {
+// PATCH - update HR-portal metadata (role, portal access)
+export async function PATCH(request: NextRequest,
+  { params }: { params: Promise<{ username: string }> }) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   try {
     const { username } = await params;
     const body = await request.json();
 
-    const meta: { employeeType?: UserEmployeeType | null; hrAccess?: boolean } = {};
-    if ('employeeType' in body) {
-      const t = body.employeeType;
-      if (t !== null && t !== '' && !USER_EMPLOYEE_TYPES.includes(t)) {
-        return NextResponse.json({ success: false, error: 'Invalid employee type' }, { status: 400 });
-      }
-      meta.employeeType = t === '' ? null : (t as UserEmployeeType | null);
-    }
+    const meta: { hrAccess?: boolean } = {};
     if ('hrAccess' in body) {
       meta.hrAccess = !!body.hrAccess;
     }
@@ -41,7 +34,7 @@ export async function PATCH(
       await setUserRole(uname, rawRole as AppRole);
     }
 
-    // employeeType / hrAccess attribute updates (skip a no-op call if only role changed).
+    // hrAccess attribute update (skip a no-op call if only the role changed).
     if (Object.keys(meta).length > 0) {
       await updateUserMeta(uname, meta);
     }
@@ -58,10 +51,11 @@ export async function PATCH(
 }
 
 // DELETE - remove a user from the pool
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ username: string }> },
-) {
+export async function DELETE(request: NextRequest,
+  { params }: { params: Promise<{ username: string }> }) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   try {
     const { username } = await params;
     await deleteUser(decodeURIComponent(username));

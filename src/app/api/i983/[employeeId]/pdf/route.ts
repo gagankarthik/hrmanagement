@@ -3,11 +3,15 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 import { buildI983Pdf } from '@/lib/i983-pdf';
 import { I983Record } from '@/types/i983';
+import { authorize } from '@/shared/server/auth/guards';
 
 export const runtime = 'nodejs';
 
 // GET - download a filled Form I-983 PDF for an employee
 export async function GET(request: NextRequest, { params }: { params: Promise<{ employeeId: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { employeeId } = await params;
     const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: { PK: `I983#${employeeId}`, SK: `I983#${employeeId}` } }));

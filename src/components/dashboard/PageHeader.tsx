@@ -42,12 +42,16 @@ export function PageHeader(props: PageHeaderProps) {
           </Link>
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
+      {/* Actions align to the TOP right, level with the title, so a two-line
+          description never drags them down to the middle of the block. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-[22px] font-bold leading-tight tracking-[-0.015em] text-[var(--adm-ink)]">
             {title}
           </h1>
-          {description && <p className="mt-1 text-[13.5px] text-[var(--adm-ink-mute)]">{description}</p>}
+          {description && (
+            <p className="mt-1 max-w-2xl text-[13.5px] text-[var(--adm-ink-mute)]">{description}</p>
+          )}
         </div>
         {actions && <div className="flex flex-shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </div>

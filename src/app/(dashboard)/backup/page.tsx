@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/toast';
 import { useAccess } from '@/hooks/useAccess';
 import { friendlyError } from '@/lib/errors';
 import { BRAND } from '@/config/brand';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface BackupObject {
   key: string;
@@ -49,7 +50,7 @@ export default function BackupPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/backups');
+      const res = await apiFetch('/api/admin/backups');
       const result = await res.json();
       if (result.success) setBackups(result.data as BackupObject[]);
       else {
@@ -71,7 +72,7 @@ export default function BackupPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const res = await fetch('/api/admin/backups', { method: 'POST' });
+      const res = await apiFetch('/api/admin/backups', { method: 'POST' });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Export failed');
       toast.success(

@@ -15,6 +15,7 @@ import { useVendors } from '@/context/VendorContext';
 import { useSubcontractors } from '@/context/SubcontractorContext';
 import { ActivityDrawer } from '@/components/dashboard/ActivityDrawer';
 import { Avatar } from '@/components/ui/avatar';
+import { IconTimesheets, IconLeave } from '@/components/icons';
 
 type Result = { key: string; label: string; sub?: string; group: string; href: string; icon: React.ElementType };
 
@@ -247,6 +248,26 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                     <UserRound className="h-4 w-4" strokeWidth={1.75} />
                     Profile
                   </button>
+                  {/* Full-access users work the console all day but still have
+                      their own time to mark — the ESS nav already links these. */}
+                  {!selfServiceOnly && (
+                    <>
+                      <button
+                        onClick={() => { setMenuOpen(false); router.push('/my-attendance'); }}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <IconTimesheets className="h-4 w-4" />
+                        My Attendance
+                      </button>
+                      <button
+                        onClick={() => { setMenuOpen(false); router.push('/my-leave'); }}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <IconLeave className="h-4 w-4" />
+                        My Leave
+                      </button>
+                    </>
+                  )}
                   <div className="my-1 border-t border-slate-100" />
                   <button
                     onClick={() => { setMenuOpen(false); signOut(); }}

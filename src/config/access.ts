@@ -85,6 +85,28 @@ export function isSelfServiceOnly(roles: ReadonlyArray<string> | null | undefine
 }
 
 /**
+ * Roles ordered by seniority — used to pick the single role to show a user
+ * when they hold more than one (e.g. an admin also tagged `sales`).
+ */
+const ROLE_PRECEDENCE: readonly AppRole[] = ['admin', 'hr', 'recruiter', 'sales', 'employee'];
+
+/**
+ * The one role to display for a user, most senior first. Returns `null` when
+ * they hold no recognized application role.
+ */
+export function primaryRole(roles: ReadonlyArray<string> | null | undefined): AppRole | null {
+  if (!roles || roles.length === 0) return null;
+  const owned = new Set(roles.map(norm));
+  return ROLE_PRECEDENCE.find((r) => owned.has(r)) ?? null;
+}
+
+/** Display label for a user's primary role, e.g. "Employee (ESS)". */
+export function primaryRoleLabel(roles: ReadonlyArray<string> | null | undefined): string {
+  const role = primaryRole(roles);
+  return role ? ROLE_LABELS[role] : 'No role assigned';
+}
+
+/**
  * Route prefixes a self-service user is allowed to visit. Anything else is
  * redirected to {@link SELF_SERVICE_HOME}. Prefix match, so child routes
  * (e.g. `/my-leave/new`) are covered.
@@ -95,6 +117,7 @@ export const SELF_SERVICE_ROUTES = [
   '/policies',
   '/benefits',
   '/my-leave',
+  '/my-attendance',
   '/my-documents',
   '/profile',
 ] as const;

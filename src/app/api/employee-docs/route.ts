@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
+import { getSelfEmployeeId } from '@/shared/server/auth/self';
 
-// GET - all employee document records
-export async function GET() {
+// GET - employee document records. Self-service users receive only their own
+// folder; HR receives every record.
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -12,7 +18,12 @@ export async function GET() {
       ExpressionAttributeValues: { ':k': 'EMPDOCS' },
     });
     const response = await docClient.send(command);
-    return NextResponse.json({ success: true, data: response.Items || [], count: response.Items?.length || 0 });
+    let items = response.Items || [];
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      items = selfEmployeeId ? items.filter((item) => item.employeeId === selfEmployeeId) : [];
+    }
+    return NextResponse.json({ success: true, data: items, count: items.length });
   } catch (error: unknown) {
     const err = error as Error;
     console.error('Error fetching employee document records:', err.message);
@@ -20,8 +31,12 @@ export async function GET() {
   }
 }
 
-// POST - upsert an employee document record keyed by employeeId
+// POST - upsert an employee document record keyed by employeeId (HR only —
+// people cannot add or replace documents in their own file)
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const employeeId = body.employeeId;

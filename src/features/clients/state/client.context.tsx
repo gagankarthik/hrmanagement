@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { clientApi } from '../api/client.client';
 import type { Client, ClientFormData } from '../domain/client.types';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
 
 /** Thin client server-state holder — transport lives in `clientApi`, rules in the service. */
 interface ClientContextType {
@@ -53,8 +54,7 @@ export function ClientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getClientById = useCallback((id: string) => clients.find((c) => c.id === id), [clients]);
-
-  useEffect(() => { fetchClients(); }, [fetchClients]);
+  useManagementFetch(fetchClients);
 
   return (
     <ClientContext.Provider

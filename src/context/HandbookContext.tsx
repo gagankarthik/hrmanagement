@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { CategoryPolicy, SopDoc, SopFormData, HandbookForm, HandbookFormData } from '@/types/handbook';
 import { EmployeeType } from '@/types/employee';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface HandbookContextType {
   policies: CategoryPolicy[];
@@ -36,9 +37,9 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
       const [pRes, sRes, fRes] = await Promise.all([
-        fetch('/api/handbook/policies').then((r) => r.json()),
-        fetch('/api/handbook/sops').then((r) => r.json()),
-        fetch('/api/handbook/forms').then((r) => r.json()),
+        apiFetch('/api/handbook/policies').then((r) => r.json()),
+        apiFetch('/api/handbook/sops').then((r) => r.json()),
+        apiFetch('/api/handbook/forms').then((r) => r.json()),
       ]);
       if (pRes.success) setPolicies(pRes.data || []);
       if (sRes.success) setSops(sRes.data || []);
@@ -54,7 +55,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
 
   const fetchForms = useCallback(async () => {
     try {
-      const res = await fetch('/api/handbook/forms').then((r) => r.json());
+      const res = await apiFetch('/api/handbook/forms').then((r) => r.json());
       if (res.success) setForms(res.data || []);
     } catch (err) {
       console.error('Error fetching handbook forms:', err);
@@ -68,7 +69,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
   );
 
   const savePolicy = useCallback(async (policy: CategoryPolicy) => {
-    const res = await fetch('/api/handbook/policies', {
+    const res = await apiFetch('/api/handbook/policies', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(policy),
@@ -82,7 +83,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createSop = useCallback(async (data: SopFormData) => {
-    const res = await fetch('/api/handbook/sops', {
+    const res = await apiFetch('/api/handbook/sops', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -94,7 +95,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
 
   const updateSop = useCallback(async (id: string, data: Partial<SopDoc>) => {
     const existing = sops.find((s) => s.id === id);
-    const res = await fetch(`/api/handbook/sops/${id}`, {
+    const res = await apiFetch(`/api/handbook/sops/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...existing, ...data }),
@@ -105,14 +106,14 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
   }, [sops]);
 
   const deleteSop = useCallback(async (id: string) => {
-    const res = await fetch(`/api/handbook/sops/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/handbook/sops/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete document');
     setSops((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   const createForm = useCallback(async (data: HandbookFormData) => {
-    const res = await fetch('/api/handbook/forms', {
+    const res = await apiFetch('/api/handbook/forms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -124,7 +125,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
 
   const updateForm = useCallback(async (id: string, data: Partial<HandbookForm>) => {
     const existing = forms.find((f) => f.id === id);
-    const res = await fetch(`/api/handbook/forms/${id}`, {
+    const res = await apiFetch(`/api/handbook/forms/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...existing, ...data }),
@@ -135,7 +136,7 @@ export function HandbookProvider({ children }: { children: React.ReactNode }) {
   }, [forms]);
 
   const deleteForm = useCallback(async (id: string) => {
-    const res = await fetch(`/api/handbook/forms/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/handbook/forms/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete form');
     setForms((prev) => prev.filter((f) => f.id !== id));

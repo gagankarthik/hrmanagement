@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 // GET - all I-983 records
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -22,6 +26,9 @@ export async function GET() {
 
 // POST - upsert an I-983 record keyed by employeeId
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const employeeId = body.employeeId;

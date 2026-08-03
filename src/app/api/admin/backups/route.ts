@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
@@ -10,6 +10,7 @@ import {
   backupObjectKey,
 } from '@/lib/backups';
 import { ok, created, serverError } from '@/shared/server/http/responses';
+import { authorize } from '@/shared/server/auth/guards';
 
 // Backups run against the whole single table, so exports can be large-ish;
 // never let Next cache this route.
@@ -35,7 +36,10 @@ function notConfigured(): NextResponse {
 }
 
 /** GET /api/admin/backups → list every backup file in the bucket (newest first). */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   if (!backupsConfigured) return notConfigured();
   try {
     const items: BackupObject[] = [];
@@ -75,7 +79,10 @@ export async function GET() {
  * JSON snapshot to S3 as backup-[date]-[time].json. Read-only against Dynamo;
  * creates one new immutable object in the backups bucket.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   if (!backupsConfigured) return notConfigured();
   try {
     // Full-table scan, following pagination until every item is collected.

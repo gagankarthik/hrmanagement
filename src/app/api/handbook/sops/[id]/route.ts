@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 // PUT - update a SOP entry
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -29,10 +31,11 @@ export async function PUT(
 }
 
 // DELETE - remove a SOP entry
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     await docClient.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { PK: `SOP#${id}`, SK: `SOP#${id}` } }));

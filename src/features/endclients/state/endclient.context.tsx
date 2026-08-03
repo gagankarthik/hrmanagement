@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { endClientApi } from '../api/endclient.client';
 import type { EndClient, EndClientFormData } from '../domain/endclient.types';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
 
 interface EndClientContextType {
   endClients: EndClient[];
@@ -52,8 +53,7 @@ export function EndClientProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getEndClientById = useCallback((id: string) => endClients.find((c) => c.id === id), [endClients]);
-
-  useEffect(() => { fetchEndClients(); }, [fetchEndClients]);
+  useManagementFetch(fetchEndClients);
 
   return (
     <EndClientContext.Provider

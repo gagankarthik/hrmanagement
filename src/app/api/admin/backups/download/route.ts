@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { authorize } from '@/shared/server/auth/guards';
 import {
   backupsS3Client,
   BACKUPS_BUCKET,
@@ -13,6 +14,9 @@ import {
 // PUT/DELETE counterpart, and the key is pinned to the backups prefix so this
 // can never surface any other object in the bucket.
 export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   if (!backupsConfigured) {
     return NextResponse.json({ success: false, error: 'Backups are not configured.' }, { status: 501 });
   }

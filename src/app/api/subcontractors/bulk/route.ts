@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { subcontractorService } from '@/features/subcontractors/server/subcontractor.service';
 import { badRequest, fail } from '@/shared/server/http/responses';
+import { authorize } from '@/shared/server/auth/guards';
 
 // POST - Bulk-create subcontractors from validated import rows: { rows: [...] }
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const rows = Array.isArray(body?.rows) ? body.rows : [];

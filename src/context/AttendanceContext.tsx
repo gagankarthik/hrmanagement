@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Attendance, AttendanceFormData } from '@/types/attendance';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface AttendanceContextType {
   records: Attendance[];
@@ -29,7 +30,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/attendance');
+      const response = await apiFetch('/api/attendance');
       const result = await response.json();
 
       if (result.success) {
@@ -48,7 +49,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   // Create new attendance record
   const createAttendance = useCallback(async (attendanceData: AttendanceFormData) => {
     try {
-      const response = await fetch('/api/attendance', {
+      const response = await apiFetch('/api/attendance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
         ...attendanceData,
       };
 
-      const response = await fetch(`/api/attendance/${id}`, {
+      const response = await apiFetch(`/api/attendance/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   // Delete attendance record
   const deleteAttendance = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/attendance/${id}`, {
+      const response = await apiFetch(`/api/attendance/${id}`, {
         method: 'DELETE',
       });
 

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listUsers, inviteUser, APP_INVITE_ROLES, type AppRole } from '@/lib/cognito';
+import { authorize } from '@/shared/server/auth/guards';
 
 // GET - list all app users (Cognito)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   try {
     const data = await listUsers();
     return NextResponse.json({ success: true, data });
@@ -17,6 +21,9 @@ export async function GET() {
 
 // POST - invite a user (creates the Cognito account; Cognito emails the temp password)
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const email = (body.email || '').trim();

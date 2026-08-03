@@ -5,6 +5,8 @@ import {
   DeleteCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize, forbidden } from '@/shared/server/auth/guards';
+import { getSelfEmployeeId, ownsRecord } from '@/shared/server/auth/self';
 
 // Compute inclusive day count between two ISO date strings
 function computeDays(startDate: string, endDate: string): number {
@@ -23,6 +25,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
 
@@ -43,6 +48,11 @@ export async function GET(
       );
     }
 
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      if (!ownsRecord(response.Item, auth.session, selfEmployeeId)) return forbidden();
+    }
+
     return NextResponse.json({
       success: true,
       data: response.Item,
@@ -57,11 +67,15 @@ export async function GET(
   }
 }
 
-// PUT - Update leave
+// PUT - Update leave (approve / reject / edit) — HR work only. Self-service
+// users withdraw a pending request via DELETE instead.
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -98,13 +112,31 @@ export async function PUT(
   }
 }
 
-// DELETE - Delete leave
+// DELETE - Delete leave. HR can remove any request; a self-service user may
+// withdraw only their own, and only while it is still pending.
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const { id } = await params;
+
+    if (!auth.session.fullAccess) {
+      const existing = await docClient.send(
+        new GetCommand({ TableName: TABLE_NAME, Key: { PK: `LEAVE#${id}`, SK: `LEAVE#${id}` } })
+      );
+      if (!existing.Item) {
+        return NextResponse.json({ success: false, error: 'Leave not found' }, { status: 404 });
+      }
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      if (!ownsRecord(existing.Item, auth.session, selfEmployeeId)) return forbidden();
+      if (existing.Item.status !== 'Pending') {
+        return forbidden('Only a pending request can be withdrawn. Ask HR to change a decided one.');
+      }
+    }
 
     const command = new DeleteCommand({
       TableName: TABLE_NAME,

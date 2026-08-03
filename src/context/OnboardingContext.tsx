@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { OnboardingPacket } from '@/types/onboarding';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface OnboardingContextType {
   packets: OnboardingPacket[];
@@ -24,7 +26,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch('/api/onboarding');
+      const res = await apiFetch('/api/onboarding');
       const result = await res.json();
       if (result.success) setPackets(result.data || []);
       else setError(result.error || 'Failed to load onboarding packets');
@@ -42,7 +44,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   );
 
   const savePacket = useCallback(async (packet: Partial<OnboardingPacket> & { employeeId: string }) => {
-    const res = await fetch('/api/onboarding', {
+    const res = await apiFetch('/api/onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(packet),
@@ -57,13 +59,12 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const deletePacket = useCallback(async (employeeId: string) => {
-    const res = await fetch(`/api/onboarding/${employeeId}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/onboarding/${employeeId}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete onboarding packet');
     setPackets((prev) => prev.filter((p) => p.employeeId !== employeeId));
   }, []);
-
-  useEffect(() => { fetchPackets(); }, [fetchPackets]);
+  useManagementFetch(fetchPackets);
 
   return (
     <OnboardingContext.Provider value={{ packets, isLoading, error, fetchPackets, getByEmployee, savePacket, deletePacket }}>

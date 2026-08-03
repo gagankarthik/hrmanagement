@@ -8,6 +8,7 @@ import {
   IconDashboard, IconEmployees, IconOnboarding, IconPartners, IconLeave,
   IconBilling, IconReports, IconHandbook, IconProcedures, IconPolicies,
   IconBenefits, IconCompliance, IconUsersAdmin, IconBackup, IconDocuments,
+  IconTimesheets,
 } from '@/components/icons';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ const selfServiceSections: NavSection[] = [
     heading: 'My Portal',
     items: [
       { label: 'My Leave', href: '/my-leave', icon: IconLeave },
+      { label: 'My Attendance', href: '/my-attendance', icon: IconTimesheets },
       { label: 'My Documents', href: '/my-documents', icon: IconDocuments },
       { label: 'Handbook', href: '/handbook', icon: IconHandbook },
       { label: 'Company Procedures', href: '/procedures', icon: IconProcedures },
@@ -57,7 +59,7 @@ const sections: NavSection[] = [
   {
     heading: 'Administration',
     items: [
-      { label: 'Users', href: '/users', icon: IconUsersAdmin },
+      { label: 'Users', href: '/users', icon: IconUsersAdmin, adminOnly: true },
       { label: 'Backups', href: '/backup', icon: IconBackup, adminOnly: true },
     ],
   },

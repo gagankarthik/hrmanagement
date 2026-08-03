@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Invoice, InvoiceFormData } from '@/types/invoice';
+import { useManagementFetch } from '@/hooks/useManagementFetch';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 interface InvoiceContextType {
   invoices: Invoice[];
@@ -25,7 +27,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch('/api/invoices');
+      const res = await apiFetch('/api/invoices');
       const result = await res.json();
       if (result.success) setInvoices(result.data || []);
       else setError(result.error || 'Failed to fetch invoices');
@@ -38,7 +40,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createInvoice = useCallback(async (data: InvoiceFormData) => {
-    const res = await fetch('/api/invoices', {
+    const res = await apiFetch('/api/invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -50,7 +52,7 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateInvoice = useCallback(async (id: string, data: Partial<Invoice>) => {
-    const res = await fetch(`/api/invoices/${id}`, {
+    const res = await apiFetch(`/api/invoices/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -61,17 +63,14 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteInvoice = useCallback(async (id: string) => {
-    const res = await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/invoices/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete invoice');
     setInvoices((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
   const getInvoiceById = useCallback((id: string) => invoices.find((i) => i.id === id), [invoices]);
-
-  useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
+  useManagementFetch(fetchInvoices);
 
   return (
     <InvoiceContext.Provider

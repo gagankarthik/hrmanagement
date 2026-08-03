@@ -9,6 +9,8 @@
  * try/catch instead of branching on `result.success` everywhere.
  */
 
+import { apiFetch } from './auth-fetch';
+
 export interface ApiError extends Error {
   status?: number;
 }
@@ -25,7 +27,7 @@ function makeError(message: string, status?: number): ApiError {
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await apiFetch(url, {
       method,
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -42,6 +44,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   }
 
   if (!res.ok || !json || json.success === false) {
+    if (res.status === 401) throw makeError('Your session has expired. Please sign in again.', 401);
     const errField = json && 'error' in json ? json.error : undefined;
     const message = typeof errField === 'string' && errField ? errField : `Request failed (${res.status}).`;
     throw makeError(message, res.status);
@@ -57,7 +60,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 async function requestRaw<R>(method: string, url: string, body?: unknown): Promise<R> {
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await apiFetch(url, {
       method,
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,

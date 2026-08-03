@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 // GET - all category policies
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -22,6 +26,9 @@ export async function GET() {
 
 // PUT - upsert one category policy (keyed by employeeType)
 export async function PUT(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const type = String(body.employeeType);

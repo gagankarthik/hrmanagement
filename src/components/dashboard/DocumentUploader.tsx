@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { FileText, X, Loader2, ExternalLink, UploadCloud, Download } from 'lucide-react';
 import { UploadedDoc } from '@/types/uploads';
+import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
 function fmtSize(n?: number) {
   if (!n) return '';
@@ -31,7 +32,7 @@ export function DocumentUploader({ value = [], onChange, folder, label = 'Docume
     try {
       const added: UploadedDoc[] = [];
       for (const file of Array.from(files)) {
-        const res = await fetch('/api/uploads/presign', {
+        const res = await apiFetch('/api/uploads/presign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: file.name, contentType: file.type, folder }),

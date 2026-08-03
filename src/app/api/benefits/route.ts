@@ -5,9 +5,13 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
+import { authorize } from '@/shared/server/auth/guards';
 
 // GET - Fetch all benefit plans
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await authorize(request, 'user');
+  if (!auth.ok) return auth.response;
+
   try {
     const command = new QueryCommand({
       TableName: TABLE_NAME,
@@ -39,6 +43,9 @@ export async function GET() {
 
 // POST - Create new benefit plan
 export async function POST(request: NextRequest) {
+  const auth = await authorize(request, 'full');
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await request.json();
     const id = uuidv4();

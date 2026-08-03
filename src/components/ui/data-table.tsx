@@ -72,6 +72,12 @@ export interface DataTableProps<T> {
   initialSort?: { columnId: string; dir: SortDir };
   /** When set, enables a persisted column-visibility menu (key: ob:cols:<tableId>). */
   tableId?: string;
+  /**
+   * Page controls (search, filters, export) rendered on the left of the table's
+   * own toolbar row, so they share a line with the Columns menu instead of
+   * stacking a second bar above it.
+   */
+  toolbar?: React.ReactNode;
 }
 
 const alignClass = { left: 'text-left', right: 'text-right', center: 'text-center' } as const;
@@ -101,6 +107,7 @@ export function DataTable<T>({
   stickyHeader = false,
   initialSort,
   tableId,
+  toolbar,
 }: DataTableProps<T>) {
   const [sort, setSort] = React.useState<{ columnId: string; dir: SortDir } | null>(initialSort ?? null);
 
@@ -181,10 +188,20 @@ export function DataTable<T>({
     );
   };
 
+  // Page controls stay on screen in every state — a search that matches
+  // nothing must still be clearable.
+  const toolbarOnlyRow = toolbar ? (
+    <div className="flex flex-col gap-3 border-b border-[var(--adm-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{toolbar}</div>
+    </div>
+  ) : null;
+
   // ── Error ──────────────────────────────────────────────────────────────
   if (error && !isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-12 text-center" role="alert">
+      <div>
+        {toolbarOnlyRow}
+        <div className="flex flex-col items-center justify-center px-6 py-12 text-center" role="alert">
         <span className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]">
           <AlertTriangle className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
@@ -195,6 +212,7 @@ export function DataTable<T>({
             <RefreshCw className="h-4 w-4" /> Try again
           </button>
         )}
+        </div>
       </div>
     );
   }
@@ -202,23 +220,35 @@ export function DataTable<T>({
   // ── Empty (only when not loading) ──────────────────────────────────────
   if (!isLoading && data.length === 0 && empty) {
     return (
-      <div className="p-5">
-        <EmptyState
-          icon={empty.icon}
-          tone={empty.tone}
-          title={empty.title}
-          description={empty.description}
-          action={empty.action}
-        />
+      <div>
+        {toolbarOnlyRow}
+        <div className="p-5">
+          <EmptyState
+            icon={empty.icon}
+            tone={empty.tone}
+            title={empty.title}
+            description={empty.description}
+            action={empty.action}
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Column-visibility control */}
-      {tableId && hideableCols.length > 0 && (
-        <div ref={colMenuRef} className="relative flex justify-end px-3 pt-3">
+      {/* Toolbar row — page controls on the left, column visibility on the
+          right, always one line. */}
+      {(toolbar || (tableId && hideableCols.length > 0)) && (
+      <div
+        className={cn(
+          'flex flex-col gap-3 px-3 pt-3 sm:flex-row sm:items-center sm:justify-between',
+          toolbar && 'border-b border-[var(--adm-line)] px-5 py-4',
+        )}
+      >
+        {toolbar && <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{toolbar}</div>}
+        {tableId && hideableCols.length > 0 && (
+        <div ref={colMenuRef} className="relative flex justify-end">
           <button
             type="button"
             onClick={() => setColMenuOpen((v) => !v)}
@@ -229,7 +259,7 @@ export function DataTable<T>({
             <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Columns
           </button>
           {colMenuOpen && (
-            <div role="menu" className="absolute right-3 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100">
+            <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100">
               <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Show columns</p>
               {hideableCols.map((c) => {
                 const shown = !hidden.has(c.id);
@@ -252,6 +282,8 @@ export function DataTable<T>({
             </div>
           )}
         </div>
+        )}
+      </div>
       )}
 
       <div className="overflow-x-auto">
