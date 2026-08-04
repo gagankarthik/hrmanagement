@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { UserManager, User, WebStorageStateStore } from "oidc-client-ts";
 import { UserRole, roleHierarchy } from "./config";
+import { appRolesOf } from "@/config/access";
 
 interface AuthUser {
   id: string;
@@ -60,14 +61,16 @@ const createUserManagerConfig = () => {
 const parseUser = (oidcUser: User): AuthUser => {
   const profile = oidcUser.profile;
 
-  // Cognito groups are in the cognito:groups claim
+  // Cognito groups are in the cognito:groups claim. They are namespaced per app
+  // (`hr:admin`) since the pool is shared; bare legacy names still count.
   const groups: string[] = (profile as Record<string, unknown>)["cognito:groups"] as string[] || [];
+  const appRoles = new Set<string>(appRolesOf(groups));
 
   // Determine role from groups (prioritize highest role)
   let role = UserRole.USER;
-  if (groups.includes("admin")) {
+  if (appRoles.has("admin")) {
     role = UserRole.ADMIN;
-  } else if (groups.includes("hr")) {
+  } else if (appRoles.has("hr")) {
     role = UserRole.HR;
   }
 

@@ -1,7 +1,7 @@
 import 'server-only';
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import type { NextRequest } from 'next/server';
-import { hasAppAccess, hasFullAccess, isAdmin, isSelfServiceOnly } from '@/config/access';
+import { appRolesOf, hasAppAccess, hasFullAccess, isAdmin, isSelfServiceOnly } from '@/config/access';
 
 /**
  * Server-side session verification.
@@ -89,13 +89,12 @@ function claimList(payload: JWTPayload, key: string): string[] {
 }
 
 function toSession(payload: JWTPayload): Session {
-  const roles = Array.from(
-    new Set(
-      [...claimList(payload, 'cognito:groups'), ...claimList(payload, 'custom:role')]
-        .map((r) => r.toLowerCase().trim())
-        .filter(Boolean),
-    ),
-  );
+  // Groups may be namespaced per application (`hr:admin`) or bare (`admin`,
+  // the legacy shape). Anything belonging to another app is dropped.
+  const roles: string[] = appRolesOf([
+    ...claimList(payload, 'cognito:groups'),
+    ...claimList(payload, 'custom:role'),
+  ]);
   const email = typeof payload.email === 'string' ? payload.email.toLowerCase().trim() : '';
   return {
     userId: String(payload.sub || ''),

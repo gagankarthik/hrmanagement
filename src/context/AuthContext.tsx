@@ -14,6 +14,7 @@ import {
   fetchUserAttributes,
 } from 'aws-amplify/auth';
 import { configureAmplify } from '@/config/amplify';
+import { appRolesOf } from '@/config/access';
 
 if (typeof window !== 'undefined') {
   configureAmplify();
@@ -68,14 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const attributes = await fetchUserAttributes();
 
       // Roles come from Cognito groups (`cognito:groups` in the ID token) and,
-      // as a fallback, a `custom:role` attribute. Normalize to a lowercased list.
+      // as a fallback, a `custom:role` attribute. The pool is shared with the
+      // company website, so groups are namespaced per app (`hr:admin`); bare
+      // legacy names still count, another app's prefix does not.
       const session = await fetchAuthSession();
       const groupsClaim = session.tokens?.idToken?.payload?.['cognito:groups'];
       const groups = Array.isArray(groupsClaim) ? groupsClaim.map(String) : [];
       const roleAttr = (attributes as Record<string, string | undefined>)['custom:role'];
-      const roles = Array.from(
-        new Set([...groups, ...(roleAttr ? [roleAttr] : [])].map((r) => r.toLowerCase().trim()).filter(Boolean)),
-      );
+      const roles: string[] = appRolesOf([...groups, ...(roleAttr ? [roleAttr] : [])]);
       // HR-portal access: blocked only when explicitly "false".
       const hrAccess = (attributes as Record<string, string | undefined>)['custom:hr_access'] !== 'false';
 

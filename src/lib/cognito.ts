@@ -12,7 +12,7 @@ import {
   type UserType,
 } from '@aws-sdk/client-cognito-identity-provider';
 
-import { INVITE_ROLE_OPTIONS, type AppRole } from '@/config/access';
+import { INVITE_ROLE_OPTIONS, groupNameForRole, normalizeRole, type AppRole } from '@/config/access';
 
 /**
  * Application roles an admin may assign from the Users page — the canonical list
@@ -98,7 +98,7 @@ function toAppUser(user: UserType): AppUser {
     status: user.UserStatus,
     enabled: user.Enabled ?? true,
     hrAccess: access !== 'false',
-    role: APP_ROLE_SET.has(roleAttr) ? (roleAttr as AppRole) : undefined,
+    role: normalizeRole(roleAttr) ?? undefined,
     createdAt: user.UserCreateDate ? user.UserCreateDate.toISOString() : undefined,
     updatedAt: user.UserLastModifiedDate ? user.UserLastModifiedDate.toISOString() : undefined,
   };
@@ -117,8 +117,10 @@ export async function groupRoleFor(username: string): Promise<AppRole | undefine
     const res = await client.send(
       new AdminListGroupsForUserCommand({ UserPoolId: USER_POOL_ID, Username: username }),
     );
-    const owned = new Set(
-      (res.Groups || []).map((g) => (g.GroupName || '').toLowerCase().trim()).filter(Boolean),
+    const owned = new Set<string>(
+      (res.Groups || [])
+        .map((g) => normalizeRole(g.GroupName))
+        .filter((r): r is AppRole => r !== null),
     );
     return ROLE_DISPLAY_PRIORITY.find((r) => owned.has(r));
   } catch {
@@ -201,9 +203,18 @@ export async function inviteUser({
   return { ...invited, role };
 }
 
-/** Cognito group name for an app role. Groups are named exactly like the role. */
+/**
+ * Cognito group name written for an app role: namespaced per application
+ * (`hr:admin`), because this pool is shared with the company website. Reads
+ * still accept the legacy bare names, so existing members keep their access.
+ */
 function roleGroupName(role: AppRole): string {
-  return role;
+  return groupNameForRole(role);
+}
+
+/** True if a group name grants one of THIS app's roles, prefixed or legacy. */
+function isAppRoleGroup(groupName: string): boolean {
+  return normalizeRole(groupName) !== null;
 }
 
 /** Ensure a Cognito group exists (best-effort; ignore if it already does). */
@@ -233,9 +244,12 @@ export async function setUserRole(username: string, role: AppRole): Promise<void
     const groups = await client.send(
       new AdminListGroupsForUserCommand({ UserPoolId: USER_POOL_ID, Username: username }),
     );
+    // Every other group that would grant a role in THIS app has to go, legacy
+    // bare names included — otherwise a demotion leaves the old grant standing
+    // and the reader, which accepts both forms, still sees the old role.
     const stale = (groups.Groups || [])
       .map((g) => g.GroupName || '')
-      .filter((g) => g && g !== target && APP_ROLE_SET.has(g.toLowerCase()));
+      .filter((g) => g && g !== target && isAppRoleGroup(g));
     await Promise.all(
       stale.map((g) =>
         client.send(

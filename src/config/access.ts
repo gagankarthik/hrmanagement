@@ -34,9 +34,10 @@ export const APP_ACCESS_ROLES = [...FULL_ACCESS_ROLES, ...SELF_SERVICE_ROLES] as
 export type AppRole = (typeof APP_ACCESS_ROLES)[number];
 
 /**
- * Roles an admin may assign from the Users page, in display order. Each maps 1:1
- * to a Cognito group of the same name (the `cognito:groups` claim the portal
- * reads for access tiers). `employee` is the invite-only ESS default.
+ * Roles an admin may assign from the Users page, in display order. Each maps to
+ * a namespaced Cognito group (`hr:admin`, see {@link groupNameForRole}) in the
+ * `cognito:groups` claim the portal reads for access tiers. `employee` is the
+ * invite-only ESS default.
  * Client-safe (plain constants) so both the Users UI and the server share one source.
  */
 export const INVITE_ROLE_OPTIONS = ['employee', 'recruiter', 'sales', 'hr', 'admin'] as const;
@@ -49,14 +50,62 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   admin: 'Admin',
 };
 
-/** Normalize a raw role/group string for comparison. */
-function norm(role: string): string {
-  return role.toLowerCase().trim();
+/**
+ * Per-app group namespace.
+ *
+ * One Cognito pool serves this HR portal and the company website, so a bare
+ * group called `admin` is ambiguous the moment a third application appears:
+ * whose admin? New assignments are written as `hr:admin`, `hr:recruiter` and so
+ * on, which says which application the role is about.
+ *
+ * Reads accept both forms. Bare names are the legacy shape and still grant
+ * access, so nobody is locked out by the rename; a group carrying a *different*
+ * app's prefix (`web:editor`) is deliberately ignored here, because it says
+ * nothing about what this portal should allow.
+ */
+export const APP_ROLE_NAMESPACE = 'hr';
+const NAMESPACE_SEPARATOR = ':';
+
+/** The Cognito group name this app writes for a role, e.g. "hr:admin". */
+export function groupNameForRole(role: AppRole): string {
+  return `${APP_ROLE_NAMESPACE}${NAMESPACE_SEPARATOR}${role}`;
+}
+
+/**
+ * Turn a raw group / claim string into one of this app's roles.
+ * `hr:admin` and `admin` both resolve to `admin`; `web:admin` resolves to null.
+ */
+export function normalizeRole(raw: string | null | undefined): AppRole | null {
+  if (!raw) return null;
+  const value = raw.toLowerCase().trim();
+  if (!value) return null;
+
+  const sep = value.indexOf(NAMESPACE_SEPARATOR);
+  if (sep !== -1) {
+    const namespace = value.slice(0, sep);
+    const role = value.slice(sep + 1);
+    if (namespace !== APP_ROLE_NAMESPACE) return null; // another app's role
+    return (APP_ACCESS_ROLES as ReadonlyArray<string>).includes(role) ? (role as AppRole) : null;
+  }
+
+  // Legacy unprefixed group.
+  return (APP_ACCESS_ROLES as ReadonlyArray<string>).includes(value) ? (value as AppRole) : null;
+}
+
+/** Every role in the list that belongs to this app, normalized and deduped. */
+export function appRolesOf(roles: ReadonlyArray<string> | null | undefined): AppRole[] {
+  if (!roles?.length) return [];
+  const out = new Set<AppRole>();
+  for (const raw of roles) {
+    const role = normalizeRole(raw);
+    if (role) out.add(role);
+  }
+  return [...out];
 }
 
 function hasAnyRole(roles: ReadonlyArray<string> | null | undefined, allowed: ReadonlyArray<string>): boolean {
   if (!roles || roles.length === 0) return false;
-  const owned = new Set(roles.map(norm));
+  const owned = new Set<string>(appRolesOf(roles));
   return allowed.some((r) => owned.has(r));
 }
 
@@ -95,8 +144,7 @@ const ROLE_PRECEDENCE: readonly AppRole[] = ['admin', 'hr', 'recruiter', 'sales'
  * they hold no recognized application role.
  */
 export function primaryRole(roles: ReadonlyArray<string> | null | undefined): AppRole | null {
-  if (!roles || roles.length === 0) return null;
-  const owned = new Set(roles.map(norm));
+  const owned = new Set<string>(appRolesOf(roles));
   return ROLE_PRECEDENCE.find((r) => owned.has(r)) ?? null;
 }
 
