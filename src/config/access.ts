@@ -22,6 +22,28 @@ export const FULL_ACCESS_ROLES = ['admin', 'hr'] as const;
 export const SELF_SERVICE_ROLES = ['recruiter', 'sales', 'employee'] as const;
 
 /**
+ * Who a person is to the business, which is a different question from what they
+ * can do in this portal.
+ *
+ * **Internal staff** (admin, hr, recruiter, sales) work for Ocean Blue itself.
+ * They are the people the company website is built for, and they hold accounts
+ * in both places.
+ *
+ * **External workforce** (employee) are the people placed with clients. They
+ * exist in this portal only: their own leave, attendance, documents and the
+ * handbook. They are NOT company-website users, and an `employee` account is
+ * never granted a website role.
+ *
+ * The portal enforces its half of that by only ever writing `hr:*` groups (see
+ * {@link groupNameForRole}), so an employee account carries nothing the website
+ * would recognize. The other half has to be enforced on the website, which must
+ * require one of ITS OWN roles rather than accepting any authenticated user
+ * from the shared pool.
+ */
+export const INTERNAL_ROLES = ['admin', 'hr', 'recruiter', 'sales'] as const;
+export const EXTERNAL_ROLES = ['employee'] as const;
+
+/**
  * Roles allowed to reach admin-only surfaces (e.g. data backups). Stricter than
  * full-access: `hr` can run the HR portal but only `admin` may export/restore
  * data. Add roles here to widen that gate.
@@ -122,6 +144,25 @@ export function hasFullAccess(roles: ReadonlyArray<string> | null | undefined): 
 /** True if the user holds an admin role (admin-only surfaces such as backups). */
 export function isAdmin(roles: ReadonlyArray<string> | null | undefined): boolean {
   return hasAnyRole(roles, ADMIN_ROLES);
+}
+
+/** True for Ocean Blue's own staff (admin / hr / recruiter / sales). */
+export function isInternalStaff(roles: ReadonlyArray<string> | null | undefined): boolean {
+  return hasAnyRole(roles, INTERNAL_ROLES);
+}
+
+/**
+ * True for the placed workforce: an `employee` account with no internal role.
+ * These people belong to this portal only and must not reach the company site.
+ */
+export function isExternalWorkforce(roles: ReadonlyArray<string> | null | undefined): boolean {
+  return hasAnyRole(roles, EXTERNAL_ROLES) && !isInternalStaff(roles);
+}
+
+/** How a single role reads to a human: staff or placed workforce. */
+export function roleScope(role: AppRole | null | undefined): 'internal' | 'external' | null {
+  if (!role) return null;
+  return (INTERNAL_ROLES as ReadonlyArray<string>).includes(role) ? 'internal' : 'external';
 }
 
 /**
