@@ -3,13 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DatabaseBackup, Download, HardDriveDownload, Archive, Clock, Loader2,
-  ShieldAlert, ShieldCheck, FileJson,
+  ShieldAlert, ShieldCheck, FileJson, Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { useAccess } from '@/hooks/useAccess';
 import { friendlyError } from '@/lib/errors';
@@ -40,11 +41,13 @@ function formatWhen(iso: string | null): string {
 
 export default function BackupPage() {
   const toast = useToast();
-  const { admin } = useAccess();
+  const { admin, canManage } = useAccess();
   const [backups, setBackups] = useState<BackupObject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BackupObject | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchBackups = useCallback(async () => {
     setIsLoading(true);
@@ -65,9 +68,28 @@ export default function BackupPage() {
   }, []);
 
   useEffect(() => {
-    if (admin) fetchBackups();
+    if (canManage) fetchBackups();
     else setIsLoading(false);
-  }, [admin, fetchBackups]);
+  }, [canManage, fetchBackups]);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await apiFetch(`/api/admin/backups?key=${encodeURIComponent(deleteTarget.key)}`, {
+        method: 'DELETE',
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Delete failed');
+      toast.success('Backup deleted', `${deleteTarget.name} has been removed from S3.`);
+      setDeleteTarget(null);
+      fetchBackups();
+    } catch (err) {
+      toast.error('Could not delete backup', friendlyError(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -122,17 +144,17 @@ export default function BackupPage() {
     },
   ];
 
-  // ── Admin-only surface ──────────────────────────────────────────────────
-  if (!admin) {
+  // HR and Admin both take and download backups; only admins delete one.
+  if (!canManage) {
     return (
       <PageContainer>
         <div className="surface flex flex-col items-center px-6 py-14 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
             <ShieldAlert className="h-6 w-6" strokeWidth={1.75} />
           </span>
-          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Admins only</h1>
+          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Not available</h1>
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600">
-            Data backups are restricted to administrators. If you need a backup, ask an admin on your team.
+            Data backups are handled by HR and administrators.
           </p>
         </div>
       </PageContainer>
@@ -145,7 +167,7 @@ export default function BackupPage() {
         icon={DatabaseBackup}
         eyebrow="Administration"
         title="Backups"
-        description={`Export a full snapshot of the ${BRAND.name} database to secure S3 storage and download any previous backup. Backups are read-only once created — they can be downloaded but never edited or deleted here.`}
+        description={`Export a full snapshot of the ${BRAND.name} database to secure S3 storage and download any previous backup. HR and admins take backups; only an administrator can delete one.`}
         tone="brand"
         actions={
           <button onClick={handleExport} disabled={exporting} className="btn-primary">
@@ -171,7 +193,7 @@ export default function BackupPage() {
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
           <div>
             <h2 className="font-display text-sm font-bold text-slate-900">All backups</h2>
-            <p className="text-xs text-slate-400">Newest first · download only</p>
+            <p className="text-xs text-slate-400">Newest first · snapshots are never edited, only downloaded{admin ? ' or deleted' : ''}</p>
           </div>
         </div>
 
@@ -187,14 +209,27 @@ export default function BackupPage() {
           minWidth="min-w-[640px]"
           initialSort={{ columnId: 'created', dir: 'desc' }}
           rowActions={(b) => (
-            <a
-              href={`/api/admin/backups/download?key=${encodeURIComponent(b.key)}`}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50"
-              // Native download — the endpoint 302s to a presigned S3 URL with an
-              // attachment disposition, so no new tab is needed.
-            >
-              <Download className="h-3.5 w-3.5" strokeWidth={2} /> Download
-            </a>
+            <div className="flex items-center justify-end gap-1">
+              <a
+                href={`/api/admin/backups/download?key=${encodeURIComponent(b.key)}`}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                // Native download — the endpoint 302s to a presigned S3 URL with an
+                // attachment disposition, so no new tab is needed.
+              >
+                <Download className="h-3.5 w-3.5" strokeWidth={2} /> Download
+              </a>
+              {/* Deleting a snapshot cannot be undone, so it stays with admins. */}
+              {admin && (
+                <button
+                  onClick={() => setDeleteTarget(b)}
+                  className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  title={`Delete ${b.name}`}
+                  aria-label={`Delete ${b.name}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                </button>
+              )}
+            </div>
           )}
           empty={{
             icon: DatabaseBackup,
@@ -218,6 +253,25 @@ export default function BackupPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Delete backup"
+        tone="danger"
+        description={
+          deleteTarget ? (
+            <>
+              Permanently delete <span className="font-semibold text-slate-900">{deleteTarget.name}</span>{' '}
+              ({formatBytes(deleteTarget.size)})? The snapshot is removed from S3 and cannot be
+              recovered.
+            </>
+          ) : null
+        }
+        confirmLabel="Delete backup"
+        isLoading={deleting}
+      />
     </PageContainer>
   );
 }

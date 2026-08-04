@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
+import { ListObjectsV2Command, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 import {
@@ -37,7 +37,7 @@ function notConfigured(): NextResponse {
 
 /** GET /api/admin/backups → list every backup file in the bucket (newest first). */
 export async function GET(request: NextRequest) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   if (!backupsConfigured) return notConfigured();
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
  * creates one new immutable object in the backups bucket.
  */
 export async function POST(request: NextRequest) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   if (!backupsConfigured) return notConfigured();
@@ -126,5 +126,34 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     return serverError(error, 'Failed to export data to S3');
+  }
+}
+
+/**
+ * DELETE /api/admin/backups?key=... → remove one snapshot.
+ *
+ * Deliberately stricter than the rest of this route: HR can take and download
+ * backups, but destroying one is irreversible and stays with administrators.
+ * The key is pinned to the backups prefix so this can never reach another
+ * object in a shared bucket.
+ */
+export async function DELETE(request: NextRequest) {
+  const auth = await authorize(request, 'admin');
+  if (!auth.ok) return auth.response;
+
+  if (!backupsConfigured) return notConfigured();
+
+  const key = new URL(request.url).searchParams.get('key') || '';
+  if (!key || key.includes('..') || !key.startsWith(BACKUPS_PREFIX)) {
+    return NextResponse.json({ success: false, error: 'Invalid backup key' }, { status: 400 });
+  }
+
+  try {
+    await backupsS3Client.send(
+      new DeleteObjectCommand({ Bucket: BACKUPS_BUCKET, Key: key }),
+    );
+    return ok({ key, deleted: true });
+  } catch (error) {
+    return serverError(error, 'Failed to delete backup');
   }
 }

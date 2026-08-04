@@ -14,7 +14,7 @@ import {
 // PUT/DELETE counterpart, and the key is pinned to the backups prefix so this
 // can never surface any other object in the bucket.
 export async function GET(request: NextRequest) {
-  const auth = await authorize(request, 'admin');
+  const auth = await authorize(request, 'full');
   if (!auth.ok) return auth.response;
 
   if (!backupsConfigured) {

@@ -14,6 +14,7 @@ import { StatCard, StatGrid } from '@/components/ui/stat-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
 import { Switch } from '@/components/ui/switch';
+import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
 import { INVITE_ROLE_OPTIONS, ROLE_LABELS, roleScope, type AppRole } from '@/config/access';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,29 @@ interface AppUser {
   createdAt?: string;
 }
 
+type RoleFilter = 'all' | 'none' | AppRole;
+type ScopeFilter = 'all' | 'internal' | 'external';
+type StatusFilter = 'all' | 'active' | 'pending' | 'blocked';
+
+const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
+  { value: 'all', label: 'All roles' },
+  ...INVITE_ROLE_OPTIONS.map((r) => ({ value: r as RoleFilter, label: ROLE_LABELS[r] })),
+  { value: 'none', label: 'No role' },
+];
+
+const SCOPE_FILTERS: { value: ScopeFilter; label: string }[] = [
+  { value: 'all', label: 'Everyone' },
+  { value: 'internal', label: 'Internal staff' },
+  { value: 'external', label: 'Placed workforce' },
+];
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'Any status' },
+  { value: 'active', label: 'Active' },
+  { value: 'pending', label: 'Invite pending' },
+  { value: 'blocked', label: 'Blocked or disabled' },
+];
+
 function statusInfo(u: AppUser): { label: string; tone: StatusTone; Icon: React.ElementType } {
   if (!u.enabled) return { label: 'Disabled', tone: 'neutral', Icon: ShieldAlert };
   switch (u.status) {
@@ -61,6 +85,9 @@ export default function UsersPage() {
   const [linkingFor, setLinkingFor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState('');
@@ -93,9 +120,23 @@ export default function UsersPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) => [u.name, u.email].some((f) => f?.toLowerCase().includes(q)));
-  }, [users, search]);
+    return users.filter((u) => {
+      const matchSearch = !q || [u.name, u.email].some((f) => f?.toLowerCase().includes(q));
+      const matchRole =
+        roleFilter === 'all'
+          ? true
+          : roleFilter === 'none'
+          ? !u.role
+          : u.role === roleFilter;
+      const matchScope = scopeFilter === 'all' || (u.role ? roleScope(u.role) === scopeFilter : false);
+      const matchStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && u.enabled && u.status === 'CONFIRMED') ||
+        (statusFilter === 'pending' && u.status === 'FORCE_CHANGE_PASSWORD') ||
+        (statusFilter === 'blocked' && (!u.enabled || !u.hrAccess));
+      return matchSearch && matchRole && matchScope && matchStatus;
+    });
+  }, [users, search, roleFilter, scopeFilter, statusFilter]);
 
   /**
    * HR administers ordinary accounts; admin and HR accounts are an admin's to
@@ -455,16 +496,21 @@ export default function UsersPage() {
       <div className="surface">
         <DataTable<AppUser>
           toolbar={
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50"
-              />
-            </div>
+            <>
+              <div className="relative w-full max-w-xs">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50"
+                />
+              </div>
+              <FilterSelect label="Filter by role" value={roleFilter} onChange={setRoleFilter} options={ROLE_FILTERS} />
+              <FilterSelect label="Filter by group" value={scopeFilter} onChange={setScopeFilter} options={SCOPE_FILTERS} />
+              <FilterSelect label="Filter by status" value={statusFilter} onChange={setStatusFilter} options={STATUS_FILTERS} />
+            </>
           }
           columns={columns}
           data={filtered}
