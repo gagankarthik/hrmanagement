@@ -305,10 +305,9 @@ async function ensureCustomAttributes(names: string[]): Promise<void> {
 
 /**
  * Update HR-portal metadata on a Cognito user: their role and whether they may
- * use the HR portal (custom:hr_access). These attributes are
- * read only by the HR portal — the company website ignores them, so toggling
- * access here never affects the marketing-site login. If the custom attributes
- * aren't in the pool schema yet, we add them once and retry.
+ * use the HR portal (custom:hr_access). It is a soft block that leaves the
+ * account intact, which is why it is separate from disabling the user. If the
+ * custom attributes aren't in the pool schema yet, we add them once and retry.
  */
 export async function updateUserMeta(
   username: string,
