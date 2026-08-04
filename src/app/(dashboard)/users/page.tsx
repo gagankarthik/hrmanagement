@@ -16,8 +16,7 @@ import { StatusBadge, type StatusTone } from '@/components/ui/status-badge';
 import { Switch } from '@/components/ui/switch';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
-import { INVITE_ROLE_OPTIONS, ROLE_LABELS, roleScope, type AppRole } from '@/config/access';
-import { cn } from '@/lib/utils';
+import { INVITE_ROLE_OPTIONS, ROLE_LABELS, type AppRole } from '@/config/access';
 import { friendlyError } from '@/lib/errors';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Avatar } from '@/components/ui/avatar';
@@ -41,19 +40,12 @@ interface AppUser {
 }
 
 type RoleFilter = 'all' | 'none' | AppRole;
-type ScopeFilter = 'all' | 'internal' | 'external';
 type StatusFilter = 'all' | 'active' | 'pending' | 'blocked';
 
 const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
   { value: 'all', label: 'All roles' },
   ...INVITE_ROLE_OPTIONS.map((r) => ({ value: r as RoleFilter, label: ROLE_LABELS[r] })),
   { value: 'none', label: 'No role' },
-];
-
-const SCOPE_FILTERS: { value: ScopeFilter; label: string }[] = [
-  { value: 'all', label: 'Everyone' },
-  { value: 'internal', label: 'Internal staff' },
-  { value: 'external', label: 'Placed workforce' },
 ];
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
@@ -86,7 +78,6 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -94,7 +85,6 @@ export default function UsersPage() {
   const [name, setName] = useState('');
   const [inviteRole, setInviteRole] = useState<AppRole>('employee');
   const [submitting, setSubmitting] = useState(false);
-  const [restricting, setRestricting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -128,53 +118,20 @@ export default function UsersPage() {
           : roleFilter === 'none'
           ? !u.role
           : u.role === roleFilter;
-      const matchScope = scopeFilter === 'all' || (u.role ? roleScope(u.role) === scopeFilter : false);
       const matchStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' && u.enabled && u.status === 'CONFIRMED') ||
         (statusFilter === 'pending' && u.status === 'FORCE_CHANGE_PASSWORD') ||
         (statusFilter === 'blocked' && (!u.enabled || !u.hrAccess));
-      return matchSearch && matchRole && matchScope && matchStatus;
+      return matchSearch && matchRole && matchStatus;
     });
-  }, [users, search, roleFilter, scopeFilter, statusFilter]);
+  }, [users, search, roleFilter, statusFilter]);
 
   /**
-   * HR administers ordinary accounts; admin and HR accounts are an admin's to
-   * change. The API enforces this too — this only keeps HR from clicking
-   * controls that would come back 403.
+   * HR manages everyone except admins. The API enforces this too — this only
+   * keeps HR from clicking controls that would come back 403.
    */
-  const isLocked = (u: AppUser) => !admin && (u.role === 'admin' || u.role === 'hr');
-
-  /**
-   * Confine placed-workforce accounts to this portal: rewrites every `employee`
-   * account to the namespaced group and clears legacy bare groups, which are
-   * the shape the company website reads. Idempotent.
-   */
-  const restrictExternal = async () => {
-    setRestricting(true);
-    try {
-      const res = await apiFetch('/api/users/restrict-external', { method: 'POST' });
-      const result = await res.json();
-      if (!result.success) throw new Error(result.error || 'Failed');
-      const { restricted, failed } = result.data as { restricted: number; failed: { email: string }[] };
-      if (failed?.length) {
-        toast.error(
-          'Some accounts could not be updated',
-          `${restricted} confined, ${failed.length} failed (${failed[0].email}${failed.length > 1 ? ' and others' : ''}).`,
-        );
-      } else {
-        toast.success(
-          'Workforce accounts confined',
-          `${restricted} employee account${restricted !== 1 ? 's' : ''} now carry portal-only groups.`,
-        );
-      }
-      fetchUsers();
-    } catch (err) {
-      toast.error('Could not confine accounts', friendlyError(err));
-    } finally {
-      setRestricting(false);
-    }
-  };
+  const isLocked = (u: AppUser) => !admin && u.role === 'admin';
 
   const activeCount = users.filter((u) => u.enabled && u.status === 'CONFIRMED').length;
   const pendingCount = users.filter((u) => u.status === 'FORCE_CHANGE_PASSWORD').length;
@@ -184,13 +141,11 @@ export default function UsersPage() {
   };
 
   /**
-   * Roles this person may hand out. Everyone can create the placed workforce and
-   * the non-privileged internal roles; admin and hr are an administrator's to
-   * grant (see shared/server/auth/role-limits.ts, which enforces it server-side).
+   * Roles this person may hand out. HR grants employee and hr; only an admin
+   * grants admin (see shared/server/auth/role-limits.ts, which enforces it
+   * server-side — this list only keeps the UI honest).
    */
-  const assignableRoles = INVITE_ROLE_OPTIONS.filter(
-    (r) => admin || (r !== 'admin' && r !== 'hr'),
-  );
+  const assignableRoles = INVITE_ROLE_OPTIONS.filter((r) => admin || r !== 'admin');
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,21 +336,9 @@ export default function UsersPage() {
       header: 'Role',
       sortValue: (u) => u.role ?? '',
       cell: (u) => u.role ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
-            {ROLE_LABELS[u.role as AppRole] ?? u.role}
-          </span>
-          {/* Staff hold accounts on the company website too; placed workforce
-              lives in this portal only. */}
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
-              roleScope(u.role) === 'internal' ? 'bg-slate-100 text-slate-600' : 'bg-teal-50 text-teal-700',
-            )}
-          >
-            {roleScope(u.role) === 'internal' ? 'Internal' : 'Workforce'}
-          </span>
-        </div>
+        <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
+          {ROLE_LABELS[u.role as AppRole] ?? u.role}
+        </span>
       ) : (
         <span className="text-sm text-slate-400">No role</span>
       ),
@@ -469,21 +412,13 @@ export default function UsersPage() {
         description={
           admin
             ? 'Invite people, set the role each one holds, and link their sign-in to an employee record so they see their own leave, attendance and documents.'
-            : 'Invite people and link their sign-in to an employee record so they see their own leave, attendance and documents. Admin and HR accounts are changed by an administrator.'
+            : 'Invite people and link their sign-in to an employee record so they see their own leave, attendance and documents. Admin accounts are changed by an administrator.'
         }
         tone="brand"
         actions={
-          <>
-            {admin && (
-              <button onClick={restrictExternal} disabled={restricting} className="btn-ghost">
-                {restricting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldAlert className="h-4 w-4" />}
-                Confine workforce logins
-              </button>
-            )}
-            <button onClick={() => setInviteOpen(true)} className="btn-primary">
-              <UserPlus className="h-4 w-4" /> Invite user
-            </button>
-          </>
+          <button onClick={() => setInviteOpen(true)} className="btn-primary">
+            <UserPlus className="h-4 w-4" /> Invite user
+          </button>
         }
       />
 
@@ -508,7 +443,6 @@ export default function UsersPage() {
                 />
               </div>
               <FilterSelect label="Filter by role" value={roleFilter} onChange={setRoleFilter} options={ROLE_FILTERS} />
-              <FilterSelect label="Filter by group" value={scopeFilter} onChange={setScopeFilter} options={SCOPE_FILTERS} />
               <FilterSelect label="Filter by status" value={statusFilter} onChange={setStatusFilter} options={STATUS_FILTERS} />
             </>
           }
@@ -618,24 +552,17 @@ export default function UsersPage() {
                   onChange={(e) => setInviteRole(e.target.value as AppRole)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                 >
-                  <optgroup label="Placed workforce (this portal only)">
-                    {assignableRoles.filter((r) => roleScope(r) === 'external').map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Internal staff">
-                    {assignableRoles.filter((r) => roleScope(r) === 'internal').map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                    ))}
-                  </optgroup>
+                  {assignableRoles.map((r) => (
+                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                  ))}
                 </select>
                 <p className="text-xs text-slate-400">
-                  {roleScope(inviteRole) === 'external'
-                    ? 'Placed workforce: this portal only. They get their own leave, attendance, documents and company info, and no access to the Ocean Blue website.'
-                    : 'Internal staff work for Ocean Blue. Website access is granted separately on that site.'}
+                  {inviteRole === 'employee'
+                    ? 'Employees see only their own record: their leave, attendance, documents and payslips, plus company handbook and policies.'
+                    : 'HR and Admin run the whole portal. Admin additionally controls other admin accounts and data backups.'}
                 </p>
                 {!admin && (
-                  <p className="text-xs text-slate-400">Admin and HR accounts are created by an administrator.</p>
+                  <p className="text-xs text-slate-400">Admin accounts are created by an administrator.</p>
                 )}
               </div>
               <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">

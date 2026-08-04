@@ -9,7 +9,6 @@ import {
   isSelfServiceOnly,
   isSelfServiceRouteAllowed,
   SELF_SERVICE_HOME,
-  FULL_ACCESS_ROLES,
 } from '@/config/access';
 import { BRAND } from '@/config/brand';
 
@@ -66,18 +65,25 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     return null;
   }
 
-  // Authenticated but not authorized at all.
+  // Authenticated, but either carrying no role at all or explicitly blocked.
+  // These are different problems and the message should say which, so nobody
+  // spends an afternoon looking for a permission that was never the issue.
   if (!allowed) {
+    const revoked = hasAppAccess(roles) && !hrAccess;
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#f8fafc] px-6">
         <div className="surface w-full max-w-md p-8 text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
             <ShieldAlert className="h-6 w-6" strokeWidth={1.75} />
           </span>
-          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">Access restricted</h1>
+          <h1 className="mt-5 font-display text-xl font-bold text-brand-900">
+            {revoked ? 'Access paused' : 'No role assigned'}
+          </h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Your account doesn&apos;t have permission to use the {BRAND.name} HR portal. Access is
-            currently limited to {FULL_ACCESS_ROLES.map((r) => r.toUpperCase()).join(' and ')} roles.
+            {revoked
+              ? `An administrator has paused this account's access to the ${BRAND.name} HR portal.`
+              : `Your sign-in works, but no role has been assigned to it yet, so there is nothing
+                 for you to see. An admin or HR can assign one from the Users page.`}
           </p>
           <p className="mt-2 text-sm text-slate-500">
             Need access? Contact{' '}

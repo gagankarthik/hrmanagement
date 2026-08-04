@@ -1,29 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 import { s3Client, S3_BUCKET, s3Configured } from '@/lib/s3';
 import { authorize, forbidden } from '@/shared/server/auth/guards';
-import { getSelfEmployeeId } from '@/shared/server/auth/self';
+import { getSelfEmployeeId, ownsRecord } from '@/shared/server/auth/self';
 import type { Session } from '@/shared/server/auth/session';
+import type { UploadedDoc } from '@/types/uploads';
 
 /**
- * Company-wide reference material a self-service user is meant to read: the
- * handbook, procedures, policies, benefit plan documents, and leave
- * attachments (whose keys they only ever learn from their own requests).
- * Personnel files and immigration evidence are deliberately absent.
+ * Company-wide reference material every signed-in user is meant to read: the
+ * handbook, procedures, policies and benefit plan documents. Nothing here is
+ * personal to anyone, so no per-caller check applies.
+ *
+ * Personnel files, immigration evidence and leave attachments are deliberately
+ * absent — those are personal data and are checked against the caller below.
  */
-const SELF_SERVICE_READ_FOLDERS = ['sops', 'handbook-forms', 'policies', 'benefits', 'leaves', 'procedures'];
+const COMPANY_WIDE_FOLDERS = ['sops', 'handbook-forms', 'policies', 'benefits', 'procedures'];
+
+/**
+ * True when a leave attachment belongs to the caller.
+ *
+ * Attachment keys are flat (`leaves/<uuid>-<name>`), so the folder says nothing
+ * about who owns the file and an unguessable key is not an access control. The
+ * only trustworthy answer is whether the key appears on a leave record the
+ * caller owns, so that is what we check.
+ */
+async function ownsLeaveAttachment(key: string, session: Session): Promise<boolean> {
+  const res = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: 'GSI1-EmployeeType',
+      KeyConditionExpression: 'GSI1PK = :leavesKey',
+      ExpressionAttributeValues: { ':leavesKey': 'LEAVES' },
+    }),
+  );
+
+  const selfEmployeeId = await getSelfEmployeeId(session);
+  return (res.Items || []).some((item) => {
+    if (!ownsRecord(item, session, selfEmployeeId)) return false;
+    const docs = (item.documents || []) as UploadedDoc[];
+    return docs.some((d) => d?.key === key);
+  });
+}
 
 /** True when this caller is allowed to read the given S3 key. */
 async function canRead(key: string, session: Session): Promise<boolean> {
   if (session.fullAccess) return true;
   const [root, second] = key.split('/');
-  if (SELF_SERVICE_READ_FOLDERS.includes(root)) return true;
+  if (COMPANY_WIDE_FOLDERS.includes(root)) return true;
   // Their own personnel folder only: employee-docs/<their employee id>/...
   if (root === 'employee-docs' && second) {
     const selfEmployeeId = await getSelfEmployeeId(session);
     return Boolean(selfEmployeeId && selfEmployeeId === second);
   }
+  // Their own leave attachments only.
+  if (root === 'leaves') return ownsLeaveAttachment(key, session);
   return false;
 }
 

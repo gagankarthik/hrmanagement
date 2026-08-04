@@ -6,8 +6,12 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 import { authorize } from '@/shared/server/auth/guards';
+import { getSelfEmployeeId } from '@/shared/server/auth/self';
+import { redactEnrollment } from './enrollment-privacy';
 
-// GET - Fetch all benefit plans
+// GET - Fetch all benefit plans. The plans themselves are company information
+// every employee may read; the enrollment roster on each one is not, so it is
+// reduced to the caller's own membership before the response leaves the server.
 export async function GET(request: NextRequest) {
   const auth = await authorize(request, 'user');
   if (!auth.ok) return auth.response;
@@ -24,12 +28,16 @@ export async function GET(request: NextRequest) {
 
     const response = await docClient.send(command);
 
-    console.log('DynamoDB response - Benefits count:', response.Items?.length || 0);
+    let items = response.Items || [];
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      items = items.map((item) => redactEnrollment(item, selfEmployeeId));
+    }
 
     return NextResponse.json({
       success: true,
-      data: response.Items || [],
-      count: response.Items?.length || 0,
+      data: items,
+      count: items.length,
     });
   } catch (error: unknown) {
     const err = error as Error;

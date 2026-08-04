@@ -1,24 +1,31 @@
 import 'server-only';
+import { ADMIN_ROLES, type AppRole } from '@/config/access';
 import { NextResponse } from 'next/server';
-import { FULL_ACCESS_ROLES, type AppRole } from '@/config/access';
 import { groupRoleFor } from '@/lib/cognito';
 import type { Session } from './session';
 
 /**
- * Who may hand out which role.
+ * The one line HR does not cross.
  *
- * HR runs account administration day to day: inviting people, linking their
- * sign-in to an employee record, blocking access when someone leaves. What HR
- * cannot do is manufacture full access — creating an admin or hr account, or
- * editing an existing one, stays with admins. Without that line, "manage
- * accounts" quietly means "grant yourself anything".
+ * HR and admin are peers across the portal: HR invites people, assigns roles,
+ * links sign-ins to employee records, and blocks access when someone leaves.
+ * HR manages every employee and every other HR account.
+ *
+ * Admin accounts are the exception. An hr user cannot demote, block, delete or
+ * otherwise edit an admin, and cannot grant the admin role to anyone including
+ * themselves. Without that line, "manage accounts" quietly means "promote
+ * yourself", and the distinction between the two roles evaporates the first
+ * time an HR account is phished.
+ *
+ * Note this is deliberately narrower than it used to be: HR may now act on hr
+ * accounts. Admin is the only protected target.
  */
 
-/** Roles that confer full access to the whole portal. */
-const ELEVATED: readonly string[] = FULL_ACCESS_ROLES;
+/** Roles an hr user may neither grant nor act upon. */
+const PROTECTED: readonly string[] = ADMIN_ROLES;
 
-export function isElevatedRole(role: string | null | undefined): boolean {
-  return Boolean(role && ELEVATED.includes(role.toLowerCase().trim()));
+export function isProtectedRole(role: string | null | undefined): boolean {
+  return Boolean(role && PROTECTED.includes(role.toLowerCase().trim()));
 }
 
 function refuse(message: string): NextResponse {
@@ -30,8 +37,8 @@ function refuse(message: string): NextResponse {
  * reaching above their own level, otherwise null.
  */
 export function denyRoleEscalation(session: Session, role: AppRole | string | null | undefined): NextResponse | null {
-  if (!isElevatedRole(role) || session.admin) return null;
-  return refuse('Only an administrator can grant HR or Admin access.');
+  if (!isProtectedRole(role) || session.admin) return null;
+  return refuse('Only an administrator can grant Admin access.');
 }
 
 /**
@@ -42,6 +49,6 @@ export function denyRoleEscalation(session: Session, role: AppRole | string | nu
 export async function denyElevatedTarget(session: Session, username: string): Promise<NextResponse | null> {
   if (session.admin) return null;
   const role = await groupRoleFor(username);
-  if (!isElevatedRole(role)) return null;
-  return refuse('Only an administrator can change an HR or Admin account.');
+  if (!isProtectedRole(role)) return null;
+  return refuse('Only an administrator can change an Admin account.');
 }

@@ -6,8 +6,11 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '@/lib/dynamodb';
 import { authorize } from '@/shared/server/auth/guards';
+import { getSelfEmployeeId } from '@/shared/server/auth/self';
+import { redactEnrollment } from '../enrollment-privacy';
 
-// GET - Fetch single benefit plan by ID
+// GET - Fetch single benefit plan by ID. Same enrollment redaction as the list
+// endpoint: a self-service caller sees the plan, not who else is on it.
 export async function GET(request: NextRequest,
   { params }: { params: Promise<{ id: string }> }) {
   const auth = await authorize(request, 'user');
@@ -33,9 +36,15 @@ export async function GET(request: NextRequest,
       );
     }
 
+    let item = response.Item;
+    if (!auth.session.fullAccess) {
+      const selfEmployeeId = await getSelfEmployeeId(auth.session);
+      item = redactEnrollment(item, selfEmployeeId);
+    }
+
     return NextResponse.json({
       success: true,
-      data: response.Item,
+      data: item,
     });
   } catch (error: unknown) {
     const err = error as Error;

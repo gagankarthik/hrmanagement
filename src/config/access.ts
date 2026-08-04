@@ -22,24 +22,19 @@ export const FULL_ACCESS_ROLES = ['admin', 'hr'] as const;
 export const SELF_SERVICE_ROLES = ['employee'] as const;
 
 /**
- * Who a person is to the business, which is a different question from what they
- * can do in this portal.
+ * Roles allowed to reach the few admin-only surfaces.
  *
- * **Internal staff** (admin, hr) run Ocean Blue's HR operation. They may also
- * hold a company-website account, but that is a separate account in a separate
- * pool with its own password.
+ * HR and admin are peers almost everywhere: HR runs the portal, manages every
+ * employee, and manages other HR accounts. Two things are held back, and both
+ * are about destroying something rather than doing HR work:
  *
- * **External workforce** (employee) are the people placed with clients. They
- * exist in this portal only: their own leave, attendance, documents and the
- * handbook.
- */
-export const INTERNAL_ROLES = ['admin', 'hr'] as const;
-export const EXTERNAL_ROLES = ['employee'] as const;
-
-/**
- * Roles allowed to reach admin-only surfaces (e.g. data backups). Stricter than
- * full-access: `hr` can run the HR portal but only `admin` may export/restore
- * data. Add roles here to widen that gate.
+ *  1. Deleting a data backup ({@link ADMIN_ROLES}, DELETE /api/admin/backups).
+ *     HR can list and create backups, which is the recoverable half.
+ *  2. Anything targeting an admin account, or granting the admin role. That
+ *     boundary lives in `shared/server/auth/role-limits.ts`, because it depends
+ *     on the target rather than the route.
+ *
+ * Add roles here to widen the first gate.
  */
 export const ADMIN_ROLES = ['admin'] as const;
 
@@ -133,28 +128,9 @@ export function hasFullAccess(roles: ReadonlyArray<string> | null | undefined): 
   return hasAnyRole(roles, FULL_ACCESS_ROLES);
 }
 
-/** True if the user holds an admin role (admin-only surfaces such as backups). */
+/** True if the user holds an admin role (admin-only surfaces such as backup deletion). */
 export function isAdmin(roles: ReadonlyArray<string> | null | undefined): boolean {
   return hasAnyRole(roles, ADMIN_ROLES);
-}
-
-/** True for Ocean Blue's own staff (admin / hr). */
-export function isInternalStaff(roles: ReadonlyArray<string> | null | undefined): boolean {
-  return hasAnyRole(roles, INTERNAL_ROLES);
-}
-
-/**
- * True for the placed workforce: an `employee` account with no internal role.
- * These people belong to this portal only and must not reach the company site.
- */
-export function isExternalWorkforce(roles: ReadonlyArray<string> | null | undefined): boolean {
-  return hasAnyRole(roles, EXTERNAL_ROLES) && !isInternalStaff(roles);
-}
-
-/** How a single role reads to a human: staff or placed workforce. */
-export function roleScope(role: AppRole | null | undefined): 'internal' | 'external' | null {
-  if (!role) return null;
-  return (INTERNAL_ROLES as ReadonlyArray<string>).includes(role) ? 'internal' : 'external';
 }
 
 /**
