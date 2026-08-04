@@ -2,45 +2,38 @@
  * Application access policy — single source of truth for which roles may use the
  * HR portal and at what level.
  *
- * Roles in the Ocean Blue Cognito pool: admin, hr, recruiter, sales, employee.
+ * Roles in the HR Cognito pool: admin, hr, employee. That is the whole list.
  *
  * Two access tiers:
  *  - **Full access** (admin, hr): the entire HR portal.
- *  - **Self-service** (recruiter, sales, employee): a limited ESS portal — view
- *    company handbook / procedures / policies / benefits, view their own
- *    documents / payslips, and apply for / view their own leave. They cannot
- *    manage records or see other employees' data.
+ *  - **Self-service** (employee): a limited ESS portal — view company handbook /
+ *    procedures / policies / benefits, view their own documents / payslips, and
+ *    apply for / view their own leave. They cannot manage records or see other
+ *    employees' data.
  *
  * To grant another role a tier later, just add it to the relevant list.
  *
- * Site boundary: this policy governs the HR portal ONLY. `employee` users are
- * invite-only into this platform; the OceanBlue marketing site shares the same
- * Cognito pool, so it must exclude the `employee` group on its own side — that
- * separation cannot be enforced from this codebase.
+ * Site boundary: this portal runs on its OWN Cognito user pool, separate from
+ * the company website. An account here does not exist over there, which is what
+ * keeps placed workforce and candidates off the public site. Nothing in this
+ * codebase should ever be pointed back at the website's pool.
  */
 export const FULL_ACCESS_ROLES = ['admin', 'hr'] as const;
-export const SELF_SERVICE_ROLES = ['recruiter', 'sales', 'employee'] as const;
+export const SELF_SERVICE_ROLES = ['employee'] as const;
 
 /**
  * Who a person is to the business, which is a different question from what they
  * can do in this portal.
  *
- * **Internal staff** (admin, hr, recruiter, sales) work for Ocean Blue itself.
- * They are the people the company website is built for, and they hold accounts
- * in both places.
+ * **Internal staff** (admin, hr) run Ocean Blue's HR operation. They may also
+ * hold a company-website account, but that is a separate account in a separate
+ * pool with its own password.
  *
  * **External workforce** (employee) are the people placed with clients. They
  * exist in this portal only: their own leave, attendance, documents and the
- * handbook. They are NOT company-website users, and an `employee` account is
- * never granted a website role.
- *
- * The portal enforces its half of that by only ever writing `hr:*` groups (see
- * {@link groupNameForRole}), so an employee account carries nothing the website
- * would recognize. The other half has to be enforced on the website, which must
- * require one of ITS OWN roles rather than accepting any authenticated user
- * from the shared pool.
+ * handbook.
  */
-export const INTERNAL_ROLES = ['admin', 'hr', 'recruiter', 'sales'] as const;
+export const INTERNAL_ROLES = ['admin', 'hr'] as const;
 export const EXTERNAL_ROLES = ['employee'] as const;
 
 /**
@@ -62,12 +55,10 @@ export type AppRole = (typeof APP_ACCESS_ROLES)[number];
  * invite-only ESS default.
  * Client-safe (plain constants) so both the Users UI and the server share one source.
  */
-export const INVITE_ROLE_OPTIONS = ['employee', 'recruiter', 'sales', 'hr', 'admin'] as const;
+export const INVITE_ROLE_OPTIONS = ['employee', 'hr', 'admin'] as const;
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   employee: 'Employee (ESS)',
-  recruiter: 'Recruiter',
-  sales: 'Sales',
   hr: 'HR',
   admin: 'Admin',
 };
@@ -75,15 +66,16 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 /**
  * Per-app group namespace.
  *
- * One Cognito pool serves this HR portal and the company website, so a bare
- * group called `admin` is ambiguous the moment a third application appears:
- * whose admin? New assignments are written as `hr:admin`, `hr:recruiter` and so
- * on, which says which application the role is about.
+ * This portal now has its own Cognito pool, so the prefix is no longer load
+ * bearing for isolation — that job belongs to the pool boundary. It is kept
+ * because assignments are already written as `hr:admin`, `hr:employee`, and
+ * because it keeps saying which application a role is about if anything else
+ * ever shares this pool.
  *
  * Reads accept both forms. Bare names are the legacy shape and still grant
- * access, so nobody is locked out by the rename; a group carrying a *different*
- * app's prefix (`web:editor`) is deliberately ignored here, because it says
- * nothing about what this portal should allow.
+ * access, so nobody is locked out; a group carrying a *different* app's prefix
+ * (`web:editor`) is deliberately ignored, because it says nothing about what
+ * this portal should allow.
  */
 export const APP_ROLE_NAMESPACE = 'hr';
 const NAMESPACE_SEPARATOR = ':';
@@ -146,7 +138,7 @@ export function isAdmin(roles: ReadonlyArray<string> | null | undefined): boolea
   return hasAnyRole(roles, ADMIN_ROLES);
 }
 
-/** True for Ocean Blue's own staff (admin / hr / recruiter / sales). */
+/** True for Ocean Blue's own staff (admin / hr). */
 export function isInternalStaff(roles: ReadonlyArray<string> | null | undefined): boolean {
   return hasAnyRole(roles, INTERNAL_ROLES);
 }
@@ -167,8 +159,8 @@ export function roleScope(role: AppRole | null | undefined): 'internal' | 'exter
 
 /**
  * True if the user may use the app but only at the self-service tier — i.e. they
- * hold a self-service role and do NOT hold a full-access role. (An admin who is
- * also tagged `sales` still gets the full portal.)
+ * hold a self-service role and do NOT hold a full-access role. (Someone tagged
+ * both `employee` and `hr` still gets the full portal.)
  */
 export function isSelfServiceOnly(roles: ReadonlyArray<string> | null | undefined): boolean {
   return hasAppAccess(roles) && !hasFullAccess(roles);
@@ -176,9 +168,9 @@ export function isSelfServiceOnly(roles: ReadonlyArray<string> | null | undefine
 
 /**
  * Roles ordered by seniority — used to pick the single role to show a user
- * when they hold more than one (e.g. an admin also tagged `sales`).
+ * when they hold more than one (e.g. an admin also tagged `employee`).
  */
-const ROLE_PRECEDENCE: readonly AppRole[] = ['admin', 'hr', 'recruiter', 'sales', 'employee'];
+const ROLE_PRECEDENCE: readonly AppRole[] = ['admin', 'hr', 'employee'];
 
 /**
  * The one role to display for a user, most senior first. Returns `null` when

@@ -4,8 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import {
   signIn,
   signOut,
-  signUp,
-  confirmSignUp,
   confirmSignIn,
   resetPassword,
   confirmResetPassword,
@@ -29,12 +27,20 @@ interface User {
   roles: string[];
   /**
    * HR-portal access flag from `custom:hr_access`. Defaults to true unless an
-   * admin explicitly set it to "false" on the Users page. The company website
-   * ignores this attribute, so blocking here never affects that login.
+   * admin explicitly set it to "false" on the Users page. It is a soft block
+   * that leaves the account intact, which is why it is separate from disabling
+   * the user in Cognito.
    */
   hrAccess: boolean;
 }
 
+/**
+ * There is deliberately no sign-up here. The HR portal is invite-only: an admin
+ * or HR creates the account from the Users page, Cognito emails a temporary
+ * password, and the new user sets a permanent one through the
+ * FORCE_CHANGE_PASSWORD challenge below. Nobody can register themselves, which
+ * is what keeps this pool limited to people HR has actually onboarded.
+ */
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -48,8 +54,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   /** Completes the FORCE_CHANGE_PASSWORD challenge with the user's chosen password (and any required attributes such as name / phone_number). */
   confirmNewPassword: (newPassword: string, attributes?: Record<string, string>) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
-  confirmSignUp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   confirmResetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
@@ -69,9 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const attributes = await fetchUserAttributes();
 
       // Roles come from Cognito groups (`cognito:groups` in the ID token) and,
-      // as a fallback, a `custom:role` attribute. The pool is shared with the
-      // company website, so groups are namespaced per app (`hr:admin`); bare
-      // legacy names still count, another app's prefix does not.
+      // as a fallback, a `custom:role` attribute. Groups are namespaced per app
+      // (`hr:admin`); bare legacy names still count, another app's prefix does
+      // not.
       const session = await fetchAuthSession();
       const groupsClaim = session.tokens?.idToken?.payload?.['cognito:groups'];
       const groups = Array.isArray(groupsClaim) ? groupsClaim.map(String) : [];
@@ -159,26 +163,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleSignUp = async (email: string, password: string, name: string) => {
-    await signUp({
-      username: email,
-      password,
-      options: {
-        userAttributes: {
-          email,
-          name,
-        },
-      },
-    });
-  };
-
-  const handleConfirmSignUp = async (email: string, code: string) => {
-    await confirmSignUp({
-      username: email,
-      confirmationCode: code,
-    });
-  };
-
   const handleSignOut = async () => {
     await signOut();
     setUser(null);
@@ -209,8 +193,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     newPasswordRequired,
     signIn: handleSignIn,
     confirmNewPassword: handleConfirmNewPassword,
-    signUp: handleSignUp,
-    confirmSignUp: handleConfirmSignUp,
     signOut: handleSignOut,
     resetPassword: handleResetPassword,
     confirmResetPassword: handleConfirmResetPassword,

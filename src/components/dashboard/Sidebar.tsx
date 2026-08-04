@@ -17,7 +17,7 @@ import { useAccess } from '@/hooks/useAccess';
 type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean; adminOnly?: boolean };
 type NavSection = { heading: string; items: NavItem[] };
 
-/** Limited nav for self-service (recruiter / sales) users. */
+/** Limited nav for self-service (employee) users. */
 const selfServiceSections: NavSection[] = [
   {
     heading: 'My Portal',
@@ -77,7 +77,7 @@ function SidebarContent({
   const pathname = usePathname();
   const { selfServiceOnly, admin } = useAccess();
 
-  // Self-service (recruiter / sales) users get the limited portal nav. Full-access
+  // Self-service (employee) users get the limited portal nav. Full-access
   // users see the full nav, with admin-only items (e.g. Backups) hidden from
   // non-admins (hr) and any section left empty by that filter dropped.
   const navSections = (selfServiceOnly ? selfServiceSections : sections)

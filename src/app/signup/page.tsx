@@ -49,7 +49,8 @@ export default function SignUpPage() {
             <p className="eyebrow">Request access</p>
             <h1 className="font-display mt-2 text-[1.7rem] font-bold leading-tight text-slate-900">Join your team</h1>
             <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-              Ocean Blue accounts are provisioned by HR administrators. Contact your admin to get started.
+              There is no self sign-up. HR portal accounts are created for you by an admin or HR,
+              and this login is separate from your company website account.
             </p>
           </div>
 
@@ -57,9 +58,9 @@ export default function SignUpPage() {
           <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-5 space-y-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">How it works</p>
             {[
-              { icon: Mail, step: "1", text: "Contact your HR administrator with your work email" },
-              { icon: UserCheck, step: "2", text: "Admin creates your account in Ocean Blue" },
-              { icon: ShieldCheck, step: "3", text: "You receive an invite and sign in via SSO" },
+              { icon: Mail, step: "1", text: "Contact your admin or HR team with your work email" },
+              { icon: UserCheck, step: "2", text: "They create your account and pick your access level" },
+              { icon: ShieldCheck, step: "3", text: "You get an emailed invite and set your own password" },
               { icon: Clock, step: "~", text: "Access is typically granted within 1 business day" },
             ].map(({ icon: Icon, step, text }) => (
               <div key={step} className="flex items-start gap-3">

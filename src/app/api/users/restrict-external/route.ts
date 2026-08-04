@@ -4,17 +4,16 @@ import { authorize } from '@/shared/server/auth/guards';
 import { listUsers, setUserRole } from '@/lib/cognito';
 
 /**
- * Confine external workforce accounts to this portal.
+ * Normalize external workforce accounts onto the namespaced `hr:employee` group.
  *
- * `employee` accounts are the people placed with clients. They belong here and
- * nowhere else, but anyone created before role groups were namespaced may still
- * sit in a bare `employee` group — the same shape the company website reads, so
- * it could be honoured over there.
+ * This was the mitigation for the shared-pool era, when a bare `employee` group
+ * was the same shape the company website read and could be honoured over there.
+ * The pool split made that impossible: this portal has its own user pool, and an
+ * account here does not exist on the website at all.
  *
- * Re-applying the role rewrites them to `hr:employee` and clears every legacy
- * bare group, which leaves nothing the website would recognise. Internal staff
- * (admin / hr / recruiter / sales) are untouched: they are meant to hold
- * accounts on both sides, and their website groups are the website's business.
+ * It survives as a tidy-up for accounts migrated in carrying legacy bare groups,
+ * so every `employee` ends up on one consistent group name. It only ever
+ * rewrites group membership; no account and no record is removed.
  *
  * Idempotent — running it twice changes nothing the second time.
  */

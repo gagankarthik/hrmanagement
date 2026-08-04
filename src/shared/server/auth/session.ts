@@ -56,7 +56,7 @@ export interface Session {
   /** admin or hr. */
   fullAccess: boolean;
   admin: boolean;
-  /** Holds an app role, but not a full-access one (recruiter / sales / employee). */
+  /** Holds an app role, but not a full-access one (i.e. employee). */
   selfServiceOnly: boolean;
 }
 

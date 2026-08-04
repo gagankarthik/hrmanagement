@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { statusBadge, typeBadge, formatDate } from '../leaves/_components/shared';
 
 /**
- * Self-service leave portal (ESS) for recruiter / sales users. Requests are
+ * Self-service leave portal (ESS) for employee users. Requests are
  * keyed to the signed-in user's login email, so it works whether or not they
  * have an employee record. If a matching employee profile exists we also show
  * their leave balance from the policy framework.

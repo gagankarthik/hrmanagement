@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       status,
       appliedDate: now,
       documents: body.documents || [],
-      // Self-service requester identity (recruiter / sales ESS, no employee record).
+      // Self-service requester identity (employee ESS, no employee record).
       requesterEmail,
       requesterName,
       PK: `LEAVE#${id}`,

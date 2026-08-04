@@ -16,7 +16,7 @@ import { Input, Textarea, NativeSelect } from '@/components/ui/input';
 import { Avatar } from '@/components/ui/avatar';
 
 /** Identity of a user filing leave for themselves (ESS). `employeeId` is
- *  optional — recruiter / sales users may have no employee record. */
+ *  optional — a self-service user may have no employee record. */
 export type SelfApply = { employeeId?: string; name: string; email: string };
 
 function initialForm(mode: 'create' | 'edit', initial?: Leave, selfApply?: SelfApply): LeaveFormData {
@@ -46,7 +46,7 @@ function initialForm(mode: 'create' | 'edit', initial?: Leave, selfApply?: SelfA
  * on /leaves/new and /leaves/[id]/edit.
  *
  * `selfApply` binds the request to the signed-in user and hides the employee
- * picker — used by the self-service portal so recruiter/sales users can only
+ * picker — used by the self-service portal so employee users can only
  * file leave for themselves (and works even when they have no employee record).
  * `redirectTo` overrides where the form navigates after submit/cancel
  * (defaults to the admin /leaves list).

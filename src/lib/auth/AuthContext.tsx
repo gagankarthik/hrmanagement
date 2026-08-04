@@ -153,17 +153,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Self-registration is not available: the HR portal is invite-only, and the
+  // Hosted UI signup endpoint this used to open is disabled on the app client.
+  // Kept as a no-op so any remaining caller fails loudly in one place rather
+  // than sending someone to a broken Cognito page.
   const signUp = useCallback(async () => {
-    try {
-      const userManager = getUserManager();
-      // For Cognito, we use the same authorize endpoint but can add a signup hint
-      // The Cognito Hosted UI will show signup by navigating to the signup URL directly
-      const signUpUrl = `${process.env.NEXT_PUBLIC_COGNITO_DOMAIN}/signup?client_id=${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}&response_type=code&scope=openid+email+phone&redirect_uri=${encodeURIComponent(window.location.origin + "/auth/callback")}`;
-      window.location.href = signUpUrl;
-    } catch (err) {
-      console.error("Sign up error:", err);
-      setError(err instanceof Error ? err.message : "Failed to sign up");
-    }
+    setError("Accounts are created by an administrator. Please contact your HR team.");
   }, []);
 
   const signOut = useCallback(async () => {

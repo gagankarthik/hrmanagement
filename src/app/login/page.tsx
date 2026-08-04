@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Self-service (recruiter / sales) users land in their limited portal.
+      // Self-service (employee) users land in their limited portal.
       router.push(isSelfServiceOnly(roles) ? SELF_SERVICE_HOME : "/dashboard");
     }
   }, [isAuthenticated, roles, router]);

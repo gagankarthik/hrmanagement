@@ -20,7 +20,7 @@ export interface Leave {
   documents?: UploadedDoc[];
   /**
    * Self-service requester identity. Set when a user files leave for themselves
-   * (recruiter / sales ESS) and may have no employee record — `employeeId` can
+   * (employee ESS) and may have no employee record — `employeeId` can
    * then be blank, so these carry who applied for the HR review screen.
    */
   requesterEmail?: string;

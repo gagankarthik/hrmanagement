@@ -111,7 +111,7 @@ function toAppUser(user: UserType): AppUser {
  * one is shown. Returns undefined if they hold no app-role group. Best-effort:
  * resolves to undefined on error so one failure never breaks the whole list.
  */
-const ROLE_DISPLAY_PRIORITY: AppRole[] = ['admin', 'hr', 'recruiter', 'sales', 'employee'];
+const ROLE_DISPLAY_PRIORITY: AppRole[] = ['admin', 'hr', 'employee'];
 export async function groupRoleFor(username: string): Promise<AppRole | undefined> {
   try {
     const res = await client.send(
@@ -204,9 +204,9 @@ export async function inviteUser({
 }
 
 /**
- * Cognito group name written for an app role: namespaced per application
- * (`hr:admin`), because this pool is shared with the company website. Reads
- * still accept the legacy bare names, so existing members keep their access.
+ * Cognito group name written for an app role, namespaced per application
+ * (`hr:admin`). Reads still accept the legacy bare names, so members created
+ * before the namespace keep their access.
  */
 function roleGroupName(role: AppRole): string {
   return groupNameForRole(role);

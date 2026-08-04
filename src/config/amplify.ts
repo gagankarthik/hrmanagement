@@ -41,40 +41,38 @@ export function configureAmplify() {
   // on same-origin requests to /api/*. `secure` is enabled only over HTTPS so
   // local http dev still works.
   //
-  // SSO: when served from an *.oceanbluecorp.com host we scope the cookie to the
-  // parent domain (`.oceanbluecorp.com`). The marketing site (oceanbluecorp.com)
-  // writes the same Cognito cookies (same User Pool + App Client) on that parent
-  // domain at login, so Amplify here picks up the session automatically — the
-  // user lands signed-in without re-entering credentials. Visiting the HR portal
-  // directly with no shared cookie still shows the login screen.
+  // HOST-ONLY, deliberately. This portal runs on its own Cognito user pool,
+  // separate from the company website, and the session must not travel between
+  // the two. Omitting `domain` scopes every cookie to the exact host it was set
+  // on, so nothing is readable from oceanbluecorp.com or any sibling subdomain.
+  // There is no cross-site SSO: signing in here is always an explicit login.
   if (typeof window !== 'undefined') {
     const secure = window.location.protocol === 'https:';
-    const host = window.location.hostname;
-    const shared = host === 'oceanbluecorp.com' || host.endsWith('.oceanbluecorp.com');
-    const domain = shared ? '.oceanbluecorp.com' : undefined; // localhost/preview → host-only
 
-    // Remove stale HOST-ONLY Cognito cookies BEFORE Amplify reads anything. A
-    // user who previously signed in to the HR portal directly (host-only scope)
-    // ends up with two cookies per key once the shared `.oceanbluecorp.com`
-    // cookies arrive; js-cookie returns the first/oldest, so Amplify would read
-    // the dead host-only session and bounce to login. Purging the host-only
-    // variant leaves only the shared session. No-op when no duplicates exist.
-    if (shared) purgeHostOnlyCognitoCookies();
+    // One-time cleanup for anyone carrying cookies from the shared-pool era.
+    // Those were scoped to `.oceanbluecorp.com` and keyed by the old app
+    // client, so Amplify ignores them now, but they would otherwise sit in the
+    // browser holding a live token for the website's pool until they expire.
+    purgeSharedDomainCognitoCookies();
 
     cognitoUserPoolsTokenProvider.setKeyValueStorage(
-      new CookieStorage({ domain, path: '/', sameSite: 'lax', secure, expires: 30 }),
+      new CookieStorage({ path: '/', sameSite: 'lax', secure, expires: 30 }),
     );
   }
 }
 
 /**
- * Expire any host-only `CognitoIdentityServiceProvider.*` cookies (those set
- * without a Domain attribute, i.e. scoped to the exact host). Deleting without
- * a Domain only matches the host-only variant — the shared `.oceanbluecorp.com`
- * cookie has an explicit Domain and is left intact.
+ * Expire any `CognitoIdentityServiceProvider.*` cookie scoped to the shared
+ * parent domain, left over from when this portal and the company website ran on
+ * one pool and one app client. Deleting with `Domain=.oceanbluecorp.com` matches
+ * only that shared variant; the host-only cookies this app now writes carry no
+ * Domain attribute and are untouched.
  */
-function purgeHostOnlyCognitoCookies() {
+function purgeSharedDomainCognitoCookies() {
   try {
+    const host = window.location.hostname;
+    if (host !== 'oceanbluecorp.com' && !host.endsWith('.oceanbluecorp.com')) return;
+
     const names = new Set(
       document.cookie
         .split('; ')
@@ -83,7 +81,9 @@ function purgeHostOnlyCognitoCookies() {
     );
     const secure = window.location.protocol === 'https:' ? '; Secure' : '';
     names.forEach((name) => {
-      document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
+      document.cookie =
+        `${name}=; Path=/; Domain=.oceanbluecorp.com; ` +
+        `Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secure}`;
     });
   } catch {
     /* noop */

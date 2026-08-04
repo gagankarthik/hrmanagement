@@ -36,9 +36,10 @@ export const getCognitoUrls = () => {
   const responseType = "code";
   const scope = encodeURIComponent(cognitoAuthConfig.scope);
 
+  // No signUp URL: the portal is invite-only, so there is no hosted signup page
+  // to send anyone to. Accounts come from the Users page.
   return {
     signIn: `${domain}/login?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectUri}`,
-    signUp: `${domain}/signup?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectUri}`,
     signOut: `${domain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(cognitoAuthConfig.post_logout_redirect_uri)}`,
   };
 };
