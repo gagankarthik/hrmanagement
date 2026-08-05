@@ -17,6 +17,10 @@ export const employeeService = {
   get(id: string): Promise<Employee> {
     return employeeRepository.getOrThrow(id);
   },
+  /** Like `get`, but a missing record is an answer rather than an exception. */
+  find(id: string): Promise<Employee | null> {
+    return employeeRepository.get(id);
+  },
   create(input: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<Employee> {
     return employeeRepository.create(input);
   },

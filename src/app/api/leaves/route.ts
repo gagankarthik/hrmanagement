@@ -27,18 +27,32 @@ export async function GET(request: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const command = new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'GSI1-EmployeeType',
-      KeyConditionExpression: 'GSI1PK = :leavesKey',
-      ExpressionAttributeValues: {
-        ':leavesKey': 'LEAVES',
-      },
-    });
+    // All leaves share one GSI partition, and a Query returns at most 1MB per
+    // call. Ignoring LastEvaluatedKey does not fail, it silently returns a
+    // subset — so past a certain number of requests HR would be reviewing an
+    // arbitrary slice of them. Follow the cursor to the end.
+    // Ownership is deliberately NOT pushed into a FilterExpression. A leave is
+    // the caller's if it carries their employee id or their login email, and
+    // `ownsRecord` compares emails case-insensitively. DynamoDB cannot, and
+    // requesterEmail is stored as HR typed it, so a server-side filter would
+    // quietly drop a request whose email differs only in case. Hiding
+    // somebody's own leave is a worse failure than reading a few extra rows.
+    let items: Record<string, unknown>[] = [];
+    let cursor: Record<string, unknown> | undefined;
+    do {
+      const response = await docClient.send(
+        new QueryCommand({
+          TableName: TABLE_NAME,
+          IndexName: 'GSI1-EmployeeType',
+          KeyConditionExpression: 'GSI1PK = :leavesKey',
+          ExpressionAttributeValues: { ':leavesKey': 'LEAVES' },
+          ExclusiveStartKey: cursor,
+        }),
+      );
+      items.push(...(response.Items || []));
+      cursor = response.LastEvaluatedKey;
+    } while (cursor);
 
-    const response = await docClient.send(command);
-
-    let items = response.Items || [];
     if (!auth.session.fullAccess) {
       const selfEmployeeId = await getSelfEmployeeId(auth.session);
       items = items.filter((item) => ownsRecord(item, auth.session, selfEmployeeId));
@@ -75,7 +89,9 @@ export async function POST(request: NextRequest) {
     // not the request body.
     let employeeId = body.employeeId || '';
     let status = body.status || 'Pending';
-    let requesterEmail = body.requesterEmail || '';
+    // Stored lowercased so ownership comparisons are consistent wherever they
+    // happen, and so this could one day be matched server-side.
+    let requesterEmail = (body.requesterEmail || '').toLowerCase().trim();
     let requesterName = body.requesterName || '';
     if (!auth.session.fullAccess) {
       const selfEmployeeId = await getSelfEmployeeId(auth.session);

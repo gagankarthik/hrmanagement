@@ -47,33 +47,60 @@ export interface RepositoryConfig<T extends Entity> {
 export class BaseRepository<T extends Entity> {
   constructor(private readonly cfg: RepositoryConfig<T>) {}
 
+  /**
+   * Every item in the collection.
+   *
+   * DynamoDB caps a single Scan or Query response at 1MB and reports the cut
+   * with `LastEvaluatedKey`. Ignoring it does not raise an error, it just
+   * returns a subset — so a growing table would start dropping employees or
+   * partners from lists with nothing to show for it. Both modes follow the
+   * cursor to completion.
+   *
+   * Note the scan's `begins_with(PK, ...)` filter runs AFTER each 1MB page is
+   * read, so an early page can legitimately come back with zero matching items
+   * while more remain. Stopping at the first empty page would be wrong.
+   */
   async list(): Promise<T[]> {
+    const items: T[] = [];
+    let cursor: Record<string, unknown> | undefined;
+
     if (this.cfg.list.mode === 'scan') {
       const { pkPrefix } = this.cfg.list;
+      do {
+        const res = await docClient.send(
+          new ScanCommand({
+            TableName: TABLE_NAME,
+            ...(pkPrefix
+              ? {
+                  FilterExpression: 'begins_with(PK, :pk)',
+                  ExpressionAttributeValues: { ':pk': pkPrefix },
+                }
+              : {}),
+            ExclusiveStartKey: cursor,
+          }),
+        );
+        items.push(...((res.Items || []) as T[]));
+        cursor = res.LastEvaluatedKey;
+      } while (cursor);
+      return items;
+    }
+
+    const { indexName, partitionValue, partitionAttr = 'GSI1PK' } = this.cfg.list;
+    do {
       const res = await docClient.send(
-        new ScanCommand({
+        new QueryCommand({
           TableName: TABLE_NAME,
-          ...(pkPrefix
-            ? {
-                FilterExpression: 'begins_with(PK, :pk)',
-                ExpressionAttributeValues: { ':pk': pkPrefix },
-              }
-            : {}),
+          IndexName: indexName,
+          KeyConditionExpression: '#pk = :pk',
+          ExpressionAttributeNames: { '#pk': partitionAttr },
+          ExpressionAttributeValues: { ':pk': partitionValue },
+          ExclusiveStartKey: cursor,
         }),
       );
-      return (res.Items || []) as T[];
-    }
-    const { indexName, partitionValue, partitionAttr = 'GSI1PK' } = this.cfg.list;
-    const res = await docClient.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: indexName,
-        KeyConditionExpression: '#pk = :pk',
-        ExpressionAttributeNames: { '#pk': partitionAttr },
-        ExpressionAttributeValues: { ':pk': partitionValue },
-      }),
-    );
-    return (res.Items || []) as T[];
+      items.push(...((res.Items || []) as T[]));
+      cursor = res.LastEvaluatedKey;
+    } while (cursor);
+    return items;
   }
 
   async get(id: string): Promise<T | null> {

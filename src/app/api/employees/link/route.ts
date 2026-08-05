@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { employeeService } from '@/features/employees/server/employee.service';
 import { ok, badRequest, fail } from '@/shared/server/http/responses';
 import { authorize } from '@/shared/server/auth/guards';
-import { clearSelfEmployeeCache } from '@/shared/server/auth/self';
+import { clearSelfEmployeeCache, writeLoginPointer } from '@/shared/server/auth/self';
 import type { Employee } from '@/types/employee';
 
 /**
@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!employeeId) {
+      // Drop the LOGIN# pointer too, or the next request would resolve through
+      // a link HR just removed.
+      await writeLoginPointer(sub, null);
       clearSelfEmployeeCache();
       return ok({ employeeId: null, unlinked: previous.map((e) => e.id) });
     }
@@ -51,6 +54,7 @@ export async function POST(request: NextRequest) {
       loginEmail: email,
     } as Partial<Employee>);
 
+    await writeLoginPointer(sub, employeeId);
     clearSelfEmployeeCache();
     return ok(updated);
   } catch (error) {
