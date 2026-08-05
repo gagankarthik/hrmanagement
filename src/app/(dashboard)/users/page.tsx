@@ -22,6 +22,7 @@ import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Avatar } from '@/components/ui/avatar';
 import { Combobox } from '@/components/ui/combobox';
 import { useAccess } from '@/hooks/useAccess';
+import { useAuth } from '@/context/AuthContext';
 import { useEmployees } from '@/context/EmployeeContext';
 import { apiFetch } from '@/shared/lib/http/auth-fetch';
 
@@ -73,6 +74,7 @@ export default function UsersPage() {
   const toast = useToast();
   const { employees, fetchEmployees } = useEmployees();
   const { admin, canManage } = useAccess();
+  const { user } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [linkingFor, setLinkingFor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +136,23 @@ export default function UsersPage() {
    * keeps HR from clicking controls that would come back 403.
    */
   const isLocked = (u: AppUser) => !admin && u.role === 'admin';
+
+  /**
+   * Whether the caller may edit this row's role.
+   *
+   * Admins may change anyone's, including their own — someone has to be able to
+   * hand over, and there is no higher role to appeal to. HR may change other
+   * people's but never an admin's and never their own, so nobody below admin
+   * can rewrite their own level of access. The API enforces both; this only
+   * keeps HR from clicking a control that would come back 403.
+   */
+  const isSelfRow = (u: AppUser) =>
+    [u.username, u.sub, u.email].some(
+      (id) => id && [user?.username, user?.userId, user?.email].some(
+        (mine) => mine && mine.toLowerCase() === id.toLowerCase(),
+      ),
+    );
+  const canEditRole = (u: AppUser) => admin || (!isLocked(u) && !isSelfRow(u));
 
   const activeCount = users.filter((u) => u.enabled && u.status === 'CONFIRMED').length;
   const pendingCount = users.filter((u) => u.status === 'FORCE_CHANGE_PASSWORD').length;
@@ -390,13 +409,37 @@ export default function UsersPage() {
       id: 'role',
       header: 'Role',
       sortValue: (u) => u.role ?? '',
-      cell: (u) => u.role ? (
-        <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-100">
-          {ROLE_LABELS[u.role as AppRole] ?? u.role}
-        </span>
-      ) : (
-        <span className="text-sm text-slate-400">No role</span>
-      ),
+      cell: (u) =>
+        canEditRole(u) ? (
+          <div onClick={(e) => e.stopPropagation()}>
+            <select
+              value={u.role ?? ''}
+              disabled={savingFor === u.username}
+              onChange={(e) => updateMeta(u, { role: e.target.value as AppRole })}
+              aria-label={`Role for ${u.email}`}
+              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:opacity-50"
+            >
+              {!u.role && <option value="">No role</option>}
+              {assignableRoles.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
+          </div>
+        ) : u.role ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200"
+            title={
+              isSelfRow(u)
+                ? 'You cannot change your own role. Ask an administrator.'
+                : 'Only an administrator can change an Admin account.'
+            }
+          >
+            <ShieldAlert className="h-3 w-3" strokeWidth={2} />
+            {ROLE_LABELS[u.role as AppRole] ?? u.role}
+          </span>
+        ) : (
+          <span className="text-sm text-slate-400">No role</span>
+        ),
     },
     {
       id: 'employeeLink',

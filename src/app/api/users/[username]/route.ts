@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorize } from '@/shared/server/auth/guards';
-import { denyElevatedTarget, denyRoleEscalation } from '@/shared/server/auth/role-limits';
+import { denyElevatedTarget, denyRoleEscalation, denySelfRoleChange } from '@/shared/server/auth/role-limits';
 import {
   deleteUser,
   updateUserMeta,
@@ -26,8 +26,8 @@ export async function PATCH(request: NextRequest,
 
     const uname = decodeURIComponent(username);
 
-    // An hr user administers ordinary accounts, not admin/hr ones — in either
-    // direction: they cannot touch an elevated account, nor promote into one.
+    // HR administers everyone except admins; an admin account is an admin's to
+    // change, in either direction (no demoting one, no promoting into one).
     const protectedTarget = await denyElevatedTarget(auth.session, uname);
     if (protectedTarget) return protectedTarget;
 
@@ -37,6 +37,9 @@ export async function PATCH(request: NextRequest,
       if (!APP_INVITE_ROLES.includes(rawRole as AppRole)) {
         return NextResponse.json({ success: false, error: 'Invalid role' }, { status: 400 });
       }
+      // Nobody below admin rewrites their own access level.
+      const selfChange = denySelfRoleChange(auth.session, uname);
+      if (selfChange) return selfChange;
       const escalation = denyRoleEscalation(auth.session, rawRole);
       if (escalation) return escalation;
       await setUserRole(uname, rawRole as AppRole);

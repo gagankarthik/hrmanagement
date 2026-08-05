@@ -52,3 +52,27 @@ export async function denyElevatedTarget(session: Session, username: string): Pr
   if (!isProtectedRole(role)) return null;
   return refuse('Only an administrator can change an Admin account.');
 }
+
+/** True when `username` identifies the caller themselves. */
+export function isSelf(session: Session, username: string): boolean {
+  const target = username.trim().toLowerCase();
+  if (!target) return false;
+  return [session.username, session.userId, session.email]
+    .filter(Boolean)
+    .some((id) => id!.trim().toLowerCase() === target);
+}
+
+/**
+ * Guard an hr user changing their OWN role.
+ *
+ * Nobody should be able to rewrite their own level of access, and HR sits close
+ * enough to the controls that the temptation is real: without this they could
+ * quietly hand themselves a different role and the audit trail would show them
+ * doing it to a user who happens to be them. An admin is deliberately exempt —
+ * someone has to be able to hand over, and there is no higher role to appeal
+ * to.
+ */
+export function denySelfRoleChange(session: Session, username: string): NextResponse | null {
+  if (session.admin || !isSelf(session, username)) return null;
+  return refuse('You cannot change your own role. Ask an administrator.');
+}

@@ -169,6 +169,7 @@ export function primaryRoleLabel(roles: ReadonlyArray<string> | null | undefined
  * (e.g. `/my-leave/new`) are covered.
  */
 export const SELF_SERVICE_ROUTES = [
+  '/my-dashboard',
   '/handbook',
   '/procedures',
   '/policies',
@@ -179,8 +180,11 @@ export const SELF_SERVICE_ROUTES = [
   '/profile',
 ] as const;
 
-/** Where a self-service user lands by default / after a blocked navigation. */
-export const SELF_SERVICE_HOME = '/handbook';
+/**
+ * Where a self-service user lands by default / after a blocked navigation.
+ * Their own summary, which is the ESS equivalent of the console dashboard.
+ */
+export const SELF_SERVICE_HOME = '/my-dashboard';
 
 /** True if the given path is within the self-service allow-list. */
 export function isSelfServiceRouteAllowed(pathname: string | null | undefined): boolean {

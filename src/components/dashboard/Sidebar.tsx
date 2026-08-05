@@ -23,6 +23,7 @@ const selfServiceSections: NavSection[] = [
   {
     heading: 'My Portal',
     items: [
+      { label: 'Dashboard', href: '/my-dashboard', icon: IconDashboard, exact: true },
       { label: 'My Leave', href: '/my-leave', icon: IconLeave },
       { label: 'My Attendance', href: '/my-attendance', icon: IconTimesheets },
       { label: 'My Documents', href: '/my-documents', icon: IconDocuments },
