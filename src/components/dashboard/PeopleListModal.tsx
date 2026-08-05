@@ -131,7 +131,7 @@ export function PeopleListModal({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold text-slate-900">{emp.name}</p>
-                          <span className={cn('flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1', TYPE_BADGE[emp.type] || 'bg-slate-50 text-slate-600 ring-slate-200')}>
+                          <span className={cn('flex-shrink-0 rounded-full px-1.5 py-0.5 text-[0.6667rem] font-semibold ring-1', TYPE_BADGE[emp.type] || 'bg-slate-50 text-slate-600 ring-slate-200')}>
                             {emp.type}
                           </span>
                         </div>
@@ -146,7 +146,7 @@ export function PeopleListModal({
                             <p className={cn('text-xs font-semibold tabular-nums', t.chipText)}>{ctx.primary}</p>
                           )}
                           {ctx.secondary && (
-                            <p className="mt-0.5 text-[11px] text-slate-400">{ctx.secondary}</p>
+                            <p className="mt-0.5 text-[0.7333rem] text-slate-400">{ctx.secondary}</p>
                           )}
                         </div>
                       )}
@@ -155,7 +155,7 @@ export function PeopleListModal({
                     {ctx && (
                       <div className="px-5 pb-2 sm:hidden">
                         {ctx.primary && <span className={cn('mr-2 text-xs font-semibold tabular-nums', t.chipText)}>{ctx.primary}</span>}
-                        {ctx.secondary && <span className="text-[11px] text-slate-400">{ctx.secondary}</span>}
+                        {ctx.secondary && <span className="text-[0.7333rem] text-slate-400">{ctx.secondary}</span>}
                       </div>
                     )}
                   </li>

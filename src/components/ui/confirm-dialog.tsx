@@ -93,7 +93,7 @@ export function ConfirmDialog({
             <AlertTriangle className={cn('h-4.5 w-4.5', styles.iconColor)} strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 id={titleId} className="text-[16px] font-semibold leading-6 text-[var(--adm-ink)]">{title}</h3>
+            <h3 id={titleId} className="text-[1.0667rem] font-semibold leading-6 text-[var(--adm-ink)]">{title}</h3>
             {description && (
               <div id={descId} className="mt-1.5 text-sm leading-relaxed text-[var(--adm-ink-mute)]">{description}</div>
             )}
@@ -118,7 +118,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={isLoading}
             className={cn(
-              'inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-3 text-[13.5px] font-semibold text-white transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50',
+              'inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-3 text-[0.9rem] font-semibold text-white transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50',
               styles.button
             )}
           >

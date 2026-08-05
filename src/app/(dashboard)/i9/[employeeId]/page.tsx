@@ -263,7 +263,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
           <Card icon={ListChecks} title="Work authorization history" subtitle="Current and past authorizations on file">
             {authHistory.length > 0 && (
               <>
-                <div className="mb-1 hidden grid-cols-12 gap-2 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:grid">
+                <div className="mb-1 hidden grid-cols-12 gap-2 px-2.5 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-500 sm:grid">
                   <span className="col-span-3">Authorization</span><span className="col-span-2">Number</span><span className="col-span-2">Issued</span><span className="col-span-2">Expiry</span><span className="col-span-2">Status</span><span className="col-span-1" />
                 </div>
                 <div className="space-y-2.5">
@@ -339,7 +339,7 @@ export default function I9RecordPage({ params }: { params: Promise<{ employeeId:
                   <li key={i} className="relative border-l-2 border-slate-100 pl-4">
                     <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-brand-400" />
                     <p className="text-sm font-medium text-slate-800">{ev.action}</p>
-                    <p className="text-[11px] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
+                    <p className="text-[0.7333rem] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
                   </li>
                 ))}
               </ol>

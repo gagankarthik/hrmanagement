@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { addressSearchText, formatAddress } from '@/lib/address';
 import { formatDate } from '@/lib/format';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { ENDCLIENT_IMPORT } from '@/lib/bulk-import/configs';
@@ -69,7 +70,7 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
             c.email?.toLowerCase().includes(q) ||
             c.phone?.toLowerCase().includes(q) ||
             c.phoneExtension?.toLowerCase().includes(q) ||
-            c.address?.toLowerCase().includes(q);
+            addressSearchText(c).includes(q);
           const matchStatus = statusFilter === 'all' || c.status === statusFilter;
           return matchSearch && matchStatus;
         })
@@ -98,6 +99,10 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
       { key: 'phone', label: 'Phone' },
       { key: 'phoneExtension', label: 'Phone Extension' },
       { key: 'address', label: 'Address' },
+      { key: 'city', label: 'City' },
+      { key: 'state', label: 'State' },
+      { key: 'zip', label: 'ZIP' },
+      { key: 'country', label: 'Country' },
       { key: 'status', label: 'Status' },
       { key: 'empCount', label: 'Employees' },
       { key: 'createdAt', label: 'Created', value: (c) => formatDate(c.createdAt, { fallback: '' }) },
@@ -129,10 +134,10 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
           <Avatar name={endClient.name} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{endClient.name}</p>
-            {endClient.address && (
+            {formatAddress(endClient) && (
               <p className="flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-[160px]">{endClient.address}</span>
+                <span className="truncate max-w-[160px]">{formatAddress(endClient)}</span>
               </p>
             )}
           </div>
@@ -196,6 +201,8 @@ export default function EndClientsPage({ embedded = false }: { embedded?: boolea
         icon={Building2}
         eyebrow="Partners"
         title="End Clients"
+        backHref="/partners?tab=endclients"
+        backLabel="Back to Partners"
         description="Manage end client organizations and the employees placed with each"
         tone="emerald"
         actions={

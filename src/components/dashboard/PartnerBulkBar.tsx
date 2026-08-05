@@ -23,6 +23,10 @@ export interface PartnerRecord {
   phone?: string;
   phoneExtension?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
 }
 
@@ -94,6 +98,10 @@ export function PartnerBulkBar({
     phone: r.phone,
     phoneExtension: r.phoneExtension,
     address: r.address,
+    city: r.city,
+    state: r.state,
+    zip: r.zip,
+    country: r.country,
     status: r.status,
   });
 
@@ -196,7 +204,7 @@ export function PartnerBulkBar({
             role="menu"
             className="surface absolute right-0 z-30 mt-2 w-52 overflow-hidden p-1.5 animate-in fade-in slide-in-from-top-1 duration-150"
           >
-            <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="px-2 pb-1 pt-1 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">
               {isCopy ? 'Duplicate into' : 'Relocate into'}
             </p>
             {targets.map((t) => (

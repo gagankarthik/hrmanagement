@@ -264,7 +264,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
               </div>
             )}
             <button type="button" onClick={addChange} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50/40"><Plus className="h-4 w-4" strokeWidth={1.75} /> Log a material change</button>
-            <p className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-400"><Info className="mt-0.5 h-3 w-3 flex-shrink-0" strokeWidth={2} /> Material changes must be reported to your DSO and reflected in an updated I-983.</p>
+            <p className="mt-2 flex items-start gap-1.5 text-[0.7333rem] text-slate-400"><Info className="mt-0.5 h-3 w-3 flex-shrink-0" strokeWidth={2} /> Material changes must be reported to your DSO and reflected in an updated I-983.</p>
           </Card>
 
           <Card icon={FolderArchive} title="I-983 documents" subtitle="Signed training plan, evaluations, amendments">
@@ -314,7 +314,7 @@ export default function I983RecordPage({ params }: { params: Promise<{ employeeI
                   <li key={i} className="relative border-l-2 border-slate-100 pl-4">
                     <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-brand-400" />
                     <p className="text-sm font-medium text-slate-800">{ev.action}</p>
-                    <p className="text-[11px] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
+                    <p className="text-[0.7333rem] text-slate-500">{formatDateTime(ev.at)}{ev.by ? ` · ${ev.by}` : ''}</p>
                   </li>
                 ))}
               </ol>

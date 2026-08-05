@@ -91,7 +91,7 @@ function AddPartnerMenu() {
             style={{ top: coords.top, left: coords.left, width: MENU_WIDTH }}
             className="surface fixed z-[61] overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100"
           >
-            <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">New partner</p>
+            <p className="px-2 pb-1 pt-1 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">New partner</p>
             {ADD_OPTIONS.map((o) => (
               <button
                 key={o.href}

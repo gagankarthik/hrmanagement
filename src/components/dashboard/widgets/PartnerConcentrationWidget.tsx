@@ -73,7 +73,7 @@ export function PartnerConcentrationWidget() {
             <p className="text-xs text-slate-500">
               Top client holds {topShare}% of {totalPlaced} active placement{totalPlaced === 1 ? '' : 's'}
             </p>
-            {risky && <p className="mt-0.5 text-[11px] font-semibold text-red-600">⚠ High single-client dependency</p>}
+            {risky && <p className="mt-0.5 text-[0.7333rem] font-semibold text-red-600">⚠ High single-client dependency</p>}
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export function PartnerConcentrationWidget() {
           ].map((s) => (
             <div key={s.label}>
               <p className="tnum font-display text-lg font-bold text-slate-900">{s.value}</p>
-              <p className="text-[11px] text-slate-500">Active {s.label}</p>
+              <p className="text-[0.7333rem] text-slate-500">Active {s.label}</p>
             </div>
           ))}
         </div>

@@ -147,8 +147,23 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
-    /* Gentle global scale-down — compacts rem-based spacing + type so more fits on screen */
-    font-size: 15px;
+    /*
+     * Fluid density. Everything in the console is sized in rem (type, spacing,
+     * control heights, sidebar width), so this one value is the app's zoom: the
+     * UI compacts on a 13-14" laptop and relaxes on a desktop monitor instead of
+     * rendering one fixed size everywhere.
+     *
+     *   ≤1280px viewport → 13.5px    1536px → ~14.1px    ≥1920px → 15px
+     */
+    font-size: clamp(13.5px, 0.234vw + 10.5px, 15px);
+  }
+  /* Short screens (a 1080p 14" at 150% scale is only 720px tall) get the
+     compact end of the scale regardless of width — vertical room is what runs
+     out first on a laptop. */
+  @media (max-height: 800px) {
+    html {
+      font-size: clamp(13px, 0.18vw + 10.7px, 14px);
+    }
   }
   body {
     @apply bg-background text-foreground;
@@ -214,7 +229,7 @@
 
   /* Primary action — console button: 36px, 8px radius, cobalt accent shadow. */
   .btn-primary {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[8px] px-3 text-[13.5px] font-semibold text-white;
+    @apply inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[8px] px-3 text-[0.9rem] font-semibold text-white;
     background-color: var(--adm-accent);
     box-shadow: var(--adm-shadow-accent);
     transition: all 150ms var(--adm-ease);
@@ -235,7 +250,7 @@
   /* Secondary / neutral actions — bordered console button. */
   .btn-ghost,
   .btn-accent {
-    @apply inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[8px] border px-3 text-[13.5px] font-semibold;
+    @apply inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[8px] border px-3 text-[0.9rem] font-semibold;
     background-color: var(--adm-surface);
     color: var(--adm-ink-mute);
     border-color: var(--adm-line);
@@ -253,7 +268,7 @@
 
   /* Eyebrow label above page titles. */
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-600;
+    @apply text-[0.7333rem] font-semibold uppercase tracking-[0.18em] text-brand-600;
   }
 
   /* Tabular figures for data/metrics. */
@@ -477,6 +492,30 @@
   color-scheme: light;
 }
 
+/* Sidebar rail width, registered so it can be *transitioned*. The spacer and
+   the fixed rail both read this one inherited value, so collapsing is a single
+   animation instead of two same-duration transitions racing each other — which
+   is what made the collapse feel like it caught halfway. */
+@property --rail-w {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+.adm-rail {
+  transition: --rail-w 240ms var(--adm-ease);
+  will-change: --rail-w;
+}
+.adm-rail,
+.adm-rail-inner {
+  width: var(--rail-w);
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-rail {
+    transition: none;
+  }
+}
+
 /* Console re-skins for the shared utility classes, so every dashboard page
    picks up the oceanblue admin look without per-page edits. */
 .adm-scope .surface {
@@ -490,10 +529,10 @@
   transform: translateY(-1px);
 }
 .adm-scope .btn-primary {
-  height: 36px;
+  height: 2.25rem;
   border-radius: 8px;
-  padding: 0 12px;
-  font-size: 13.5px;
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
   background-color: var(--adm-accent);
   box-shadow: var(--adm-shadow-accent);
   transition: all 150ms var(--adm-ease);
@@ -509,10 +548,10 @@
 }
 .adm-scope .btn-ghost,
 .adm-scope .btn-accent {
-  height: 36px;
+  height: 2.25rem;
   border-radius: 8px;
-  padding: 0 12px;
-  font-size: 13.5px;
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
   background-color: var(--adm-surface);
   color: var(--adm-ink-mute);
   border: 1px solid var(--adm-line);
@@ -528,7 +567,7 @@
   transform: translateY(-1px);
 }
 .adm-scope .eyebrow {
-  font-size: 11px;
+  font-size: 0.7333rem;
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;

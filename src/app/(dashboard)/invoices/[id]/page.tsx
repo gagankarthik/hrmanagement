@@ -160,20 +160,20 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="grid gap-4 px-6 py-5 sm:grid-cols-4">
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bill to</p><p className="mt-0.5 text-sm font-semibold text-slate-900">{inv.clientName || '—'}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Period</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.periodStart)} → {formatDate(inv.periodEnd)}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Issued</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.issueDate)}</p></div>
-          <div><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Due</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.dueDate)}</p></div>
+          <div><p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Bill to</p><p className="mt-0.5 text-sm font-semibold text-slate-900">{inv.clientName || '—'}</p></div>
+          <div><p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Period</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.periodStart)} → {formatDate(inv.periodEnd)}</p></div>
+          <div><p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Issued</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.issueDate)}</p></div>
+          <div><p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Due</p><p className="mt-0.5 text-sm text-slate-700">{formatDate(inv.dueDate)}</p></div>
         </div>
 
         <div className="overflow-x-auto px-2">
           <table className="w-full min-w-[520px]">
             <thead>
               <tr className="border-y border-slate-100 bg-slate-50/40">
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">Description</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hours</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rate</th>
-                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider text-slate-500">Amount</th>
+                <th className="px-4 py-2.5 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                <th className="px-4 py-2.5 text-right text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">Hours</th>
+                <th className="px-4 py-2.5 text-right text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">Rate</th>
+                <th className="px-4 py-2.5 text-right text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">Amount</th>
               </tr>
             </thead>
             <tbody>

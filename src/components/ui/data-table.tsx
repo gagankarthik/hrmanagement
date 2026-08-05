@@ -205,8 +205,8 @@ export function DataTable<T>({
         <span className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-danger-soft)] text-[var(--adm-danger)]">
           <AlertTriangle className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
-        <h3 className="text-[14px] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this list</h3>
-        <p className="mt-1 max-w-sm text-[13px] text-[var(--adm-ink-mute)]">{error}</p>
+        <h3 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this list</h3>
+        <p className="mt-1 max-w-sm text-[0.8667rem] text-[var(--adm-ink-mute)]">{error}</p>
         {onRetry && (
           <button onClick={onRetry} className="btn-ghost mt-5">
             <RefreshCw className="h-4 w-4" /> Try again
@@ -254,13 +254,13 @@ export function DataTable<T>({
             onClick={() => setColMenuOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={colMenuOpen}
-            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[13px] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[0.8667rem] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Display
           </button>
           {colMenuOpen && (
             <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100">
-              <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Display columns</p>
+              <p className="px-2 pb-1 pt-1.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Display columns</p>
               {hideableCols.map((c) => {
                 const shown = !hidden.has(c.id);
                 return (
@@ -270,7 +270,7 @@ export function DataTable<T>({
                     role="menuitemcheckbox"
                     aria-checked={shown}
                     onClick={() => toggleHidden(c.id)}
-                    className="flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[13.5px] font-medium text-[var(--adm-ink)] transition-colors hover:bg-[var(--adm-row-hover)]"
+                    className="flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[0.9rem] font-medium text-[var(--adm-ink)] transition-colors hover:bg-[var(--adm-row-hover)]"
                   >
                     {colLabel(c)}
                     <span className={cn('flex h-4 w-4 items-center justify-center rounded-[4px] border', shown ? 'border-[var(--adm-accent)] bg-[var(--adm-accent)] text-white' : 'border-[var(--adm-line-strong)]')}>
@@ -311,7 +311,7 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'h-12 whitespace-nowrap border-b border-[var(--adm-line)] bg-[var(--adm-head)] px-4 text-[13px] font-medium text-[var(--adm-head-ink)] first:pl-5 last:pr-5',
+                      'h-12 whitespace-nowrap border-b border-[var(--adm-line)] bg-[var(--adm-head)] px-4 text-[0.8667rem] font-medium text-[var(--adm-head-ink)] first:pl-5 last:pr-5',
                       alignClass[col.align ?? 'left'],
                       col.width,
                       col.hideBelow && hideClass[col.hideBelow],
@@ -406,7 +406,7 @@ export function DataTable<T>({
                         <td
                           key={col.id}
                           className={cn(
-                            'border-b border-[var(--adm-line-soft)] px-4 py-3.5 text-[14px] text-[var(--adm-ink-mute)] first:pl-5 last:pr-5 group-last/row:border-b-0',
+                            'border-b border-[var(--adm-line-soft)] px-4 py-3.5 text-[0.9333rem] text-[var(--adm-ink-mute)] first:pl-5 last:pr-5 group-last/row:border-b-0',
                             alignClass[col.align ?? 'left'],
                             col.hideBelow && hideClass[col.hideBelow],
                             col.cellClassName,

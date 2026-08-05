@@ -172,7 +172,7 @@ export default function EmployeeDocsManagePage({ params }: { params: Promise<{ e
               <div key={category}>
                 <div className="mb-2.5 flex items-center gap-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-brand-700">{category}</h3>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{items.length}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.7333rem] font-semibold text-slate-500">{items.length}</span>
                 </div>
                 <div className="space-y-3">
                   {items.map((doc) => (
@@ -181,7 +181,7 @@ export default function EmployeeDocsManagePage({ params }: { params: Promise<{ e
                         <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" strokeWidth={1.75} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-slate-900">{doc.name}</p>
-                          {doc.size ? <p className="text-[11px] text-slate-400">{fmtSize(doc.size)}</p> : null}
+                          {doc.size ? <p className="text-[0.7333rem] text-slate-400">{fmtSize(doc.size)}</p> : null}
                         </div>
                         <div className="flex shrink-0 items-center gap-1">
                           <a

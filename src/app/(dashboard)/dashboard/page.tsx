@@ -47,7 +47,7 @@ const hasClient = (e: Employee) => {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 pt-2">
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-mute)]">{label}</h2>
+      <h2 className="text-[0.8667rem] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-mute)]">{label}</h2>
       <div className="h-px flex-1 bg-[var(--adm-line)]" />
     </div>
   );
@@ -383,9 +383,9 @@ function DashboardOverview() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-sm font-semibold text-slate-900">{name}</span>
-                        <span className={cn('tnum shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] font-semibold', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
+                        <span className={cn('tnum shrink-0 rounded-[4px] px-1.5 py-0.5 text-[0.7333rem] font-semibold', tone.chip)}>{days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`}</span>
                       </div>
-                      <p className="truncate text-[11px] text-slate-400">{sub}</p>
+                      <p className="truncate text-[0.7333rem] text-slate-400">{sub}</p>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${fill}%` }} /></div>
                     </div>
                     <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
@@ -427,7 +427,7 @@ function DashboardOverview() {
         <KpiCard icon={Gauge} label="Billable utilization" value={`${utilization}%`} tone={utilization >= 75 ? 'emerald' : 'red'} why="Share of active workers who are billable. Core profitability metric — red below the 75% target." accessory={<ProgressRing value={utilization} color={utilization >= 75 ? '#059669' : '#dc2626'} label={`${utilization}%`} />} />
         <KpiCard icon={ShieldAlert} label="Compliance at risk" value={<CountUp value={complianceRisk.length} />} tone="red" alert={complianceRisk.length > 0} why="Work authorizations expiring within 30 days or already expired. Click to see who." onClick={complianceRisk.length ? () => setPeopleModal({ title: 'Compliance at risk', description: 'Expiring within 30 days or already expired', people: complianceRisk, tone: 'red', ctx: ctxExpiry }) : undefined} />
         {isAdmin && (
-          <KpiCard icon={Percent} label="Blended margin" value={`${blendedMargin}%`} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} why="Profit after paying contractors, from bill vs pay rates. Set rates on the Margins page." accessory={gpSpark.length ? <Sparkline data={gpSpark} /> : undefined} delta={deltaFrom(gpSpark)} period="vs last month" sub={<span className="text-right text-[11px] font-semibold text-slate-400">{usd0(weeklyGp)}/wk</span>} />
+          <KpiCard icon={Percent} label="Blended margin" value={`${blendedMargin}%`} tone={blendedMargin >= 25 ? 'emerald' : 'amber'} why="Profit after paying contractors, from bill vs pay rates. Set rates on the Margins page." accessory={gpSpark.length ? <Sparkline data={gpSpark} /> : undefined} delta={deltaFrom(gpSpark)} period="vs last month" sub={<span className="text-right text-[0.7333rem] font-semibold text-slate-400">{usd0(weeklyGp)}/wk</span>} />
         )}
       </div>
 
@@ -485,14 +485,14 @@ function DashboardOverview() {
           <div className="surface relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden p-0">
             <div className="flex items-center justify-between border-b border-[var(--adm-line)] px-5 py-3.5">
               <div>
-                <h3 className="text-[15px] font-semibold text-[var(--adm-ink)]">{drillClient.name}</h3>
-                <p className="text-[12.5px] text-[var(--adm-ink-mute)]">Hours billed vs. paid · {usd0(drillClient.revenue)} revenue</p>
+                <h3 className="text-[1rem] font-semibold text-[var(--adm-ink)]">{drillClient.name}</h3>
+                <p className="text-[0.8333rem] text-[var(--adm-ink-mute)]">Hours billed vs. paid · {usd0(drillClient.revenue)} revenue</p>
               </div>
               <button onClick={() => setClientModal(null)} className="flex h-8 w-8 items-center justify-center rounded-[6px] text-[var(--adm-ink-subtle)] hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]" aria-label="Close"><X className="h-4 w-4" /></button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-[var(--adm-line)] bg-[var(--adm-head)] text-[13px] font-medium text-[var(--adm-head-ink)]">
+                <thead><tr className="border-b border-[var(--adm-line)] bg-[var(--adm-head)] text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                   <th className="px-5 py-2.5 text-left">Worker</th><th className="px-3 py-2.5 text-right">Hours</th><th className="px-3 py-2.5 text-right">Billed</th><th className="px-3 py-2.5 text-right">Paid</th><th className="px-5 py-2.5 text-right">Margin</th>
                 </tr></thead>
                 <tbody>
@@ -513,7 +513,7 @@ function DashboardOverview() {
             </div>
             <div className="flex items-center justify-between border-t border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] px-5 py-3 text-sm">
               <span className="text-[var(--adm-ink-mute)]">{drillClient.hours} hrs · gross profit</span>
-              <span className="tnum text-[16px] font-bold text-emerald-700">{usd0(drillClient.revenue - drillClient.cost)}</span>
+              <span className="tnum text-[1.0667rem] font-bold text-emerald-700">{usd0(drillClient.revenue - drillClient.cost)}</span>
             </div>
           </div>
         </div>

@@ -67,7 +67,7 @@ export function DateRangePicker() {
 
           <div className="my-1.5 border-t border-slate-100" />
           <div className="px-2 py-1">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Custom range</p>
+            <p className="mb-1.5 text-[0.6667rem] font-semibold uppercase tracking-widest text-slate-400">Custom range</p>
             <div className="flex flex-col gap-2">
               <input type="date" value={cs} onChange={(e) => setCs(e.target.value)} className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none" />
               <input type="date" value={ce} onChange={(e) => setCe(e.target.value)} min={cs || undefined} className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:border-brand-400 focus:outline-none" />

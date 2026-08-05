@@ -590,7 +590,7 @@ export default function OnboardPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-display text-sm font-bold text-slate-900">{selectedMeta.label}</h3>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.7333rem] font-semibold uppercase tracking-wide text-slate-500">
                       Selected type
                     </span>
                   </div>

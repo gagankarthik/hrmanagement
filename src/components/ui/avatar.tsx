@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { initials } from '@/lib/format';
 
 const SIZES = {
-  xs: 'h-6 w-6 text-[10px]',
+  xs: 'h-6 w-6 text-[0.6667rem]',
   sm: 'h-8 w-8 text-xs',
   md: 'h-9 w-9 text-xs',
   lg: 'h-11 w-11 text-sm',

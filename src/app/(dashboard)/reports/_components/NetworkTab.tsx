@@ -97,7 +97,7 @@ function NetworkTable({ title, items, icon: Icon, accent }: { title: string; ite
     <ReportCard title={`Top ${title}`} subtitle={`${items.length} ${title.toLowerCase()} · ${total} placements total`} icon={Icon}>
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+          <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
             <th className="py-2.5 pr-4">Rank</th>
             <th className="py-2.5 pr-4">{title}</th>
             <th className="py-2.5 pr-4">Placements</th>

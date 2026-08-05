@@ -52,12 +52,12 @@ export function StatCard({
           <span className="grid h-6 w-6 flex-none place-items-center rounded-[6px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)] transition-colors group-hover/kpi:bg-[var(--adm-accent-soft)] group-hover/kpi:text-[var(--adm-accent)]">
             <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
           </span>
-          <p className="truncate text-[13px] font-medium text-[var(--adm-ink-mute)]">{label}</p>
+          <p className="truncate text-[0.8667rem] font-medium text-[var(--adm-ink-mute)]">{label}</p>
         </div>
         {trend && (
           <span
             className={cn(
-              'inline-flex flex-none items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums',
+              'inline-flex flex-none items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.8rem] font-semibold tabular-nums',
               trend.up ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
             )}
           >
@@ -69,8 +69,8 @@ export function StatCard({
 
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="min-w-0 truncate text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums text-[var(--adm-ink)]">{value}</p>
-          {hint && <p className="mt-1.5 truncate text-[12px] text-[var(--adm-ink-subtle)]">{hint}</p>}
+          <p className="min-w-0 truncate text-[1.7333rem] font-bold leading-none tracking-[-0.02em] tabular-nums text-[var(--adm-ink)]">{value}</p>
+          {hint && <p className="mt-1.5 truncate text-[0.8rem] text-[var(--adm-ink-subtle)]">{hint}</p>}
         </div>
         {spark && spark.length > 1 && (
           <Sparkline

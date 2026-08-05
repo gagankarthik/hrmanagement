@@ -258,7 +258,7 @@ export default function OnboardingPacketsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-display text-base font-bold text-slate-900">{e.name || 'New hire'}</p>
-                      <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600">{e.type}</span>
+                      <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[0.7333rem] font-semibold text-slate-600">{e.type}</span>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
                       {e.position ? `${e.position} · ` : ''}Started {formatDate(e.hireDate)}
@@ -306,7 +306,7 @@ export default function OnboardingPacketsPage() {
                         if (catItems.length === 0) return null;
                         return (
                           <div key={cat}>
-                            <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-brand-700">{cat}</h4>
+                            <h4 className="mb-2 text-[0.7333rem] font-bold uppercase tracking-wider text-brand-700">{cat}</h4>
                             <ul className="space-y-1">
                               {catItems.map((it) => (
                                 <li key={it.key}>

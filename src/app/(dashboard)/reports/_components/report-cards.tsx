@@ -34,9 +34,9 @@ export function SummaryStat({ icon: Icon, label, value, sub, tone }: { icon: Rea
         <Icon className="h-4 w-4" strokeWidth={1.75} />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--adm-ink-subtle)]">{label}</p>
-        <p className={cn('mt-0.5 text-[17px] font-bold tabular-nums leading-tight tracking-[-0.01em]', SUMMARY_VALUE[tone])}>{value}</p>
-        {sub && <p className="truncate text-[11px] text-[var(--adm-ink-mute)]">{sub}</p>}
+        <p className="truncate text-[0.7333rem] font-semibold uppercase tracking-[0.07em] text-[var(--adm-ink-subtle)]">{label}</p>
+        <p className={cn('mt-0.5 text-[1.1333rem] font-bold tabular-nums leading-tight tracking-[-0.01em]', SUMMARY_VALUE[tone])}>{value}</p>
+        {sub && <p className="truncate text-[0.7333rem] text-[var(--adm-ink-mute)]">{sub}</p>}
       </div>
     </div>
   );
@@ -50,8 +50,8 @@ function CardHeader({ title, subtitle, icon: Icon }: { title: string; subtitle?:
           <Icon className="h-4 w-4" strokeWidth={1.75} />
         </div>
         <div className="min-w-0">
-          <h2 className="truncate text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h2>
-          {subtitle && <p className="truncate text-[12.5px] text-[var(--adm-ink-mute)]">{subtitle}</p>}
+          <h2 className="truncate text-[0.9333rem] font-semibold text-[var(--adm-ink)]">{title}</h2>
+          {subtitle && <p className="truncate text-[0.8333rem] text-[var(--adm-ink-mute)]">{subtitle}</p>}
         </div>
       </div>
     </header>

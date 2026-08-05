@@ -31,9 +31,9 @@ export function EmptyState({
       <div className="mb-3 grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
         <Icon className="h-4.5 w-4.5" strokeWidth={1.75} />
       </div>
-      <h3 className="text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h3>
+      <h3 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">{title}</h3>
       {description && (
-        <p className="mt-1 max-w-sm text-[13px] text-[var(--adm-ink-mute)]">{description}</p>
+        <p className="mt-1 max-w-sm text-[0.8667rem] text-[var(--adm-ink-mute)]">{description}</p>
       )}
       {(action || secondaryAction) && (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">

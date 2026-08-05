@@ -234,7 +234,7 @@ export function EmployeePortalAccess({ employee }: { employee: Employee }) {
                 </p>
               ) : (
                 <fieldset className="space-y-1.5">
-                  <legend className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <legend className="mb-1 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                     Send the invitation to
                   </legend>
                   {emailChoices.map((c) => (

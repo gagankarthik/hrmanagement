@@ -66,7 +66,7 @@ export function DocumentUploader({ value = [], onChange, folder, label = 'Docume
             <div key={doc.key} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <FileText className="h-4 w-4 shrink-0 text-brand-600" />
               <span className="min-w-0 flex-1 truncate text-sm text-slate-700">{doc.name}</span>
-              {doc.size ? <span className="shrink-0 text-[11px] text-slate-400">{fmtSize(doc.size)}</span> : null}
+              {doc.size ? <span className="shrink-0 text-[0.7333rem] text-slate-400">{fmtSize(doc.size)}</span> : null}
               <a
                 href={`/api/uploads/view?key=${encodeURIComponent(doc.key)}`}
                 target="_blank"

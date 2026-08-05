@@ -201,7 +201,7 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4">
           <div>
             <h2 className="font-display text-lg font-bold text-slate-900">Needs your attention</h2>
-            <p className="mt-0.5 text-[11px] text-slate-500 sm:text-xs">{visible.length} item{visible.length === 1 ? '' : 's'} · click any row to see who</p>
+            <p className="mt-0.5 text-[0.7333rem] text-slate-500 sm:text-xs">{visible.length} item{visible.length === 1 ? '' : 's'} · click any row to see who</p>
           </div>
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
             {visible.reduce((sum, i) => sum + i.people.length, 0)}
@@ -227,7 +227,7 @@ export default function AttentionPanel({ employees }: AttentionPanelProps) {
                       <span className="tabular-nums">{cat.people.length}</span>{' '}
                       <span className="font-medium text-slate-700">{cat.label}</span>
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-slate-500 sm:text-xs">{cat.description}</p>
+                    <p className="mt-0.5 truncate text-[0.7333rem] text-slate-500 sm:text-xs">{cat.description}</p>
                   </div>
                   <span className={cn('hidden flex-shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors sm:inline-flex', s.cta)}>
                     View

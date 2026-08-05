@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { addressSearchText, formatAddress } from '@/lib/address';
 import { formatDate } from '@/lib/format';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { VENDOR_IMPORT } from '@/lib/bulk-import/configs';
@@ -78,7 +79,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
       v.email?.toLowerCase().includes(q) ||
       v.phone?.toLowerCase().includes(q) ||
       v.phoneExtension?.toLowerCase().includes(q) ||
-      v.address?.toLowerCase().includes(q);
+      addressSearchText(v).includes(q);
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -103,6 +104,10 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
       { key: 'phone', label: 'Phone' },
       { key: 'phoneExtension', label: 'Phone Extension' },
       { key: 'address', label: 'Address' },
+      { key: 'city', label: 'City' },
+      { key: 'state', label: 'State' },
+      { key: 'zip', label: 'ZIP' },
+      { key: 'country', label: 'Country' },
       { key: 'status', label: 'Status' },
       { key: 'autoInactive', label: 'Auto Inactive', value: (v) => (v.autoInactive ? 'Yes' : 'No') },
       { key: 'empCount', label: 'Employees' },
@@ -135,10 +140,10 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
           <Avatar name={vendor.name} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{vendor.name}</p>
-            {vendor.address && (
+            {formatAddress(vendor) && (
               <p className="flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-[160px]">{vendor.address}</span>
+                <span className="truncate max-w-[160px]">{formatAddress(vendor)}</span>
               </p>
             )}
           </div>
@@ -212,6 +217,8 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
         icon={Package}
         eyebrow="Partners"
         title="Vendors"
+        backHref="/partners?tab=vendors"
+        backLabel="Back to Partners"
         description="Manage vendor partnerships and contractor firms placed through them"
         tone="purple"
         actions={

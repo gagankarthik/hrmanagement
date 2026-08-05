@@ -65,7 +65,7 @@ export function Tabs<T extends string>({
             onClick={() => onChange(t.value)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(
-              'relative inline-flex items-center gap-2 whitespace-nowrap px-3.5 py-2.5 text-[13.5px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)]',
+              'relative inline-flex items-center gap-2 whitespace-nowrap px-3.5 py-2.5 text-[0.9rem] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--adm-focus-ring)]',
               active
                 ? 'font-semibold text-[var(--adm-accent)]'
                 : 'text-[var(--adm-ink-mute)] hover:text-[var(--adm-ink)]',
@@ -77,7 +77,7 @@ export function Tabs<T extends string>({
             {typeof t.count === 'number' && (
               <span
                 className={cn(
-                  'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+                  'rounded-full px-1.5 py-0.5 text-[0.7333rem] font-semibold tabular-nums',
                   active ? 'bg-[var(--adm-accent-soft)] text-[var(--adm-accent)]' : 'bg-[var(--adm-surface-2)] text-[var(--adm-ink-mute)]',
                 )}
               >

@@ -255,7 +255,7 @@ export function FunnelChart({
                 style={{ width: `${widthPct}%`, background: color, minWidth: '2%' }}
               />
               {showStepConversion && i > 0 && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6667rem] font-semibold text-slate-400">
                   ↓ {ofPrev.toFixed(0)}% of prev
                 </span>
               )}

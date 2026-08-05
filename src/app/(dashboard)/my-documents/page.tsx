@@ -96,7 +96,7 @@ export default function MyDocumentsPage() {
               <div key={category}>
                 <div className="mb-2.5 flex items-center gap-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-brand-700">{category}</h3>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">{items.length}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[0.7333rem] font-semibold text-slate-500">{items.length}</span>
                 </div>
                 <div className="space-y-3">
                   {items.map((doc) => (
@@ -107,7 +107,7 @@ export default function MyDocumentsPage() {
                         {doc.note ? (
                           <p className="truncate text-xs text-slate-500">{doc.note}</p>
                         ) : doc.size ? (
-                          <p className="text-[11px] text-slate-400">{fmtSize(doc.size)}</p>
+                          <p className="text-[0.7333rem] text-slate-400">{fmtSize(doc.size)}</p>
                         ) : null}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">

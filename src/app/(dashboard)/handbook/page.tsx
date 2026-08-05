@@ -166,7 +166,7 @@ export default function HandbookPage() {
 
               {form.documents && form.documents.length > 0 ? (
                 <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  <p className="text-[0.7333rem] font-semibold uppercase tracking-wide text-slate-400">
                     {form.documents.length} {form.documents.length === 1 ? 'document' : 'documents'}
                   </p>
                   {form.documents.map((doc) => (

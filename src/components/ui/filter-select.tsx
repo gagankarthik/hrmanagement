@@ -41,7 +41,7 @@ export function FilterSelect<T extends string>({
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
         aria-label={label}
-        className="h-8 w-full appearance-none rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] pl-2.5 pr-8 text-[13px] font-medium text-[var(--adm-ink-mute)] outline-none transition-colors hover:border-[var(--adm-line-strong)] hover:text-[var(--adm-ink)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
+        className="h-8 w-full appearance-none rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] pl-2.5 pr-8 text-[0.8667rem] font-medium text-[var(--adm-ink-mute)] outline-none transition-colors hover:border-[var(--adm-line-strong)] hover:text-[var(--adm-ink)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

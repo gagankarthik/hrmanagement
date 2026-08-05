@@ -253,13 +253,13 @@ function BenefitDetailPageContent() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-slate-50 p-4">
-                <p className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                <p className="flex items-center gap-1 text-[0.7333rem] font-medium text-slate-400">
                   <DollarSign className="h-3 w-3" /> Cost / month
                 </p>
                 <p className="mt-1 font-display text-xl font-bold text-slate-900">{cost ?? '—'}</p>
               </div>
               <div className="rounded-xl bg-slate-50 p-4">
-                <p className="flex items-center gap-1 text-[11px] font-medium text-slate-400">
+                <p className="flex items-center gap-1 text-[0.7333rem] font-medium text-slate-400">
                   <Building2 className="h-3 w-3" /> Employer
                 </p>
                 <p className="mt-1 font-display text-xl font-bold text-slate-900">{employer ?? '—'}</p>

@@ -20,6 +20,7 @@ import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { exportToCsv } from '@/lib/export';
+import { addressSearchText, formatAddress } from '@/lib/address';
 import { formatDate } from '@/lib/format';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
@@ -80,7 +81,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           s.email?.toLowerCase().includes(q) ||
           s.phone?.toLowerCase().includes(q) ||
           s.phoneExtension?.toLowerCase().includes(q) ||
-          s.address?.toLowerCase().includes(q);
+          addressSearchText(s).includes(q);
         const matchStatus = statusFilter === 'all' || s.status === statusFilter;
         return matchSearch && matchStatus;
       }),
@@ -107,6 +108,10 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       { key: 'phone', label: 'Phone' },
       { key: 'phoneExtension', label: 'Phone Extension' },
       { key: 'address', label: 'Address' },
+      { key: 'city', label: 'City' },
+      { key: 'state', label: 'State' },
+      { key: 'zip', label: 'ZIP' },
+      { key: 'country', label: 'Country' },
       { key: 'status', label: 'Status' },
       { key: 'autoInactive', label: 'Auto Inactive', value: (s) => (s.autoInactive ? 'Yes' : 'No') },
       { key: 'empCount', label: 'Employees' },
@@ -141,10 +146,10 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           <Avatar name={subcontractor.name} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-slate-900">{subcontractor.name}</p>
-            {subcontractor.address && (
+            {formatAddress(subcontractor) && (
               <p className="flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-[160px]">{subcontractor.address}</span>
+                <span className="truncate max-w-[160px]">{formatAddress(subcontractor)}</span>
               </p>
             )}
           </div>
@@ -218,6 +223,8 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
         icon={UserCheck}
         eyebrow="Partners"
         title="Subcontractors"
+        backHref="/partners?tab=subcontractors"
+        backLabel="Back to Partners"
         description="Manage subcontractor firms and the employees assigned to them"
         tone="teal"
         actions={

@@ -42,7 +42,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+                <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Authorization</th>
@@ -70,7 +70,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
                         <p className="text-xs text-slate-500">{e.position || '—'}</p>
                       </td>
                       <td className="py-2.5 pr-4">
-                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[10.5px] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
+                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[0.7rem] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
                           {TYPE_LABEL[e.type]}
                         </span>
                       </td>
@@ -79,7 +79,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
                         {formatDate(expiry)}
                       </td>
                       <td className="py-2.5 pr-4">
-                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[10.5px] font-semibold', toneColor)}>
+                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[0.7rem] font-semibold', toneColor)}>
                           {days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left`}
                         </span>
                       </td>
@@ -104,7 +104,7 @@ export function ComplianceTab({ filtered, metrics }: TabProps & { metrics: { exp
         ) : (
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+              <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                 <th className="py-2.5 pr-4">Authorization</th>
                 <th className="py-2.5 pr-4">Count</th>
                 <th className="py-2.5">Distribution</th>
@@ -151,7 +151,7 @@ function BenefitRow({ icon: Icon, label, enrolled, total, color }: { icon: React
         <span className="text-sm font-semibold text-slate-700">{label}</span>
       </div>
       <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-[28px] font-bold tabular-nums tracking-[-0.02em] text-[var(--adm-ink)]">{pct}%</span>
+        <span className="text-[1.8667rem] font-bold tabular-nums tracking-[-0.02em] text-[var(--adm-ink)]">{pct}%</span>
         <span className="text-xs text-slate-500">{enrolled} of {total} enrolled</span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">

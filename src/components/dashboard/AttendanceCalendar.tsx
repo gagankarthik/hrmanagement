@@ -128,7 +128,7 @@ export function AttendanceCalendar({
         <div className="min-w-[560px]">
           <div className="mb-1.5 grid grid-cols-7 gap-1.5">
             {WEEKDAYS.map((d) => (
-              <div key={d} className="px-1 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+              <div key={d} className="px-1 text-center text-[0.7333rem] font-semibold uppercase tracking-[0.08em] text-slate-400">
                 {d}
               </div>
             ))}
@@ -164,7 +164,7 @@ export function AttendanceCalendar({
                 >
                   <span
                     className={cn(
-                      'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold',
+                      'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.7333rem] font-bold',
                       isToday ? 'bg-brand-600 text-white' : 'text-slate-500',
                     )}
                   >
@@ -197,7 +197,7 @@ function Pip({ tone, label, value }: { tone: 'emerald' | 'amber' | 'slate'; labe
     slate: 'bg-slate-100 text-slate-600',
   } as const;
   return (
-    <span className={cn('inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[10px] font-semibold', tones[tone])}>
+    <span className={cn('inline-flex w-full items-center gap-1 rounded px-1 py-0.5 text-[0.6667rem] font-semibold', tones[tone])}>
       <span className="tabular-nums">{value}</span>
       <span className="truncate font-medium opacity-80">{label}</span>
     </span>

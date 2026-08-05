@@ -164,17 +164,17 @@ function ColumnsToggle({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[13px] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
+        className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[0.8667rem] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
       >
-        <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Columns
+        <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Display
       </button>
       {open && (
         <div
           role="menu"
           className="absolute right-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100"
         >
-          <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">
-            Show columns
+          <p className="px-2 pb-1 pt-1.5 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">
+            Display columns
           </p>
           {columns.map((c) => {
             const locked = ALWAYS_VISIBLE.has(c.id);
@@ -188,7 +188,7 @@ function ColumnsToggle({
                 disabled={locked}
                 onClick={() => !locked && onToggle(c.id)}
                 className={cn(
-                  'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[13.5px] font-medium transition-colors',
+                  'flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left text-[0.9rem] font-medium transition-colors',
                   locked ? 'cursor-not-allowed text-slate-400' : 'text-[var(--adm-ink)] hover:bg-[var(--adm-row-hover)]',
                 )}
               >
@@ -337,7 +337,7 @@ export default function EmployeeDataTable({ employees, onView, onEdit, onDelete,
             placeholder="Search by name, email, position…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] py-1.5 pl-9 pr-3 text-[13px] text-[var(--adm-ink)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
+            className="h-8 w-full rounded-[6px] border border-[var(--adm-line)] bg-[var(--adm-surface)] py-1.5 pl-9 pr-3 text-[0.8667rem] text-[var(--adm-ink)] outline-none transition-colors placeholder:text-[var(--adm-ink-subtle)] focus:border-[var(--adm-accent)] focus:ring-2 focus:ring-[var(--adm-focus-ring)]"
           />
         </div>
 

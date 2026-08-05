@@ -116,7 +116,7 @@ export default function RecentActivity({ employees, limit = 8 }: RecentActivityP
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
                       <span
                         className={cn(
-                          'rounded-full px-1.5 py-0 text-[10px] font-semibold',
+                          'rounded-full px-1.5 py-0 text-[0.6667rem] font-semibold',
                           typeColor[entry.employee.type] || 'bg-slate-100 text-slate-600'
                         )}
                       >

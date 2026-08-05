@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/toast';
 import { SectionCard } from '@/components/ui/section-card';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
-import { Input, Textarea, NativeSelect } from '@/components/ui/input';
+import { Input, NativeSelect } from '@/components/ui/input';
 import { Building2 } from 'lucide-react';
 
 export default function ClientForm({ mode, initial }: { mode: 'create' | 'edit'; initial?: Client }) {
@@ -25,9 +25,13 @@ export default function ClientForm({ mode, initial }: { mode: 'create' | 'edit';
           phone: initial.phone || '',
           phoneExtension: initial.phoneExtension || '',
           address: initial.address || '',
+          city: initial.city || '',
+          state: initial.state || '',
+          zip: initial.zip || '',
+          country: initial.country || '',
           status: initial.status,
         }
-      : { name: '', contactPerson: '', email: '', phone: '', phoneExtension: '', address: '', status: 'Active' }
+      : { name: '', contactPerson: '', email: '', phone: '', phoneExtension: '', address: '', city: '', state: '', zip: '', country: '', status: 'Active' }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -115,8 +119,23 @@ export default function ClientForm({ mode, initial }: { mode: 'create' | 'edit';
           </div>
 
           <FormField label="Address">
-            <Textarea value={form.address} onChange={(e) => set('address', e.target.value)} rows={2} placeholder="Street, city, state" className="resize-none" />
+            <Input type="text" value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="Street address" />
           </FormField>
+
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <FormField label="City">
+              <Input type="text" value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="San Francisco" />
+            </FormField>
+            <FormField label="State">
+              <Input type="text" value={form.state} onChange={(e) => set('state', e.target.value)} placeholder="CA" />
+            </FormField>
+            <FormField label="ZIP">
+              <Input type="text" inputMode="numeric" value={form.zip} onChange={(e) => set('zip', e.target.value)} placeholder="94105" />
+            </FormField>
+            <FormField label="Country">
+              <Input type="text" value={form.country} onChange={(e) => set('country', e.target.value)} placeholder="USA" />
+            </FormField>
+          </div>
         </div>
       </SectionCard>
 

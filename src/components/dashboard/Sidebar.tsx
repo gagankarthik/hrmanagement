@@ -106,7 +106,10 @@ function SidebarContent({
             width={277}
             height={76}
             priority
-            className={collapsed ? 'h-6 w-auto' : 'h-8 w-auto'}
+            className={cn(
+              'w-auto transition-all duration-200 [transition-timing-function:var(--adm-ease)]',
+              collapsed ? 'h-6' : 'h-8',
+            )}
           />
         </Link>
         {!collapsed && onClose && (
@@ -124,13 +127,17 @@ function SidebarContent({
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Main navigation">
         {navSections.map((section, si) => (
           <div key={section.heading} className={cn('space-y-0.5', si > 0 && 'mt-6')}>
-            {collapsed ? (
-              si > 0 && <div className="mx-1 mb-2 border-t border-[var(--adm-line)]" />
-            ) : (
-              <p className="px-3 pb-1.5 pt-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">
-                {section.heading}
-              </p>
-            )}
+            {collapsed && si > 0 && <div className="mx-1 mb-2 border-t border-[var(--adm-line)]" />}
+            {/* Headings collapse in height rather than unmounting, so the rail
+                doesn't jump while it is still sliding. */}
+            <p
+              className={cn(
+                'overflow-hidden px-3 text-[0.7333rem] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)] transition-all duration-200 [transition-timing-function:var(--adm-ease)]',
+                collapsed ? 'max-h-0 opacity-0' : 'max-h-10 pb-1.5 pt-0.5 opacity-100',
+              )}
+            >
+              {section.heading}
+            </p>
             {section.items.map((item) => {
               const active = isActive(item);
               const Icon = item.icon;
@@ -142,21 +149,28 @@ function SidebarContent({
                   title={collapsed ? item.label : undefined}
                   aria-current={active ? 'page' : undefined}
                   className={cn(
-                    'group relative flex items-center gap-3 rounded-[8px] text-[14px] transition-colors duration-150',
-                    collapsed ? 'justify-center p-2.5' : 'px-3 py-[9px]',
+                    'group relative flex items-center overflow-hidden rounded-[8px] text-[0.9333rem] transition-all duration-200 [transition-timing-function:var(--adm-ease)]',
+                    collapsed ? 'justify-center gap-0 p-2.5' : 'gap-3 px-3 py-[9px]',
                     active
                       ? 'bg-[var(--adm-accent-soft)] font-semibold text-[var(--adm-accent)]'
                       : 'font-medium text-[var(--adm-ink)] hover:bg-[var(--adm-row-hover)]',
                   )}
                 >
+                  {/* One icon size in both states — resizing mid-slide reads as a jump. */}
                   <Icon
                     className={cn(
-                      'flex-shrink-0 transition-colors',
-                      collapsed ? 'h-[21px] w-[21px]' : 'h-[18px] w-[18px]',
+                      'h-[18px] w-[18px] flex-shrink-0 transition-colors',
                       active ? 'text-[var(--adm-accent)]' : 'text-[var(--adm-ink-subtle)] group-hover:text-[var(--adm-ink)]',
                     )}
                   />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
+                  <span
+                    className={cn(
+                      'truncate transition-all duration-200 [transition-timing-function:var(--adm-ease)]',
+                      collapsed ? 'max-w-0 opacity-0' : 'max-w-full opacity-100',
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -171,16 +185,16 @@ function SidebarContent({
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className={cn(
-              'flex w-full items-center gap-2.5 rounded-lg text-[13px] font-medium text-[var(--adm-ink-subtle)] transition-all hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]',
+              'flex w-full items-center gap-2.5 overflow-hidden rounded-lg text-[0.8667rem] font-medium text-[var(--adm-ink-subtle)] transition-all duration-200 [transition-timing-function:var(--adm-ease)] hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]',
               collapsed ? 'justify-center p-2.5' : 'px-3 py-2',
             )}
           >
             {collapsed ? (
-              <PanelLeft className="h-[18px] w-[18px]" aria-hidden />
+              <PanelLeft className="h-[18px] w-[18px] flex-shrink-0" aria-hidden />
             ) : (
               <>
-                <PanelLeftClose className="h-4 w-4" aria-hidden />
-                <span>Collapse</span>
+                <PanelLeftClose className="h-4 w-4 flex-shrink-0" aria-hidden />
+                <span className="truncate">Collapse</span>
               </>
             )}
           </button>
@@ -216,8 +230,10 @@ export default function Sidebar({
     });
   };
 
-  // Avoid SSR mismatch flicker — only render desktop chrome once hydrated
-  const desktopWidth = collapsed ? 64 : 224;
+  // Avoid SSR mismatch flicker — only render desktop chrome once hydrated.
+  // Widths are rem so the rail rides the global density scale (globals.css)
+  // instead of eating a fixed 224px on a small laptop.
+  const desktopWidth = collapsed ? '4rem' : '14rem';
 
   return (
     <>
@@ -227,22 +243,23 @@ export default function Sidebar({
       )}
 
       {/* Mobile drawer */}
-      <div className={cn(
-        'fixed inset-y-0 left-0 z-50 w-56 transition-transform duration-300 ease-in-out lg:hidden',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full'
-      )}>
+      <div
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-56 transition-transform lg:hidden',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+        style={{ transitionDuration: '260ms', transitionTimingFunction: 'var(--adm-ease)' }}
+      >
         <SidebarContent onClose={onMobileClose} />
       </div>
 
-      {/* Desktop — reserves space + fixed-position content; both use the same width */}
+      {/* Desktop — a spacer that reserves the rail's width plus the fixed rail
+          itself. Both read the animated --rail-w, so they move as one. */}
       <div
-        className="hidden shrink-0 transition-[width] duration-300 lg:block"
-        style={{ width: hydrated ? desktopWidth : 224 }}
+        className="adm-rail hidden shrink-0 lg:block"
+        style={{ '--rail-w': hydrated ? desktopWidth : '14rem' } as React.CSSProperties}
       >
-        <div
-          className="fixed inset-y-0 left-0 z-30 transition-[width] duration-300"
-          style={{ width: hydrated ? desktopWidth : 224 }}
-        >
+        <div className="adm-rail-inner fixed inset-y-0 left-0 z-30">
           <SidebarContent collapsed={hydrated ? collapsed : false} onToggleCollapse={toggleCollapsed} />
         </div>
       </div>

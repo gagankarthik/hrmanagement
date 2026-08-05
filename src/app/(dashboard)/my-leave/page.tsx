@@ -140,7 +140,7 @@ export default function MyLeavePage() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Type', 'Dates', 'Days', 'Status', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                       {h}
                     </th>
                   ))}

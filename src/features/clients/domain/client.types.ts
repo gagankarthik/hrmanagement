@@ -10,7 +10,12 @@ export interface Client {
   phone?: string;
   /** Optional phone extension, e.g. "204". Stored separately from `phone`. */
   phoneExtension?: string;
+  /** Street line. Records created before the address split hold the whole address here. */
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
   createdAt: string;
   updatedAt: string;
@@ -23,6 +28,10 @@ export interface ClientFormData {
   phone?: string;
   phoneExtension?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
 }
 

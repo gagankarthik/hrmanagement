@@ -156,7 +156,7 @@ export default function NewInvoicePage() {
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {['Description', 'Hours', 'Rate', 'Amount', ''].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                  <th key={h} className="px-4 py-2.5 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>

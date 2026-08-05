@@ -318,7 +318,7 @@ export function BulkImportModal({ open, onClose, configs, title, lookups = {}, o
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full min-w-[640px] text-sm">
                     <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      <tr className="border-b border-slate-100 bg-slate-50/60 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                         <th className="px-3 py-2 text-left">#</th>
                         <th className="px-3 py-2 text-left">Status</th>
                         {matchedColumns.map((c) => (

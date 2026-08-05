@@ -46,7 +46,7 @@ function Fact({ icon: Icon, label, value }: { icon: React.ElementType; label: st
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="text-[0.7333rem] font-medium uppercase tracking-wide text-slate-400">{label}</p>
         <p className="mt-0.5 text-sm font-semibold text-slate-900">{value}</p>
       </div>
     </div>

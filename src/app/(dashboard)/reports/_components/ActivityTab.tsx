@@ -47,7 +47,7 @@ export function ActivityTab({ filtered }: TabProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+                <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Position</th>
@@ -60,7 +60,7 @@ export function ActivityTab({ filtered }: TabProps) {
                   <tr key={e.id} className="border-b border-slate-50 last:border-0">
                     <td className="py-2.5 pr-4 font-medium text-slate-900">{e.name}</td>
                     <td className="py-2.5 pr-4">
-                      <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[10.5px] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
+                      <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[0.7rem] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
                         {TYPE_LABEL[e.type]}
                       </span>
                     </td>
@@ -68,7 +68,7 @@ export function ActivityTab({ filtered }: TabProps) {
                     <td className="py-2.5 pr-4 text-xs text-slate-500">{[e.city, e.state].filter(Boolean).join(', ') || '—'}</td>
                     <td className="py-2.5">
                       <p className="font-medium text-slate-900">{formatDate(e.hireDate)}</p>
-                      <p className="text-[11px] text-slate-500">{differenceInDays(new Date(), new Date(e.hireDate))}d ago</p>
+                      <p className="text-[0.7333rem] text-slate-500">{differenceInDays(new Date(), new Date(e.hireDate))}d ago</p>
                     </td>
                   </tr>
                 ))}
@@ -84,7 +84,7 @@ export function ActivityTab({ filtered }: TabProps) {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+                <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                   <th className="py-2.5 pr-4">Employee</th>
                   <th className="py-2.5 pr-4">Class</th>
                   <th className="py-2.5 pr-4">Tenure</th>
@@ -98,7 +98,7 @@ export function ActivityTab({ filtered }: TabProps) {
                     <tr key={e.id} className="border-b border-slate-50 last:border-0">
                       <td className="py-2.5 pr-4 font-medium text-slate-900">{e.name}</td>
                       <td className="py-2.5 pr-4">
-                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[10.5px] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
+                        <span className={cn('inline-flex rounded-[4px] px-1.5 py-0.5 text-[0.7rem] font-semibold', TYPE_COLOR[e.type].bg, TYPE_COLOR[e.type].text, TYPE_COLOR[e.type].ring)}>
                           {TYPE_LABEL[e.type]}
                         </span>
                       </td>

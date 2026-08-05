@@ -107,11 +107,11 @@ function ExpiryCard({ data }: { data: { expired: number; b30: number; b60: numbe
           </div>
           <div>
             <h3 className="font-display text-base font-bold text-slate-900">Auth Expiry</h3>
-            <p className="text-[11px] text-slate-500">Next 90 days, active workforce</p>
+            <p className="text-[0.7333rem] text-slate-500">Next 90 days, active workforce</p>
           </div>
         </div>
         {urgent > 0 && (
-          <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200">
+          <span className="rounded-full bg-red-50 px-2 py-0.5 text-[0.7333rem] font-semibold text-red-700 ring-1 ring-red-200">
             {urgent} urgent
           </span>
         )}
@@ -126,7 +126,7 @@ function ExpiryCard({ data }: { data: { expired: number; b30: number; b60: numbe
               const h = (b.value / max) * 100;
               return (
                 <div key={b.label} className="group flex flex-1 flex-col items-center justify-end gap-1">
-                  <span className="text-[10px] font-bold tabular-nums text-slate-700 opacity-0 transition-opacity group-hover:opacity-100">{b.value}</span>
+                  <span className="text-[0.6667rem] font-bold tabular-nums text-slate-700 opacity-0 transition-opacity group-hover:opacity-100">{b.value}</span>
                   <div
                     className="w-full rounded-t-md transition-all"
                     style={{ height: `${h}%`, backgroundColor: b.color, minHeight: b.value > 0 ? 6 : 0 }}
@@ -136,7 +136,7 @@ function ExpiryCard({ data }: { data: { expired: number; b30: number; b60: numbe
               );
             })}
           </div>
-          <div className="mt-2 flex items-center justify-between gap-1 text-[10px] text-slate-500">
+          <div className="mt-2 flex items-center justify-between gap-1 text-[0.6667rem] text-slate-500">
             {buckets.map((b) => (
               <span key={b.label} className="flex-1 truncate text-center" title={`${b.label}: ${b.value}`}>
                 {b.label}
@@ -172,12 +172,12 @@ function HiringTrendCard({ data, total, delta }: { data: number[]; total: number
           </div>
           <div>
             <h3 className="font-display text-base font-bold text-slate-900">Hiring Trend</h3>
-            <p className="text-[11px] text-slate-500">Last 24 weeks · {total} hire{total === 1 ? '' : 's'}</p>
+            <p className="text-[0.7333rem] text-slate-500">Last 24 weeks · {total} hire{total === 1 ? '' : 's'}</p>
           </div>
         </div>
         {total > 0 && delta !== 0 && (
           <span className={cn(
-            'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+            'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.7333rem] font-semibold',
             delta > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
           )}>
             {delta > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -223,10 +223,10 @@ function TenureCard({ data }: { data: Record<string, number> }) {
           </div>
           <div>
             <h3 className="font-display text-base font-bold text-slate-900">Tenure</h3>
-            <p className="text-[11px] text-slate-500">Years with the company</p>
+            <p className="text-[0.7333rem] text-slate-500">Years with the company</p>
           </div>
         </div>
-        <span className="text-[11px] font-semibold tabular-nums text-slate-500">{total}</span>
+        <span className="text-[0.7333rem] font-semibold tabular-nums text-slate-500">{total}</span>
       </header>
 
       {total === 0 ? (
@@ -237,7 +237,7 @@ function TenureCard({ data }: { data: Record<string, number> }) {
             const pct = total ? Math.round((b.value / total) * 100) : 0;
             return (
               <li key={b.label} title={`${b.label}: ${b.value} (${pct}%)`}>
-                <div className="mb-1 flex items-center justify-between text-[11px]">
+                <div className="mb-1 flex items-center justify-between text-[0.7333rem]">
                   <span className="font-medium text-slate-700">{b.label}</span>
                   <span className="font-semibold tabular-nums text-slate-900">
                     {b.value}<span className="ml-1 text-slate-400">({pct}%)</span>

@@ -14,7 +14,11 @@ function partnerColumns(): ImportColumn[] {
     { field: 'email', header: 'Email', type: 'email', example: 'jane@acme.com' },
     { field: 'phone', header: 'Phone', type: 'tel', aliases: ['phone number', 'contact number'], example: '+1 (555) 000-0000' },
     { field: 'phoneExtension', header: 'Phone Extension', type: 'text', aliases: ['ext', 'extension'], example: '204' },
-    { field: 'address', header: 'Address', type: 'text', example: '500 Market St, San Francisco, CA' },
+    { field: 'address', header: 'Address', type: 'text', aliases: ['street', 'address line 1'], example: '500 Market St' },
+    { field: 'city', header: 'City', type: 'text', example: 'San Francisco' },
+    { field: 'state', header: 'State', type: 'text', aliases: ['province', 'region'], example: 'CA' },
+    { field: 'zip', header: 'ZIP', type: 'text', aliases: ['zipcode', 'zip code', 'postal code', 'pincode'], example: '94105' },
+    { field: 'country', header: 'Country', type: 'text', example: 'USA' },
     {
       field: 'status',
       header: 'Status',

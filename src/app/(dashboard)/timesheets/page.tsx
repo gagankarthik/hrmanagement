@@ -115,7 +115,7 @@ export default function TimesheetsPage() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Worker', 'Client', 'Period', 'Hours', 'Bill total', 'GP', 'Status', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>

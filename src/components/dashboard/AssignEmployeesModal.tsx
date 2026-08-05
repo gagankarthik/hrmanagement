@@ -205,11 +205,11 @@ export function AssignEmployeesModal({
                     <span className="block truncate text-sm font-semibold text-slate-800">{emp.name}</span>
                     <span className="block truncate text-xs text-slate-400">{emp.position || emp.personalEmail || '—'}</span>
                   </span>
-                  <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold', typeBadge[emp.type] || 'bg-slate-100 text-slate-600')}>
+                  <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[0.7333rem] font-semibold', typeBadge[emp.type] || 'bg-slate-100 text-slate-600')}>
                     {emp.type}
                   </span>
                   {status && (
-                    <span className={cn('hidden shrink-0 text-[11px] font-medium sm:inline', status === 'Active' ? 'text-emerald-600' : 'text-slate-400')}>
+                    <span className={cn('hidden shrink-0 text-[0.7333rem] font-medium sm:inline', status === 'Active' ? 'text-emerald-600' : 'text-slate-400')}>
                       {status}
                     </span>
                   )}

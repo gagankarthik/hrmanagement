@@ -25,7 +25,7 @@ export interface BackLinkProps {
 }
 
 const BASE_CLASS =
-  'inline-flex items-center gap-2 rounded-[8px] border border-transparent px-2.5 py-1.5 text-[13px] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-line)] hover:bg-white hover:text-[var(--adm-ink)]';
+  'inline-flex items-center gap-2 rounded-[8px] border border-transparent px-2.5 py-1.5 text-[0.8667rem] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-line)] hover:bg-white hover:text-[var(--adm-ink)]';
 
 function Anchor({ href, label, className }: { href: string; label: string; className?: string }) {
   return (

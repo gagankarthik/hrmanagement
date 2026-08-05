@@ -497,12 +497,12 @@ export default function UsersPage() {
                 <AlertCircle className="h-4 w-4 shrink-0 text-red-500" strokeWidth={2} />
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-semibold text-slate-800">
+                <span className="block truncate text-[0.8667rem] font-semibold text-slate-800">
                   {linked ? linked.name : 'Not linked'}
                 </span>
                 <span
                   className={cn(
-                    'block text-[11px] font-semibold',
+                    'block text-[0.7333rem] font-semibold',
                     linked ? 'text-emerald-700' : 'text-red-600',
                   )}
                 >
@@ -858,7 +858,7 @@ export default function UsersPage() {
                             </span>
                           </span>
                           {isCurrent && (
-                            <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                            <span className="flex shrink-0 items-center gap-1 text-[0.7333rem] font-semibold text-emerald-700">
                               <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
                               Linked
                             </span>

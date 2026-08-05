@@ -63,7 +63,7 @@ export function ColumnToggle({
       >
         <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
         Display
-        <span className="rounded-full bg-slate-100 px-1.5 text-[10px] font-semibold text-slate-500">
+        <span className="rounded-full bg-slate-100 px-1.5 text-[0.6667rem] font-semibold text-slate-500">
           {shownCount}/{columns.length}
         </span>
       </button>
@@ -73,7 +73,7 @@ export function ColumnToggle({
           role="menu"
           className="surface absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100"
         >
-          <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <p className="px-2 pb-1 pt-1 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">
             Display columns
           </p>
           {columns.map((c) => {

@@ -133,8 +133,8 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
       className="absolute right-0 top-full z-50 mt-1.5 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white shadow-[var(--adm-shadow-pop)] animate-in fade-in slide-in-from-top-1 duration-150 sm:w-96"
     >
       <header className="flex items-center justify-between border-b border-[var(--adm-line)] bg-[var(--adm-surface-sunken)] px-4 py-3">
-        <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Notifications</h2>
-        <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[var(--adm-ink-mute)]">
+        <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Notifications</h2>
+        <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-[0.7333rem] font-semibold tabular-nums text-[var(--adm-ink-mute)]">
           {items.length}
         </span>
       </header>
@@ -145,7 +145,7 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
             <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
               <Inbox className="h-4.5 w-4.5" strokeWidth={1.75} />
             </span>
-            <p className="text-[14px] font-semibold text-[var(--adm-ink)]">No recent activity</p>
+            <p className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">No recent activity</p>
             <p className="text-xs text-[var(--adm-ink-mute)]">Changes across employees, leaves and partners will show up here.</p>
           </div>
         ) : (
@@ -165,10 +165,10 @@ export function ActivityDrawer({ open, onClose }: { open: boolean; onClose: () =
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-semibold text-[var(--adm-ink)]">{a.title}</span>
-                  <span className="block truncate text-[12px] text-[var(--adm-ink-mute)]">{a.meta}</span>
+                  <span className="block truncate text-[0.8667rem] font-semibold text-[var(--adm-ink)]">{a.title}</span>
+                  <span className="block truncate text-[0.8rem] text-[var(--adm-ink-mute)]">{a.meta}</span>
                 </span>
-                <span className="shrink-0 pt-0.5 text-[11px] tabular-nums text-[var(--adm-ink-subtle)]">{timeAgo(a.time)}</span>
+                <span className="shrink-0 pt-0.5 text-[0.7333rem] tabular-nums text-[var(--adm-ink-subtle)]">{timeAgo(a.time)}</span>
               </button>
             );
           })

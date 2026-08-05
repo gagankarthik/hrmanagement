@@ -22,7 +22,7 @@ function Tile({ icon: Icon, label, value, tone }: { icon: React.ElementType; lab
       </span>
       <div className="min-w-0">
         <p className="tnum font-display text-lg font-bold leading-none text-slate-900">{value}</p>
-        <p className="truncate text-[11px] text-slate-500">{label}</p>
+        <p className="truncate text-[0.7333rem] text-slate-500">{label}</p>
       </div>
     </div>
   );
@@ -96,7 +96,7 @@ export function LeaveAttendanceWidget() {
           <Tile icon={UserCheck} label="Attendance rate" value={hasAttendance ? `${attendanceRate}%` : '—'} tone="bg-emerald-50 text-emerald-700" />
         </div>
         <div className="flex min-w-0 flex-col">
-          <p className="mb-1 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">Leave by type</p>
+          <p className="mb-1 text-center text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">Leave by type</p>
           {typeDonut.length ? (
             <DonutChart data={typeDonut} height={180} />
           ) : (

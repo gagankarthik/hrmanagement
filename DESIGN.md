@@ -154,6 +154,25 @@ Default, hover (darken + subtle lift), active (settle), disabled (`opacity-50`,
   their own container; primary action stays reachable. Use relative units, never fixed px
   widths that cannot collapse.
 
+### Density scale (how the console fits a laptop)
+
+The root font size is fluid — `clamp(13.5px, 0.234vw + 10.5px, 15px)`, with a tighter ramp
+under `max-height: 800px`. Everything in the console is sized against it, so one value acts as
+the app's zoom: 13.5px at 1280px wide, 15px at 1920px.
+
+**Size type and spacing in rem, never px.** A `text-[13px]` does not shrink on a 14" screen
+while the rem-based box around it does — that mismatch is what made the UI read as oversized.
+Arbitrary values are written against the 15px base (`text-[0.8667rem]` = 13px at full size).
+This applies to control heights, the sidebar rail (`14rem` / `4rem` collapsed), and padding too.
+
+### Motion
+
+Transitions use `var(--adm-ease)` at 150-260ms. When two elements must move together, animate
+**one** value they share rather than giving each its own transition — the sidebar rail
+transitions the registered `--rail-w` custom property, which both the layout spacer and the
+fixed rail read, so they cannot desync. Content inside something that resizes should fade or
+collapse (`max-w-0`, `max-h-0`) rather than unmount, or it pops mid-animation.
+
 ---
 
 ## 6. Do not

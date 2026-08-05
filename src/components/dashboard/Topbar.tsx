@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
-  Search, Menu, Bell, LogOut, Eye, EyeOff,
+  Search, Menu, Bell, BookOpen, LogOut, Eye, EyeOff,
   UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft, UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ function useClickOutside<T extends HTMLElement>(enabled: boolean, onOutside: () 
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { selfServiceOnly } = useAccess();
   const { employees } = useEmployees();
@@ -174,7 +176,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   return (
                     <React.Fragment key={r.key}>
                       {showHeader && (
-                        <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{r.group}</p>
+                        <p className="px-2 pb-1 pt-2 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">{r.group}</p>
                       )}
                       <button
                         type="button"
@@ -221,7 +223,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         {canUseEmployeeView && employeeView && (
           <button
             onClick={exitEmployeeView}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--adm-accent)]/10 px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--adm-accent)] transition-colors hover:bg-[var(--adm-accent)]/15"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--adm-accent)]/10 px-2.5 py-1.5 text-[0.8333rem] font-semibold text-[var(--adm-accent)] transition-colors hover:bg-[var(--adm-accent)]/15"
             title="Return to the full HR console"
           >
             <Eye className="h-4 w-4" strokeWidth={1.75} />
@@ -229,6 +231,22 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             <span className="hidden sm:inline text-[var(--adm-ink-subtle)]">·</span>
             <span className="hidden sm:inline font-medium text-[var(--adm-ink-mute)]">Exit</span>
           </button>
+        )}
+
+        {/* Documentation — sits beside the bell, full-access only (it describes
+            management surfaces an ESS employee cannot reach). */}
+        {!showEssShell && (
+          <Link
+            href="/docs"
+            className={cn(
+              'rounded-lg p-2 text-[var(--adm-ink-mute)] transition-colors hover:bg-[var(--adm-row-hover)] hover:text-[var(--adm-ink)]',
+              pathname?.startsWith('/docs') && 'bg-[var(--adm-row-hover)] text-[var(--adm-ink)]',
+            )}
+            aria-label="Documentation"
+            title="Documentation"
+          >
+            <BookOpen className="h-5 w-5" strokeWidth={1.75} />
+          </Link>
         )}
 
         {/* Notifications → anchored dropdown panel (full-access only) */}

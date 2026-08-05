@@ -146,7 +146,7 @@ export function ChartFrame({
           <AlertTriangle className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
         <div>
-          <p className="text-[14px] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this data</p>
+          <p className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Couldn&apos;t load this data</p>
           {error && <p className="mt-0.5 max-w-xs text-xs text-[var(--adm-ink-mute)]">{error}</p>}
         </div>
         {onRetry && (
@@ -164,7 +164,7 @@ export function ChartFrame({
         <span className="grid h-9 w-9 place-items-center rounded-[8px] bg-[var(--adm-surface-2)] text-[var(--adm-ink-subtle)]">
           <Inbox className="h-4.5 w-4.5" strokeWidth={1.75} />
         </span>
-        <p className="text-[14px] font-medium text-[var(--adm-ink-mute)]">{emptyLabel}</p>
+        <p className="text-[0.9333rem] font-medium text-[var(--adm-ink-mute)]">{emptyLabel}</p>
         {emptyHint && <p className="max-w-xs text-xs text-[var(--adm-ink-subtle)]">{emptyHint}</p>}
         {emptyCta && (
           <Link href={emptyCta.href} className="btn-primary mt-1">
@@ -188,10 +188,10 @@ export function ChartFrame({
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h2>
+              <h2 className="truncate text-[0.9333rem] font-semibold text-[var(--adm-ink)]">{title}</h2>
               {badge}
             </div>
-            {subtitle && <p className="truncate text-[12.5px] text-[var(--adm-ink-mute)]">{subtitle}</p>}
+            {subtitle && <p className="truncate text-[0.8333rem] text-[var(--adm-ink-mute)]">{subtitle}</p>}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -229,7 +229,7 @@ export function FreshnessBadge({ updatedAt }: { updatedAt: number | null }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-px text-[10.5px] font-semibold uppercase tracking-[0.03em]',
+        'inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-px text-[0.7rem] font-semibold uppercase tracking-[0.03em]',
         stale
           ? 'bg-[var(--adm-warning-soft)] text-[var(--adm-warning)]'
           : 'bg-[var(--adm-success-soft)] text-[var(--adm-success)]',

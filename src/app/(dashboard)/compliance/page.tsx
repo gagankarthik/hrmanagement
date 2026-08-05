@@ -301,8 +301,8 @@ export default function CompliancePage() {
               <div className="relative w-full max-w-[260px]">
                 <DonutChart data={healthDonut} height={180} />
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center pb-8">
-                  <span className={cn('text-[22px] font-bold leading-none tabular-nums tracking-[-0.02em]', healthTone === 'emerald' && 'text-emerald-600', healthTone === 'amber' && 'text-amber-600', healthTone === 'red' && 'text-red-600')}>{health.pct}%</span>
-                  <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">compliant</span>
+                  <span className={cn('text-[1.4667rem] font-bold leading-none tabular-nums tracking-[-0.02em]', healthTone === 'emerald' && 'text-emerald-600', healthTone === 'amber' && 'text-amber-600', healthTone === 'red' && 'text-red-600')}>{health.pct}%</span>
+                  <span className="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">compliant</span>
                 </div>
               </div>
               <p className="mt-1 text-xs text-slate-500">
@@ -322,7 +322,7 @@ export default function CompliancePage() {
               <PieChartIcon className="h-4 w-4 text-[var(--adm-ink-subtle)]" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Work authorization mix</h2>
+              <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Work authorization mix</h2>
               <p className="text-xs text-slate-400">Across all {employees.length} employee{employees.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
@@ -341,13 +341,13 @@ export default function CompliancePage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[var(--adm-surface-2)]">
               <FileText className="h-4 w-4 text-[var(--adm-ink-subtle)]" />
             </div>
-            <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Policy coverage</h2>
+            <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Policy coverage</h2>
             <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--adm-ink-mute)]">{coveredCount}/{EMPLOYEE_TYPES.length}</span>
           </div>
           <ul className="flex-1 divide-y divide-[var(--adm-line)]">
             {policyCoverage.map((p) => (
               <li key={p.type} className="flex items-center justify-between gap-3 px-5 py-3">
-                <span className={cn('inline-flex items-center rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold', typeChip[p.type])}>{p.type}</span>
+                <span className={cn('inline-flex items-center rounded-[4px] px-2 py-0.5 text-[0.7667rem] font-semibold', typeChip[p.type])}>{p.type}</span>
                 {p.covered ? (
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Configured</span>
                 ) : (
@@ -370,7 +370,7 @@ export default function CompliancePage() {
               <ShieldAlert className="h-4 w-4 text-[var(--adm-ink-subtle)]" />
             </div>
             <div>
-              <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Work authorization at risk</h2>
+              <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Work authorization at risk</h2>
               <p className="text-xs text-slate-400">Active employees, expired or expiring soon · soonest first</p>
             </div>
           </div>
@@ -418,7 +418,7 @@ export default function CompliancePage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+                <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                   <th className="px-5 py-3">Employee</th>
                   <th className="px-5 py-3">Type</th>
                   <th className="px-5 py-3">Work auth</th>
@@ -454,7 +454,7 @@ export default function CompliancePage() {
                       <td className="px-5 py-3">
                         <span
                           className={cn(
-                            'inline-flex items-center rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold',
+                            'inline-flex items-center rounded-[4px] px-2 py-0.5 text-[0.7667rem] font-semibold',
                             typeChip[row.type]
                           )}
                         >
@@ -471,7 +471,7 @@ export default function CompliancePage() {
                       <td className="px-5 py-3">
                         <span
                           className={cn(
-                            'inline-flex items-center rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold',
+                            'inline-flex items-center rounded-[4px] px-2 py-0.5 text-[0.7667rem] font-semibold',
                             pill.className
                           )}
                         >
@@ -495,7 +495,7 @@ export default function CompliancePage() {
               <ShieldCheck className="h-4 w-4 text-[var(--adm-ink-subtle)]" />
             </div>
             <div>
-              <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Subcontractor COI expiry</h2>
+              <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Subcontractor COI expiry</h2>
               <p className="text-xs text-slate-400">Insurance policies expiring within 60 days, per company</p>
             </div>
           </div>
@@ -533,11 +533,11 @@ export default function CompliancePage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-semibold text-slate-900">{s.name}</span>
-                      <span className={cn('shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] font-semibold', chip)}>
+                      <span className={cn('shrink-0 rounded-[4px] px-1.5 py-0.5 text-[0.7333rem] font-semibold', chip)}>
                         {expired ? `${Math.abs(coi.days ?? 0)}d overdue` : `${coi.days}d`}
                       </span>
                     </div>
-                    <p className="truncate text-[11px] text-slate-400">{coi.label}</p>
+                    <p className="truncate text-[0.7333rem] text-slate-400">{coi.label}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
                 </button>
@@ -558,7 +558,7 @@ export default function CompliancePage() {
               <UserX className="h-4 w-4 text-[var(--adm-ink-subtle)]" />
             </div>
             <div>
-              <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Profile completeness</h2>
+              <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Profile completeness</h2>
               <p className="text-xs text-slate-400">
                 Active employees missing key compliance data
               </p>
@@ -601,7 +601,7 @@ export default function CompliancePage() {
                         {g.missing.map((m) => (
                           <span
                             key={m}
-                            className="inline-flex items-center rounded-[4px] bg-[var(--adm-danger-soft)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--adm-danger)]"
+                            className="inline-flex items-center rounded-[4px] bg-[var(--adm-danger-soft)] px-1.5 py-0.5 text-[0.7333rem] font-semibold text-[var(--adm-danger)]"
                           >
                             Missing {m}
                           </span>
@@ -611,7 +611,7 @@ export default function CompliancePage() {
                   </div>
                   <span
                     className={cn(
-                      'inline-flex shrink-0 items-center rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold',
+                      'inline-flex shrink-0 items-center rounded-[4px] px-2 py-0.5 text-[0.7667rem] font-semibold',
                       typeChip[g.type]
                     )}
                   >

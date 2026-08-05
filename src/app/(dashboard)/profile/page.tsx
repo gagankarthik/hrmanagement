@@ -174,7 +174,7 @@ export default function ProfilePage() {
           <div className="mt-5 space-y-6">
             {employmentSections.map((section) => (
               <div key={section.id} className="border-b border-dashed border-slate-200 pb-5 last:border-0 last:pb-0">
-                <h3 className="font-display text-[13px] font-bold text-brand-900">{section.title}</h3>
+                <h3 className="font-display text-[0.8667rem] font-bold text-brand-900">{section.title}</h3>
                 <div className="mt-3 grid gap-x-6 gap-y-4 grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))]">
                   {section.items.map((it) => (
                     <div key={it.label} className="min-w-0">

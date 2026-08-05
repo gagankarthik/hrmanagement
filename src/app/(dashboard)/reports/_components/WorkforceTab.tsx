@@ -75,7 +75,7 @@ export function WorkforceTab({ filtered }: TabProps) {
       <ReportCard title="Headcount by Class" subtitle="Class distribution + status breakdown" icon={Users}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+            <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
               <th className="py-3 pr-4">Class</th>
               <th className="py-3 pr-4">Total</th>
               <th className="py-3 pr-4">Active</th>
@@ -93,7 +93,7 @@ export function WorkforceTab({ filtered }: TabProps) {
               return (
                 <tr key={t.label} className="border-b border-slate-50 last:border-0">
                   <td className="py-3 pr-4">
-                    <span className={cn('inline-flex items-center gap-2 rounded-[4px] px-2 py-0.5 text-[11.5px] font-semibold', TYPE_COLOR[t.label].bg, TYPE_COLOR[t.label].text, TYPE_COLOR[t.label].ring)}>
+                    <span className={cn('inline-flex items-center gap-2 rounded-[4px] px-2 py-0.5 text-[0.7667rem] font-semibold', TYPE_COLOR[t.label].bg, TYPE_COLOR[t.label].text, TYPE_COLOR[t.label].ring)}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLOR[t.label].hex }} />
                       {TYPE_LABEL[t.label]}
                     </span>
@@ -130,7 +130,7 @@ export function WorkforceTab({ filtered }: TabProps) {
         ) : (
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--adm-line)] text-left text-[13px] font-medium text-[var(--adm-head-ink)]">
+              <tr className="border-b border-[var(--adm-line)] text-left text-[0.8667rem] font-medium text-[var(--adm-head-ink)]">
                 <th className="py-2.5 pr-4">Rank</th>
                 <th className="py-2.5 pr-4">State</th>
                 <th className="py-2.5 pr-4">Employees</th>

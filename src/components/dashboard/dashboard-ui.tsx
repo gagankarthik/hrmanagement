@@ -85,7 +85,7 @@ export function DeltaIndicator({ delta, period }: { delta: KpiDelta; period?: st
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+        'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[0.7333rem] font-semibold tabular-nums',
         good ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700',
       )}
       title={period ? `${delta.direction === 'up' ? '+' : '−'}${Math.abs(delta.value).toFixed(1)}% ${period}` : undefined}
@@ -140,11 +140,11 @@ export function KpiCard({
           >
             <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
           </span>
-          <p className="flex min-w-0 items-center gap-1 truncate text-[13px] font-medium text-[var(--adm-ink-mute)]">
+          <p className="flex min-w-0 items-center gap-1 truncate text-[0.8667rem] font-medium text-[var(--adm-ink-mute)]">
             {label}
             <span className="group/tip relative inline-flex" tabIndex={0} aria-label={why}>
               <Info className="h-3 w-3 cursor-help text-[var(--adm-ink-subtle)] transition-colors group-hover/tip:text-[var(--adm-ink-mute)]" strokeWidth={2} />
-              <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-44 -translate-x-1/2 rounded-[8px] bg-[var(--adm-ink)] px-2.5 py-1.5 text-[11px] font-normal leading-snug text-white opacity-0 shadow-[var(--adm-shadow-pop)] transition-opacity duration-150 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100">
+              <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-44 -translate-x-1/2 rounded-[8px] bg-[var(--adm-ink)] px-2.5 py-1.5 text-[0.7333rem] font-normal leading-snug text-white opacity-0 shadow-[var(--adm-shadow-pop)] transition-opacity duration-150 group-hover/tip:opacity-100 group-focus-within/tip:opacity-100">
                 {why}
               </span>
             </span>
@@ -154,8 +154,8 @@ export function KpiCard({
       </div>
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="tnum min-w-0 truncate text-[26px] font-bold leading-none tracking-[-0.02em] text-[var(--adm-ink)]">{value}</p>
-          {period && !delta && <p className="mt-1.5 text-[11px] text-[var(--adm-ink-subtle)]">{period}</p>}
+          <p className="tnum min-w-0 truncate text-[1.7333rem] font-bold leading-none tracking-[-0.02em] text-[var(--adm-ink)]">{value}</p>
+          {period && !delta && <p className="mt-1.5 text-[0.7333rem] text-[var(--adm-ink-subtle)]">{period}</p>}
         </div>
         {accessory}
         {sub}
@@ -204,8 +204,8 @@ export function SectionCard({
             </span>
           )}
           <div>
-            <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h2>
-            {subtitle && <p className="text-[12.5px] text-[var(--adm-ink-mute)]">{subtitle}</p>}
+            <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">{title}</h2>
+            {subtitle && <p className="text-[0.8333rem] text-[var(--adm-ink-mute)]">{subtitle}</p>}
           </div>
         </div>
         {action}

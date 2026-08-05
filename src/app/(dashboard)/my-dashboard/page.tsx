@@ -162,7 +162,7 @@ export default function MyDashboardPage() {
           </div>
 
           <div>
-            <h3 className="mb-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-400">Upcoming leave</h3>
+            <h3 className="mb-2 text-[0.8667rem] font-semibold uppercase tracking-[0.08em] text-slate-400">Upcoming leave</h3>
             {upcoming ? (
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
@@ -215,7 +215,7 @@ export default function MyDashboardPage() {
                     </div>
                     <span
                       className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                        'shrink-0 rounded-full px-2 py-0.5 text-[0.7333rem] font-semibold',
                         l.status === 'Approved' && 'bg-emerald-50 text-emerald-700',
                         l.status === 'Pending' && 'bg-amber-50 text-amber-700',
                         l.status === 'Rejected' && 'bg-red-50 text-red-700',

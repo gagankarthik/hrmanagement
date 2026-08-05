@@ -13,7 +13,12 @@ export interface Subcontractor {
   phone?: string;
   /** Optional phone extension, e.g. "204". Stored separately from `phone`. */
   phoneExtension?: string;
+  /** Street line. Records created before the address split hold the whole address here. */
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
   /** Certificate of Insurance — policy effective date (ISO yyyy-mm-dd) */
   coiEffectiveDate?: string;
@@ -31,6 +36,10 @@ export interface SubcontractorFormData {
   phone?: string;
   phoneExtension?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
   coiEffectiveDate?: string;
   coiExpiryDate?: string;

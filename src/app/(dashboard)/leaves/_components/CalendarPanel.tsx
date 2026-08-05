@@ -38,7 +38,7 @@ export function CalendarPanel({
       onClick={() => onChipClick(leave.id)}
       title={`${nameOf(leave.employeeId)} · ${leave.type}`}
       className={cn(
-        'block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[10px] font-semibold leading-tight transition-opacity hover:opacity-80',
+        'block w-full truncate rounded-md px-1.5 py-0.5 text-left text-[0.6667rem] font-semibold leading-tight transition-opacity hover:opacity-80',
         typeBadge[leave.type]
       )}
     >
@@ -81,7 +81,7 @@ export function CalendarPanel({
       <div className="hidden sm:block">
         <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/60">
           {WEEKDAYS.map((d) => (
-            <div key={d} className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <div key={d} className="px-2 py-2 text-center text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
               {d}
             </div>
           ))}
@@ -105,7 +105,7 @@ export function CalendarPanel({
                     <div className="mb-1 flex justify-end">
                       <span
                         className={cn(
-                          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold',
+                          'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[0.7333rem] font-semibold',
                           isToday ? 'bg-brand-600 text-white' : 'text-slate-500'
                         )}
                       >
@@ -117,7 +117,7 @@ export function CalendarPanel({
                         <Chip key={leave.id} leave={leave} />
                       ))}
                       {extra > 0 && (
-                        <p className="px-1 text-[10px] font-medium text-slate-400">+{extra} more</p>
+                        <p className="px-1 text-[0.6667rem] font-medium text-slate-400">+{extra} more</p>
                       )}
                     </div>
                   </>

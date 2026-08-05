@@ -140,15 +140,15 @@ export default function TimesheetForm({ mode, timesheet }: { mode: 'create' | 'e
       {/* Computed preview */}
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-slate-100 bg-slate-100 sm:grid-cols-3">
         <div className="bg-white px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bill total</p>
+          <p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Bill total</p>
           <p className="font-display text-lg font-bold text-slate-900">{money(billTotal)}</p>
         </div>
         <div className="bg-white px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Gross profit</p>
+          <p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Gross profit</p>
           <p className="font-display text-lg font-bold text-emerald-700">{money(gp)}</p>
         </div>
         <div className="bg-white px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Margin</p>
+          <p className="text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Margin</p>
           <p className="font-display text-lg font-bold text-slate-900">{bill > 0 ? `${(((bill - pay) / bill) * 100).toFixed(1)}%` : '—'}</p>
         </div>
       </div>

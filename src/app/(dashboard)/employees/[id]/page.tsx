@@ -56,7 +56,7 @@ function Field({ label, value }: { label: string; value?: React.ReactNode }) {
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-b border-dashed border-slate-200 pb-6 last:border-0 last:pb-0">
-      <h3 className="font-display text-[15px] font-bold text-brand-900">{title}</h3>
+      <h3 className="font-display text-[1rem] font-bold text-brand-900">{title}</h3>
       <div className="mt-4 grid gap-x-6 gap-y-5 grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))]">{children}</div>
     </section>
   );
@@ -135,7 +135,7 @@ function DocsTab({ employeeId, employeeName, i9Docs, i983Docs }: { employeeId: s
       <div>
         <div className="mb-3 flex items-center gap-2">
           <FolderArchive className="h-4 w-4 text-brand-600" />
-          <h3 className="font-display text-[15px] font-bold text-brand-900">Documents</h3>
+          <h3 className="font-display text-[1rem] font-bold text-brand-900">Documents</h3>
           {saving && <span className="text-xs text-slate-400">Saving…</span>}
         </div>
         <DocumentUploader value={docs} onChange={onChange} folder={`employee-docs/${employeeId}`} label="" />
@@ -546,7 +546,7 @@ function EmployeeDetailPageContent() {
 
   const railField = (label: string, value?: React.ReactNode) => (
     <div className="min-w-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-[0.6667rem] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-0.5 truncate text-sm font-semibold text-slate-800">{value || <span className="font-normal text-slate-400">N/A</span>}</p>
     </div>
   );
@@ -610,7 +610,7 @@ function EmployeeDetailPageContent() {
             <div className="mb-3 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-accent-600" strokeWidth={1.75} />
               <h2 className="font-display text-sm font-bold text-slate-900">Alerts</h2>
-              {alerts.length > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white">{alerts.length}</span>}
+              {alerts.length > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[0.7333rem] font-bold text-white">{alerts.length}</span>}
             </div>
             {alerts.length === 0 ? (
               <p className="flex items-center gap-2 text-sm text-emerald-600"><CheckCircle2 className="h-4 w-4" /> All clear</p>
@@ -765,7 +765,7 @@ function EmployeeDetailPageContent() {
                     return (
                       <div key={cat}>
                         <div className="mb-2 flex items-center gap-2">
-                          <h4 className="font-display text-[13px] font-bold text-brand-900">{cat}</h4>
+                          <h4 className="font-display text-[0.8667rem] font-bold text-brand-900">{cat}</h4>
                           <span className="text-xs text-slate-400">{catDone}/{items.length}</span>
                         </div>
                         <ul className="space-y-1.5">
@@ -821,7 +821,7 @@ function EmployeeDetailPageContent() {
 
                 {authHistCount > 0 && i9Record?.workAuthHistory && (
                   <div>
-                    <h3 className="font-display text-[15px] font-bold text-brand-900">Authorization history</h3>
+                    <h3 className="font-display text-[1rem] font-bold text-brand-900">Authorization history</h3>
                     <div className="mt-3 space-y-2">
                       {i9Record.workAuthHistory.map((a) => (
                         <div key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm">
@@ -970,7 +970,7 @@ function FormsMenu({ employeeId }: { employeeId: string }) {
       </button>
       {open && (
         <div role="menu" className="surface absolute right-0 z-30 mt-2 w-56 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100">
-          <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Create for this employee</p>
+          <p className="px-2 pb-1 pt-1 text-[0.6667rem] font-semibold uppercase tracking-wider text-slate-400">Create for this employee</p>
           {forms.map((f) => (
             <button
               key={f.href}

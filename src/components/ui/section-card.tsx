@@ -29,8 +29,8 @@ export function SectionCard({
             </span>
           )}
           <div className="min-w-0">
-            <h3 className="text-[14px] font-semibold text-[var(--adm-ink)]">{title}</h3>
-            {description && <p className="text-[12.5px] text-[var(--adm-ink-mute)]">{description}</p>}
+            <h3 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">{title}</h3>
+            {description && <p className="text-[0.8333rem] text-[var(--adm-ink-mute)]">{description}</p>}
           </div>
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
@@ -53,7 +53,7 @@ export function DetailField({
   const empty = value === undefined || value === null || value === '';
   return (
     <div className={cn('min-w-0', className)}>
-      <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--adm-ink-subtle)]">{label}</dt>
+      <dt className="text-[0.7333rem] font-semibold uppercase tracking-[0.07em] text-[var(--adm-ink-subtle)]">{label}</dt>
       <dd className={cn('mt-0.5 text-sm', empty ? 'text-slate-300' : 'font-medium text-[var(--adm-ink)]')}>
         {empty ? '—' : value}
       </dd>

@@ -186,7 +186,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
           </div>
           <div>
             <h3 className="font-display text-base font-bold text-slate-900">{title}</h3>
-            <p className="text-[11px] text-slate-500 sm:text-xs">{subtitle}</p>
+            <p className="text-[0.7333rem] text-slate-500 sm:text-xs">{subtitle}</p>
           </div>
         </div>
         <span className={cn('flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1', t.chip)}>
@@ -218,7 +218,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
                   <Avatar name={p.name} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-slate-900">{p.name}</p>
-                    <p className="truncate text-[11px] text-slate-500 sm:text-xs">
+                    <p className="truncate text-[0.7333rem] text-slate-500 sm:text-xs">
                       {p.position || '—'}
                       {years !== null && <span className="text-slate-400"> · {years}y</span>}
                     </p>
@@ -226,7 +226,7 @@ function MilestoneCard({ tone, icon: Icon, title, subtitle, people, dateGetter, 
                   <div className="flex-shrink-0 text-right">
                     <p className="text-xs font-semibold tabular-nums text-slate-900">{dateLabel}</p>
                     {days !== null && (
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-[0.6667rem] text-slate-400">
                         {days === 0 ? 'today' : `in ${days}d`}
                       </p>
                     )}

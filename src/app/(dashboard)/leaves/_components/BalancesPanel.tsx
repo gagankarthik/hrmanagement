@@ -55,7 +55,7 @@ export function BalancesPanel({
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
                 {['Employee', 'Type', 'Allowance', 'Used', 'Remaining', 'Utilization', 'Breakdown'].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                     {h}
                   </th>
                 ))}
@@ -118,7 +118,7 @@ export function BalancesPanel({
                             <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-100">
                               <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-[11px] font-medium tabular-nums text-slate-400">{used}/{allowance}</span>
+                            <span className="text-[0.7333rem] font-medium tabular-nums text-slate-400">{used}/{allowance}</span>
                           </div>
                         </td>
                       </>
@@ -131,7 +131,7 @@ export function BalancesPanel({
                           {breakdown.map(([t, d]) => (
                             <span
                               key={t}
-                              className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold', typeBadge[t])}
+                              className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.7333rem] font-semibold', typeBadge[t])}
                             >
                               {t} · {d}
                             </span>

@@ -35,6 +35,10 @@ function normalize(input: ClientFormData): Omit<Client, 'id' | 'createdAt' | 'up
     phone: input.phone || '',
     phoneExtension: input.phoneExtension || '',
     address: input.address || '',
+    city: input.city || '',
+    state: input.state || '',
+    zip: input.zip || '',
+    country: input.country || '',
     status: input.status || 'Active',
   };
 }

@@ -69,6 +69,21 @@ Each feature repository becomes ~15 lines of config instead of ~120 of commands.
 One `apiClient.get/post/put/del` that owns the `{success,data,error}` envelope.
 Contexts shrink to thin server-state holders.
 
+## Shared product surfaces
+
+Where four entities render the same screen, the screen lives once:
+
+- `components/dashboard/partners/PartnerProfile.tsx` — the detail page behind
+  `/clients/[id]`, `/endclients/[id]`, `/vendors/[id]` and `/subcontractors/[id]`. Each route
+  resolves its record plus that record's employees and passes both in; entity-specific blocks
+  (a subcontractor's COI) come through `extra`.
+- `components/dashboard/BackLink.tsx` — origin-aware back navigation. Partner lists stamp
+  `?from=partners` or `?from=list`, so back returns where the user actually was.
+- `lib/partner-report.ts` — the printable partner report for all four types.
+- `lib/address.ts` — partner addresses are stored as parts (street / city / state / zip /
+  country); `formatAddress`, `addressLines` and `addressSearchText` compose them. Records
+  written before the split keep their whole address in the street line and still read.
+
 ## Migration plan (incremental, behavior-preserving)
 
 | Phase | Scope | Verify |

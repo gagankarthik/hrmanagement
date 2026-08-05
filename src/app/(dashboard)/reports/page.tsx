@@ -279,10 +279,10 @@ export default function ReportsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow">Executive Summary</p>
-            <h2 className="mt-1 text-[16px] font-semibold text-[var(--adm-ink)]">
+            <h2 className="mt-1 text-[1.0667rem] font-semibold text-[var(--adm-ink)]">
               Workforce snapshot · {formatDate(new Date(), { long: true })}
             </h2>
-            <p className="mt-1 text-[12.5px] text-[var(--adm-ink-mute)]">
+            <p className="mt-1 text-[0.8333rem] text-[var(--adm-ink-mute)]">
               Live numbers across {filtered.length.toLocaleString()} {filtered.length === 1 ? 'employee' : 'employees'}{hasFilters ? ' (filtered)' : ''}.
             </p>
           </div>

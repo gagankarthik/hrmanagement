@@ -127,7 +127,7 @@ export default function I9Page() {
                       <span className="block truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
                       <span className="block truncate text-xs text-slate-500">{e.type}</span>
                     </span>
-                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', I9_BADGE[st])}>{st}</span>
+                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[0.7333rem] font-semibold ring-1', I9_BADGE[st])}>{st}</span>
                     <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
                   </button>
                 );
@@ -149,7 +149,7 @@ export default function I9Page() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Employee', 'Type', 'I-9 status', 'E-Verify', 'Retain until', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>

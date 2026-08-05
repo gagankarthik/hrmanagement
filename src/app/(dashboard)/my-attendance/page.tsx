@@ -255,21 +255,21 @@ export default function MyAttendancePage() {
         {self && (
           <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
             <div>
-              <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Position</dt>
+              <dt className="text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">Position</dt>
               <dd className="mt-0.5 truncate text-sm text-slate-700">{self.position || '—'}</dd>
             </div>
             <div>
-              <dt className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Department</dt>
+              <dt className="text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">Department</dt>
               <dd className="mt-0.5 truncate text-sm text-slate-700">{self.department || '—'}</dd>
             </div>
             <div>
-              <dt className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <dt className="flex items-center gap-1 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                 <UserRound className="h-3 w-3" /> Manager
               </dt>
               <dd className="mt-0.5 truncate text-sm text-slate-700">{self.reportingManager || '—'}</dd>
             </div>
             <div>
-              <dt className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <dt className="flex items-center gap-1 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                 <MapPin className="h-3 w-3" /> Location
               </dt>
               <dd className="mt-0.5 truncate text-sm text-slate-700">
@@ -297,7 +297,7 @@ export default function MyAttendancePage() {
           <div className="surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Today</p>
+                <p className="text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">Today</p>
                 <p className="mt-1 font-display text-lg font-bold text-slate-900">{formatDate(today)}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-500">
                   <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -446,7 +446,7 @@ export default function MyAttendancePage() {
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/60">
                       {['Date', 'Status', 'Check-in', 'Check-out', 'Hours', 'Note'].map((h) => (
-                        <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                           {h}
                         </th>
                       ))}

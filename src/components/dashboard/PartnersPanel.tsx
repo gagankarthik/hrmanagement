@@ -97,7 +97,7 @@ export default function PartnersPanel() {
           <table className="w-full min-w-[620px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
-                {headers.map((h) => <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>)}
+                {headers.map((h) => <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">{h}</th>)}
               </tr>
             </thead>
             <tbody>

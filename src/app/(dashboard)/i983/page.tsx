@@ -121,7 +121,7 @@ export default function I983Page() {
                       <span className="block truncate text-sm font-semibold text-slate-900">{e.name || 'Unnamed'}</span>
                       <span className="block truncate text-xs text-slate-500">{e.type} · {wa || 'no work auth'}</span>
                     </span>
-                    {isOptAuth(wa) && <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 ring-1 ring-brand-200">STEM OPT</span>}
+                    {isOptAuth(wa) && <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[0.7333rem] font-semibold text-brand-700 ring-1 ring-brand-200">STEM OPT</span>}
                     <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" strokeWidth={1.75} />
                   </button>
                 );
@@ -143,7 +143,7 @@ export default function I983Page() {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/60">
                   {['Employee', 'Work auth', 'I-983 status', 'Next evaluation', ''].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                    <th key={h} className="px-5 py-3 text-left text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -159,7 +159,7 @@ export default function I983Page() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-600">{workAuth || '—'}</span>
-                        {opt && <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 ring-1 ring-brand-200">STEM OPT</span>}
+                        {opt && <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[0.7333rem] font-semibold text-brand-700 ring-1 ring-brand-200">STEM OPT</span>}
                       </div>
                     </td>
                     <td className="px-5 py-3.5"><span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1', I983_BADGE[status])}>{status}</span></td>

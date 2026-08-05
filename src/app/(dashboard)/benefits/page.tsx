@@ -282,11 +282,11 @@ function BenefitsContent() {
 
                     {/* Eligibility */}
                     <div className="mt-3">
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Eligibility</p>
+                      <p className="mb-1 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">Eligibility</p>
                       {plan.eligibility?.length ? (
                         <div className="flex flex-wrap gap-1">
                           {plan.eligibility.map((e) => (
-                            <span key={e} className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            <span key={e} className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[0.7333rem] font-medium text-slate-600">
                               {e}
                             </span>
                           ))}
@@ -300,7 +300,7 @@ function BenefitsContent() {
                         (they shouldn't see other people's enrollment). */}
                     {canManage && (
                       <div className="mt-3">
-                        <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <p className="mb-1 flex items-center gap-1 text-[0.7333rem] font-semibold uppercase tracking-wider text-slate-400">
                           <Users className="h-3 w-3" /> Enrolled · {enrolledCount}
                         </p>
                         {enrolledCount > 0 ? (
@@ -322,11 +322,11 @@ function BenefitsContent() {
                     {(cost || employer) && (
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="rounded-lg bg-slate-50 px-2.5 py-2">
-                          <p className="flex items-center gap-1 text-[11px] text-slate-400"><DollarSign className="h-3 w-3" /> Cost / mo</p>
+                          <p className="flex items-center gap-1 text-[0.7333rem] text-slate-400"><DollarSign className="h-3 w-3" /> Cost / mo</p>
                           <p className="text-sm font-semibold text-slate-800">{cost ?? '—'}</p>
                         </div>
                         <div className="rounded-lg bg-slate-50 px-2.5 py-2">
-                          <p className="flex items-center gap-1 text-[11px] text-slate-400"><Building2 className="h-3 w-3" /> Employer</p>
+                          <p className="flex items-center gap-1 text-[0.7333rem] text-slate-400"><Building2 className="h-3 w-3" /> Employer</p>
                           <p className="text-sm font-semibold text-slate-800">{employer ?? '—'}</p>
                         </div>
                       </div>

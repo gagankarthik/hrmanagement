@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/format';
 import { friendlyError } from '@/lib/errors';
 import { printPartnerReport } from '@/lib/partner-report';
+import { formatAddress, hasAddress } from '@/lib/address';
 import { EMPLOYEE_TYPES } from '@/features/employees/domain/employee.types';
 import { PageContainer } from '@/components/dashboard/page-container';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -43,6 +44,10 @@ export interface PartnerProfileRecord {
   phone?: string;
   phoneExtension?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   status: 'Active' | 'Inactive';
   createdAt: string;
   updatedAt: string;
@@ -87,7 +92,7 @@ const typeMeta = new Map(EMPLOYEE_TYPES.map((t) => [t.value as string, t]));
 function TypePill({ type }: { type: string }) {
   const dot = typeMeta.get(type)?.dotColor ?? '#94a3b8';
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[4px] bg-[var(--adm-surface-2)] px-2 py-0.5 text-[12px] font-semibold text-[var(--adm-ink-mute)]">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[4px] bg-[var(--adm-surface-2)] px-2 py-0.5 text-[0.8rem] font-semibold text-[var(--adm-ink-mute)]">
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dot }} aria-hidden />
       {type}
     </span>
@@ -134,7 +139,10 @@ export function PartnerProfile({
 
   const handlePrint = () => {
     if (!partner) return;
-    const ok = printPartnerReport({ partner, employees, singular, accent });
+    const ok = printPartnerReport({
+      partner: { ...partner, address: formatAddress(partner) },
+      employees, singular, accent,
+    });
     if (!ok) toast.error('Popup blocked', 'Allow popups for this site to print the report.');
   };
 
@@ -165,7 +173,8 @@ export function PartnerProfile({
     );
   }
 
-  const hasContact = Boolean(partner.contactPerson || partner.email || partner.phone || partner.address);
+  const fullAddress = formatAddress(partner);
+  const hasContact = Boolean(partner.contactPerson || partner.email || partner.phone) || hasAddress(partner);
 
   const columns: DataTableColumn<PartnerProfileEmployee>[] = [
     {
@@ -244,12 +253,12 @@ export function PartnerProfile({
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <StatusBadge label={partner.status} tone={partner.status === 'Active' ? 'success' : 'danger'} />
             <span>{singular}</span>
-            {partner.address && (
+            {fullAddress && (
               <>
                 <span aria-hidden>·</span>
                 <span className="inline-flex max-w-xs items-center gap-1 truncate">
                   <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-                  <span className="truncate">{partner.address}</span>
+                  <span className="truncate">{fullAddress}</span>
                 </span>
               </>
             )}
@@ -311,6 +320,10 @@ export function PartnerProfile({
                 )}
               />
               <DetailField label="Address" value={partner.address} className="sm:col-span-2" />
+              <DetailField label="City" value={partner.city} />
+              <DetailField label="State" value={partner.state} />
+              <DetailField label="ZIP" value={partner.zip} />
+              <DetailField label="Country" value={partner.country} />
               <DetailField label="Added" value={formatDate(partner.createdAt)} />
               <DetailField label="Last updated" value={formatDate(partner.updatedAt)} />
             </dl>
@@ -348,8 +361,8 @@ export function PartnerProfile({
       <div className="surface">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--adm-line)] px-5 py-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-[14px] font-semibold text-[var(--adm-ink)]">Employees</h2>
-            <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-[12px] font-medium text-[var(--adm-ink-mute)]">
+            <h2 className="text-[0.9333rem] font-semibold text-[var(--adm-ink)]">Employees</h2>
+            <span className="rounded-full bg-[var(--adm-surface-2)] px-2 py-0.5 text-[0.8rem] font-medium text-[var(--adm-ink-mute)]">
               {employees.length}
             </span>
           </div>
