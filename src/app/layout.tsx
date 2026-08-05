@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/ui/toast";
 import { RouteProgressBar } from "@/components/ui/route-progress";
-import { BRAND } from "@/config/brand";
+import { BRAND, SITE_URL } from "@/config/brand";
 
 // Brand typeface — Geist Sans across display and body (Ocean Blue brand kit)
 const geistSans = Geist({
@@ -28,25 +28,52 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(`https://${BRAND.domain}`),
+  // Canonical host is the portal itself, not the marketing site.
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: `${BRAND.name} | ${BRAND.tagline}`,
+    default: `${BRAND.legalName} | ${BRAND.tagline}`,
     template: `%s · ${BRAND.name}`,
   },
   description: BRAND.description,
   applicationName: BRAND.name,
+  authors: [{ name: BRAND.legalName, url: `https://${BRAND.domain}` }],
+  creator: BRAND.legalName,
+  publisher: BRAND.legalName,
+  category: "business",
+  keywords: [
+    "Ocean Blue Corporation",
+    "IT services and staffing",
+    "enterprise IT delivery",
+    "government IT projects",
+    "W-2 contract 1099 offshore staffing",
+    "employee portal",
+    "workforce management",
+  ],
+  alternates: { canonical: "/" },
+  // Public pages may be indexed; everything behind sign-in is excluded in
+  // robots.ts and by the dashboard layout's own metadata.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
+  icons: { icon: "/logo.png", apple: "/logo.png" },
   openGraph: {
     type: "website",
-    siteName: BRAND.name,
-    title: `${BRAND.name} | ${BRAND.tagline}`,
+    siteName: BRAND.legalName,
+    title: `${BRAND.legalName} | ${BRAND.tagline}`,
     description: BRAND.shortDescription,
-    url: `https://${BRAND.domain}`,
+    url: "/",
+    locale: "en_US",
+    images: [{ url: "/logo.png", width: 277, height: 76, alt: BRAND.legalName }],
   },
   twitter: {
     card: "summary",
-    title: `${BRAND.name} | ${BRAND.tagline}`,
+    title: `${BRAND.legalName} | ${BRAND.tagline}`,
     description: BRAND.shortDescription,
+    images: ["/logo.png"],
   },
+  formatDetection: { telephone: false, address: false, email: false },
 };
 
 export default function RootLayout({

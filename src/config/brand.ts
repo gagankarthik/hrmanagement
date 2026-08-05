@@ -23,3 +23,11 @@ export const BRAND = {
   contactEmail: 'hr@oceanbluecorp.com',
   domain: 'oceanbluecorp.com',
 } as const;
+
+/**
+ * Where this portal actually lives. The company website is `BRAND.domain`;
+ * the portal is its own host, and canonical URLs / sitemap entries must point
+ * here rather than at the marketing site. `NEXT_PUBLIC_APP_URL` wins when set
+ * (Amplify provides it per environment).
+ */
+export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || `https://hr.${BRAND.domain}`).replace(/\/$/, '');

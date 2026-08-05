@@ -9,9 +9,10 @@ import { useAuth } from '@/context/AuthContext';
 import { BRAND } from '@/config/brand';
 
 const navLinks = [
-  { href: '/#platform', label: 'Platform' },
-  { href: '/#ess', label: 'Self-service' },
-  { href: '/why-us', label: 'Why work with us' },
+  { href: '/#company', label: 'Who we are' },
+  { href: '/#culture', label: 'Culture' },
+  { href: '/#benefits', label: 'Benefits' },
+  { href: '/platform', label: 'Platform' },
 ];
 
 function Logo({ className }: { className?: string }) {
@@ -191,20 +192,12 @@ export function SiteNav() {
             ) : isAuthenticated ? (
               <UserMenu name={user?.name} email={user?.email} onSignOut={handleSignOut} />
             ) : (
-              <>
-                <Link
-                  href="/signup"
-                  className="rounded-lg px-3.5 py-2 text-[14px] font-medium text-gray-700 transition-colors hover:text-[var(--hz-cobalt)]"
-                >
-                  Request access
-                </Link>
-                <Link
-                  href="/login"
-                  className="hz-btn-fill rounded-full bg-[var(--hz-cobalt)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-shadow hover:shadow-md"
-                >
-                  Sign in
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="hz-btn-fill rounded-full bg-[var(--hz-cobalt)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                Sign in
+              </Link>
             )}
           </div>
 
@@ -292,13 +285,6 @@ export function SiteNav() {
                     className="hz-btn-fill inline-flex w-full items-center justify-center rounded-full bg-[var(--hz-cobalt)] px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     Sign in
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setOpen(false)}
-                    className="inline-flex w-full items-center justify-center rounded-full border border-[var(--hz-line-2)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--hz-text)] transition-colors hover:border-[var(--hz-cobalt)] hover:text-[var(--hz-cobalt)]"
-                  >
-                    Request access
                   </Link>
                 </div>
               )}

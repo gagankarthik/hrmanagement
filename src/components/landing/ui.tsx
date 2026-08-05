@@ -31,7 +31,7 @@ export function Cta({
 }) {
   const Icon = CTA_ICONS[icon];
   const base =
-    'group inline-flex items-center gap-3 rounded-full py-2 pl-6 pr-2 text-[14px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]';
+    'group inline-flex items-center gap-3 rounded-full py-2 pl-6 pr-2 text-[14px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hz-cobalt)]';
   const variants = {
     primary:
       'bg-[var(--hz-cobalt)] text-white hover:bg-[var(--hz-cobalt-600)] shadow-[0_14px_34px_-14px_rgba(37,99,235,0.7)]',

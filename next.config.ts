@@ -24,6 +24,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.pravatar.cc",
       },
+      // Landing photography. Swap these for real Ocean Blue photos when they
+      // exist: drop the files in /public and change the srcs in lib/photos.ts.
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
   async headers() {

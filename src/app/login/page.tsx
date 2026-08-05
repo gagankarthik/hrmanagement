@@ -288,7 +288,7 @@ export default function LoginPage() {
                 <p className="mt-5 text-center text-sm text-[var(--adm-ink-mute)]">
                   Don&apos;t have an account?{" "}
                   <Link href="/signup" className="font-semibold text-[var(--adm-accent)] hover:text-[var(--adm-accent-strong)]">
-                    Request access
+                    Ask HR for one
                   </Link>
                 </p>
               </>

@@ -415,6 +415,16 @@
   }
 }
 
+/* Photograph settle: a wide shot eases back to rest as it enters. */
+@keyframes hz-settle {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 /* Word-by-word headline reveal (pairs with an overflow-hidden word wrapper) */
 @keyframes hz-rise {
   from {
