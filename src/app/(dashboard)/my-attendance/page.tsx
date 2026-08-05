@@ -9,6 +9,8 @@ import {
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { PageContainer } from '@/components/dashboard/page-container';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { Tabs } from '@/components/ui/tabs';
+import { AttendanceCalendar } from '@/components/dashboard/AttendanceCalendar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SkeletonTable } from '@/components/ui/skeleton';
 import { Avatar } from '@/components/ui/avatar';
@@ -142,6 +144,13 @@ export default function MyAttendancePage() {
 
   // ── This month ──────────────────────────────────────────────────────────────
   const monthPrefix = today.slice(0, 7);
+  /** History as a list or as a month grid. The KPIs above stay the same either way. */
+  const [historyView, setHistoryView] = useState<'list' | 'month'>('list');
+  const [calCursor, setCalCursor] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
   const monthRecords = useMemo(
     () => myRecords.filter((r) => r.date?.startsWith(monthPrefix)),
     [myRecords, monthPrefix]
@@ -396,12 +405,33 @@ export default function MyAttendancePage() {
 
           {/* ── History ── */}
           <div className="surface">
-            <div className="border-b border-slate-100 px-5 py-4">
-              <h2 className="font-display text-sm font-bold text-slate-900">My record</h2>
-              <p className="text-xs text-slate-400">Your attendance history, newest first</p>
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 className="font-display text-sm font-bold text-slate-900">My record</h2>
+                <p className="text-xs text-slate-400">
+                  {historyView === 'month' ? 'Your month at a glance' : 'Your attendance history, newest first'}
+                </p>
+              </div>
+              <Tabs
+                ariaLabel="History view"
+                value={historyView}
+                onChange={setHistoryView}
+                items={[
+                  { value: 'list' as const, label: 'List', icon: CalendarCheck },
+                  { value: 'month' as const, label: 'Month', icon: CalendarDays },
+                ]}
+              />
             </div>
 
-            {myRecords.length === 0 ? (
+            {historyView === 'month' ? (
+              <AttendanceCalendar
+                year={calCursor.year}
+                month={calCursor.month}
+                records={myRecords}
+                onMonthChange={(year, month) => setCalCursor({ year, month })}
+                onSelectDate={() => setHistoryView('list')}
+              />
+            ) : myRecords.length === 0 ? (
               <div className="p-5">
                 <EmptyState
                   icon={CalendarCheck}

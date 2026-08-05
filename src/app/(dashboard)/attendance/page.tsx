@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  CalendarCheck, Plus, Pencil, Trash2, Search,
-  Home, XCircle, CheckCircle2, Percent, LogIn, LogOut
+  CalendarCheck, CalendarDays, Plus, Pencil, Trash2, Search,
+  Home, XCircle, CheckCircle2, Percent, LogIn, LogOut, Timer, UserRoundX
 } from 'lucide-react';
 import AttendanceModal from '@/components/dashboard/AttendanceModal';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -20,6 +20,8 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
 import { StatCard, StatGrid } from '@/components/ui/stat-card';
+import { Tabs } from '@/components/ui/tabs';
+import { AttendanceCalendar, rollUpDay } from '@/components/dashboard/AttendanceCalendar';
 import { formatDate } from '@/lib/format';
 import { Avatar } from '@/components/ui/avatar';
 
@@ -78,6 +80,32 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
   const attendanceRate = statScope.length
     ? Math.round(((presentCount + remoteCount + halfCount) / statScope.length) * 100)
     : 0;
+
+  /**
+   * Clock state for the scope in view.
+   *
+   * `stillIn` is the one worth watching: someone checked in and never checked
+   * out. On today's date that is simply people still at work; on a past date it
+   * is a missing check-out somebody has to correct, which is why the hint below
+   * says which of the two it is rather than leaving it ambiguous.
+   */
+  const clock = useMemo(() => rollUpDay(statScope), [statScope]);
+  const isToday = dateFilter === todayISO();
+  /** Employees with no record at all on the selected day. */
+  const unrecorded = dateFilter ? Math.max(0, employees.length - statScope.length) : 0;
+
+  // Month view state. Defaults to the month of the selected day so switching
+  // views never jumps somewhere unrelated.
+  const [view, setView] = useState<'day' | 'month'>('day');
+  const [cursor, setCursor] = useState(() => {
+    const base = dateFilter || todayISO();
+    return { year: Number(base.slice(0, 4)), month: Number(base.slice(5, 7)) - 1 };
+  });
+
+  const monthRecords = useMemo(() => {
+    const prefix = `${cursor.year}-${String(cursor.month + 1).padStart(2, '0')}`;
+    return validRecords.filter((r) => r.date?.startsWith(prefix));
+  }, [validRecords, cursor]);
 
   const attendanceColumns: DataTableColumn<Attendance>[] = [
     {
@@ -196,15 +224,90 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
 
       {/* Stats — hidden in embedded mode so the host page's common KPI strip is the single source */}
       {!embedded && (
-        <StatGrid cols={4}>
-          <StatCard label="Present" value={presentCount} icon={CheckCircle2} tone="emerald" hint={dateFilter ? 'on selected date' : 'all records'} />
-          <StatCard label="Remote" value={remoteCount} icon={Home} tone="sky" hint={dateFilter ? 'on selected date' : 'all records'} />
-          <StatCard label="Absent" value={absentCount} icon={XCircle} tone="red" hint={dateFilter ? 'on selected date' : 'all records'} />
-          <StatCard label="Attendance rate" value={`${attendanceRate}%`} icon={Percent} tone="brand" hint={`${statScope.length} record${statScope.length !== 1 ? 's' : ''}`} />
-        </StatGrid>
+        <>
+          <StatGrid cols={4}>
+            <StatCard
+              label="Clocked in"
+              value={clock.clockedIn}
+              icon={LogIn}
+              tone="emerald"
+              hint={dateFilter ? 'check-in recorded' : 'across all records'}
+            />
+            <StatCard
+              label="Clocked out"
+              value={clock.clockedOut}
+              icon={LogOut}
+              tone="sky"
+              hint="in and out recorded"
+            />
+            <StatCard
+              label={isToday ? 'Still in' : 'No clock-out'}
+              value={clock.stillIn}
+              icon={Timer}
+              tone={clock.stillIn > 0 && !isToday ? 'amber' : 'slate'}
+              hint={isToday ? 'no check-out yet' : 'missing a check-out'}
+            />
+            <StatCard
+              label="Not recorded"
+              value={dateFilter ? unrecorded : '—'}
+              icon={UserRoundX}
+              tone={unrecorded > 0 ? 'red' : 'slate'}
+              hint={dateFilter ? `of ${employees.length} employees` : 'pick a date'}
+            />
+          </StatGrid>
+
+          <StatGrid cols={4}>
+            <StatCard label="Present" value={presentCount} icon={CheckCircle2} tone="emerald" hint={dateFilter ? 'on selected date' : 'all records'} />
+            <StatCard label="Remote" value={remoteCount} icon={Home} tone="sky" hint={dateFilter ? 'on selected date' : 'all records'} />
+            <StatCard label="Absent" value={absentCount} icon={XCircle} tone="red" hint={dateFilter ? 'on selected date' : 'all records'} />
+            <StatCard label="Attendance rate" value={`${attendanceRate}%`} icon={Percent} tone="brand" hint={`${statScope.length} record${statScope.length !== 1 ? 's' : ''}`} />
+          </StatGrid>
+
+          <div className="surface overflow-hidden">
+            <div className="border-b border-slate-100 px-5 pt-3">
+              <Tabs
+                ariaLabel="Attendance view"
+                value={view}
+                onChange={setView}
+                items={[
+                  { value: 'day' as const, label: 'Day', icon: CalendarCheck },
+                  { value: 'month' as const, label: 'Month', icon: CalendarDays, count: monthRecords.length },
+                ]}
+              />
+            </div>
+
+            {view === 'month' && (
+              <AttendanceCalendar
+                year={cursor.year}
+                month={cursor.month}
+                records={monthRecords}
+                selectedDate={dateFilter}
+                onMonthChange={(year, month) => setCursor({ year, month })}
+                onSelectDate={(date) => {
+                  // Picking a day is a drill-down, so follow it into day view
+                  // rather than leaving the person to find the switch.
+                  setDateFilter(date);
+                  setView('day');
+                }}
+              />
+            )}
+
+            {view === 'day' && (
+              <p className="px-5 py-3.5 text-sm text-slate-500">
+                {dateFilter
+                  ? `Showing ${filtered.length} record${filtered.length === 1 ? '' : 's'} for ${formatDate(dateFilter)}.`
+                  : 'Showing every record. Pick a date below to focus on one day.'}
+              </p>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Table card */}
+      {/* Table card. Hidden while the month grid is up: the two answer the same
+          question at different resolutions, and showing both makes the page
+          scroll past a calendar to reach a table filtered to one day. Embedded
+          hosts render no view switcher, so they always get the table. */}
+      {(embedded || view === 'day') && (
       <div className="surface">
         {/* Toolbar */}
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -280,6 +383,7 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
           </div>
         )}
       </div>
+      )}
 
       <AttendanceModal
         isOpen={modalState.isOpen}
