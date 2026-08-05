@@ -34,6 +34,12 @@ const amplifyConfig = {
   },
 };
 
+/**
+ * Refresh token validity on the Cognito app client, in days. Keep this in step
+ * with the pool: `describe-user-pool-client → RefreshTokenValidity`.
+ */
+const REFRESH_TOKEN_DAYS = 5;
+
 export function configureAmplify() {
   Amplify.configure(amplifyConfig);
 
@@ -55,8 +61,12 @@ export function configureAmplify() {
     // browser holding a live token for the website's pool until they expire.
     purgeSharedDomainCognitoCookies();
 
+    // Cookie lifetime tracks the app client's refresh token validity (5 days).
+    // A longer cookie is worse than useless: the browser keeps presenting a
+    // session whose refresh token Cognito has already expired, so the user
+    // looks signed in until the first API call bounces them to the login page.
     cognitoUserPoolsTokenProvider.setKeyValueStorage(
-      new CookieStorage({ path: '/', sameSite: 'lax', secure, expires: 30 }),
+      new CookieStorage({ path: '/', sameSite: 'lax', secure, expires: REFRESH_TOKEN_DAYS }),
     );
   }
 }

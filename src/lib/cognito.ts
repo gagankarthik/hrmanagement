@@ -9,6 +9,7 @@ import {
   AdminListGroupsForUserCommand,
   CreateGroupCommand,
   ListUsersCommand,
+  ListUsersInGroupCommand,
   type UserType,
 } from '@aws-sdk/client-cognito-identity-provider';
 
@@ -128,7 +129,68 @@ export async function groupRoleFor(username: string): Promise<AppRole | undefine
   }
 }
 
-/** List all users in the pool (paginates up to a reasonable limit). */
+/**
+ * Every user's role, read from group membership in one pass.
+ *
+ * The obvious implementation asks Cognito which groups each user is in, which
+ * is one API call per user and gets slower every time somebody is hired. This
+ * asks the opposite question: who is in each role group? There are only three
+ * roles, so the whole pool costs three paginated queries no matter how many
+ * people are in it.
+ *
+ * Returns username → highest-privilege role. Best-effort: a failure leaves the
+ * map short rather than breaking the Users page, and the mirrored
+ * `custom:role` still carries the display value.
+ */
+async function roleByUsername(): Promise<Map<string, AppRole>> {
+  const found = new Map<string, AppRole>();
+
+  await Promise.all(
+    ROLE_DISPLAY_PRIORITY.map(async (role) => {
+      const group = roleGroupName(role);
+      try {
+        let nextToken: string | undefined;
+        do {
+          const res = await client.send(
+            new ListUsersInGroupCommand({
+              UserPoolId: USER_POOL_ID,
+              GroupName: group,
+              Limit: 60,
+              NextToken: nextToken,
+            }),
+          );
+          for (const u of res.Users || []) {
+            const name = u.Username;
+            if (!name) continue;
+            // Priority order matters: admin beats hr beats employee, so only
+            // fill a slot that a more senior role has not already claimed.
+            const existing = found.get(name);
+            if (
+              !existing ||
+              ROLE_DISPLAY_PRIORITY.indexOf(role) < ROLE_DISPLAY_PRIORITY.indexOf(existing)
+            ) {
+              found.set(name, role);
+            }
+          }
+          nextToken = res.NextToken;
+        } while (nextToken);
+      } catch {
+        // Group may not exist yet on a fresh pool — that is not an error.
+      }
+    }),
+  );
+
+  return found;
+}
+
+/**
+ * Every user in the pool, newest first.
+ *
+ * Pagination runs to completion. An earlier version stopped at 600 and said
+ * nothing, so the Users page would quietly start hiding people as the company
+ * grew — the kind of bug nobody reports because it looks like the list is just
+ * the list.
+ */
 export async function listUsers(): Promise<AppUser[]> {
   const users: AppUser[] = [];
   let paginationToken: string | undefined;
@@ -138,20 +200,14 @@ export async function listUsers(): Promise<AppUser[]> {
     );
     (res.Users || []).forEach((u) => users.push(toAppUser(u)));
     paginationToken = res.PaginationToken;
-  } while (paginationToken && users.length < 600);
+  } while (paginationToken);
 
-  // Enrich each user's role from their live group membership (authoritative),
-  // overriding the mirrored `custom:role`. Bounded concurrency to avoid Cognito
-  // AdminListGroupsForUser throttling on larger pools.
-  const CONCURRENCY = 12;
-  for (let i = 0; i < users.length; i += CONCURRENCY) {
-    const chunk = users.slice(i, i + CONCURRENCY);
-    await Promise.all(
-      chunk.map(async (u) => {
-        const groupRole = await groupRoleFor(u.username);
-        if (groupRole) u.role = groupRole;
-      }),
-    );
+  // Live group membership is authoritative; it overrides the mirrored
+  // `custom:role`, which is only kept for cheap display.
+  const roles = await roleByUsername();
+  for (const u of users) {
+    const groupRole = roles.get(u.username);
+    if (groupRole) u.role = groupRole;
   }
 
   return users.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
