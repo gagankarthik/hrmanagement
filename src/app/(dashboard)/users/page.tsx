@@ -84,6 +84,8 @@ export default function UsersPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [inviteRole, setInviteRole] = useState<AppRole>('employee');
+  /** Employee record to attach the new login to, chosen during the invite. */
+  const [inviteEmployeeId, setInviteEmployeeId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
@@ -137,7 +139,13 @@ export default function UsersPage() {
   const pendingCount = users.filter((u) => u.status === 'FORCE_CHANGE_PASSWORD').length;
 
   const closeInvite = () => {
-    if (!submitting) { setInviteOpen(false); setEmail(''); setName(''); setInviteRole('employee'); }
+    if (!submitting) {
+      setInviteOpen(false);
+      setEmail('');
+      setName('');
+      setInviteRole('employee');
+      setInviteEmployeeId('');
+    }
   };
 
   /**
@@ -158,14 +166,48 @@ export default function UsersPage() {
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to invite');
+
+      // Attach the new login to its employee record straight away. Doing it here
+      // is what makes the Users page picker an exception handler rather than a
+      // second step somebody has to remember: an employee whose login is not
+      // linked cannot see their own documents or mark attendance.
+      const sub = (result.data as { sub?: string } | undefined)?.sub;
+      let linkNote = '';
+      if (inviteEmployeeId && !sub) {
+        toast.error(
+          'Invited, but not linked',
+          'Cognito did not return a user id for the new account. Link them from the Employee record column.',
+        );
+      } else if (inviteEmployeeId && sub) {
+        try {
+          const linkRes = await apiFetch('/api/employees/link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sub, email: email.trim(), employeeId: inviteEmployeeId }),
+          });
+          const linkResult = await linkRes.json();
+          if (!linkResult.success) throw new Error(linkResult.error || 'Link failed');
+          const who = employees.find((emp) => emp.id === inviteEmployeeId)?.name;
+          linkNote = who ? ` Linked to ${who}.` : '';
+          await fetchEmployees();
+        } catch (linkErr) {
+          // The account exists either way, so this is a warning, not a failure.
+          toast.error(
+            'Invited, but not linked',
+            `${friendlyError(linkErr)} Link them from the Employee record column.`,
+          );
+        }
+      }
+
       toast.success(
         'Invitation sent',
-        `${email.trim()} was invited as ${ROLE_LABELS[inviteRole]} and will receive an email with a temporary password.`,
+        `${email.trim()} was invited as ${ROLE_LABELS[inviteRole]} and will receive an email with a temporary password.${linkNote}`,
       );
       setInviteOpen(false);
       setEmail('');
       setName('');
       setInviteRole('employee');
+      setInviteEmployeeId('');
       fetchUsers();
     } catch (err) {
       toast.error('Could not send invite', friendlyError(err));
@@ -225,10 +267,11 @@ export default function UsersPage() {
   };
 
   // ── Login ↔ employee link ───────────────────────────────────────────────────
-  // The company website and this portal share one Cognito pool, so a sign-in is
-  // not automatically a person in the HR database. Most links form themselves
-  // the first time someone signs in with the email already on their record;
-  // this is where HR fixes the rest.
+  // A sign-in is not automatically a person in the HR database: accounts and
+  // employee records are created separately, and one can exist without the
+  // other. The invite modal links them at creation time, and most remaining
+  // links form themselves the first time someone signs in with the email
+  // already on their record. This column is where HR fixes what is left.
   const employeeOptions = useMemo(
     () => [
       { value: '', label: 'Not linked', sublabel: 'No employee record' },
@@ -257,6 +300,18 @@ export default function UsersPage() {
       return byEmail?.id ?? '';
     },
     [employees],
+  );
+
+  /**
+   * An `employee` account with no employee record is a broken state, not a
+   * configuration choice: they can sign in, but the portal cannot tell which
+   * person they are, so their documents, payslips and attendance come back
+   * empty and marking attendance is refused outright. Surfaced here rather than
+   * left for the person it happens to to discover.
+   */
+  const unlinkedEmployeeCount = useMemo(
+    () => users.filter((u) => u.role === 'employee' && !linkedEmployeeId(u)).length,
+    [users, linkedEmployeeId],
   );
 
   const linkEmployee = async (u: AppUser, employeeId: string) => {
@@ -348,17 +403,26 @@ export default function UsersPage() {
       header: 'Employee record',
       hideBelow: 'lg',
       sortValue: (u) => employees.find((e) => e.id === linkedEmployeeId(u))?.name ?? '',
-      cell: (u) => (
-        <div onClick={(e) => e.stopPropagation()} className="min-w-[200px]">
-          <Combobox
-            value={linkedEmployeeId(u)}
-            onChange={(v) => linkEmployee(u, v)}
-            options={employeeOptions}
-            disabled={linkingFor === u.username}
-            placeholder="Not linked"
-          />
-        </div>
-      ),
+      cell: (u) => {
+        const needsLink = u.role === 'employee' && !linkedEmployeeId(u);
+        return (
+          <div onClick={(e) => e.stopPropagation()} className="min-w-[200px] space-y-1">
+            <Combobox
+              value={linkedEmployeeId(u)}
+              onChange={(v) => linkEmployee(u, v)}
+              options={employeeOptions}
+              disabled={linkingFor === u.username}
+              placeholder={needsLink ? 'Needs linking' : 'Not linked'}
+            />
+            {needsLink && (
+              <p className="flex items-center gap-1 text-[11px] font-medium text-amber-600">
+                <ShieldAlert className="h-3 w-3 shrink-0" />
+                Sees no documents or attendance
+              </p>
+            )}
+          </div>
+        );
+      },
     },
     {
       id: 'hrAccess',
@@ -422,10 +486,17 @@ export default function UsersPage() {
         }
       />
 
-      <StatGrid cols={3}>
+      <StatGrid cols={4}>
         <StatCard label="Total users" value={users.length} icon={UserCog} tone="slate" hint="with sign-in access" />
         <StatCard label="Active" value={activeCount} icon={CheckCircle2} tone="emerald" hint="completed setup" />
         <StatCard label="Pending invites" value={pendingCount} icon={Clock} tone="amber" hint="awaiting first sign-in" />
+        <StatCard
+          label="Needs linking"
+          value={unlinkedEmployeeCount}
+          icon={ShieldAlert}
+          tone={unlinkedEmployeeCount > 0 ? 'red' : 'slate'}
+          hint={unlinkedEmployeeCount > 0 ? 'employees with no record' : 'every employee is linked'}
+        />
       </StatGrid>
 
       <div className="surface">
@@ -563,6 +634,35 @@ export default function UsersPage() {
                 </p>
                 {!admin && (
                   <p className="text-xs text-slate-400">Admin accounts are created by an administrator.</p>
+                )}
+              </div>
+
+              {/* Linking here saves the second step. Without a link the portal
+                  cannot tell which person signed in, so an employee sees none of
+                  their own documents, payslips or attendance. */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-slate-700">
+                  Employee record{inviteRole === 'employee' ? '' : ' (optional)'}
+                </label>
+                <Combobox
+                  value={inviteEmployeeId}
+                  onChange={setInviteEmployeeId}
+                  options={employeeOptions}
+                  placeholder="Search employees..."
+                />
+                {inviteRole === 'employee' && !inviteEmployeeId ? (
+                  <p className="flex items-start gap-1.5 text-xs text-amber-600">
+                    <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Without a linked record they can sign in, but their documents, payslips and
+                      attendance will be empty. You can link them later from the table.
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-400">
+                    Connects this sign-in to a person, so the portal can show them their own leave,
+                    attendance and documents.
+                  </p>
                 )}
               </div>
               <p className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">

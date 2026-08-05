@@ -6,15 +6,18 @@ import { clearSelfEmployeeCache } from '@/shared/server/auth/self';
 import type { Employee } from '@/types/employee';
 
 /**
- * Link a shared-pool login to an employee record.
+ * Link a login to an employee record.
  *
- * The company website and this portal authenticate against the same Cognito
- * pool, so the portal has to be told which sign-in belongs to which person
- * before it can show them their own leave, attendance and documents. Most links
- * form themselves the first time someone signs in with the email already on
- * their employee record; this endpoint is how HR fixes the rest — someone who
- * signs in with a personal address, a record created after the account, or a
- * link pointed at the wrong person.
+ * Accounts and employee records are created separately: HR onboards a person
+ * into the database, and invites a sign-in for them, and either can exist
+ * without the other. The portal has to be told which sign-in belongs to which
+ * person before it can show them their own leave, attendance and documents.
+ *
+ * The invite flow calls this straight after creating the account, and most of
+ * the rest form themselves the first time someone signs in with the email
+ * already on their record. This endpoint is also how HR fixes what is left:
+ * someone who signs in with a personal address, a record created after the
+ * account, or a link pointed at the wrong person.
  *
  * POST { sub, email?, employeeId }   → link (moves the link off any other record)
  * POST { sub, employeeId: null }     → unlink
