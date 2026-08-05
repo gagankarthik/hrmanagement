@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   UserCog, UserPlus, Mail, Search, Trash2, RotateCw, CheckCircle2, Clock,
-  ShieldAlert, X, Loader2,
+  ShieldAlert, X, Loader2, AlertCircle, UserRoundCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { useToast } from '@/components/ui/toast';
 import { INVITE_ROLE_OPTIONS, ROLE_LABELS, type AppRole } from '@/config/access';
+import { cn } from '@/lib/utils';
 import { friendlyError } from '@/lib/errors';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Avatar } from '@/components/ui/avatar';
@@ -89,6 +90,11 @@ export default function UsersPage() {
   /** Employee record to attach the new login to, chosen during the invite. */
   const [inviteEmployeeId, setInviteEmployeeId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  /** Account whose employee link is being chosen, plus that dialog's search. */
+  const [linkTarget, setLinkTarget] = useState<AppUser | null>(null);
+  const [linkSearch, setLinkSearch] = useState('');
+  const linkTrapRef = useFocusTrap<HTMLDivElement>(linkTarget !== null);
 
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -333,6 +339,24 @@ export default function UsersPage() {
     [users, linkedEmployeeId],
   );
 
+  const closeLinkDialog = () => {
+    setLinkTarget(null);
+    setLinkSearch('');
+  };
+
+  /** Employees matching the dialog's search, name or email, capped for the list. */
+  const linkResults = useMemo(() => {
+    const q = linkSearch.trim().toLowerCase();
+    const all = employees.filter((e) => e?.id);
+    if (!q) return all.slice(0, 50);
+    return all
+      .filter((e) => {
+        const office = 'officeEmail' in e ? e.officeEmail : undefined;
+        return [e.name, e.type, office, e.personalEmail].some((f) => f?.toLowerCase().includes(q));
+      })
+      .slice(0, 50);
+  }, [employees, linkSearch]);
+
   const linkEmployee = async (u: AppUser, employeeId: string) => {
     if (!u.sub) {
       toast.error('Cannot link this account', 'Cognito did not return a user id for it.');
@@ -355,6 +379,7 @@ export default function UsersPage() {
           ? `${u.email} now sees ${name}'s leave, attendance and documents.`
           : `${u.email} is no longer tied to an employee record.`,
       );
+      closeLinkDialog();
     } catch (err) {
       toast.error('Could not link this login', friendlyError(err));
     } finally {
@@ -447,22 +472,44 @@ export default function UsersPage() {
       hideBelow: 'lg',
       sortValue: (u) => employees.find((e) => e.id === linkedEmployeeId(u))?.name ?? '',
       cell: (u) => {
-        const needsLink = u.role === 'employee' && !linkedEmployeeId(u);
+        const linkedId = linkedEmployeeId(u);
+        const linked = linkedId ? employees.find((e) => e.id === linkedId) : undefined;
+        const busy = linkingFor === u.username;
         return (
-          <div onClick={(e) => e.stopPropagation()} className="min-w-[200px] space-y-1">
-            <Combobox
-              value={linkedEmployeeId(u)}
-              onChange={(v) => linkEmployee(u, v)}
-              options={employeeOptions}
-              disabled={linkingFor === u.username}
-              placeholder={needsLink ? 'Needs linking' : 'Not linked'}
-            />
-            {needsLink && (
-              <p className="flex items-center gap-1 text-[11px] font-medium text-amber-600">
-                <ShieldAlert className="h-3 w-3 shrink-0" />
-                Sees no documents or attendance
-              </p>
-            )}
+          <div onClick={(e) => e.stopPropagation()} className="min-w-[190px]">
+            <button
+              type="button"
+              onClick={() => setLinkTarget(u)}
+              disabled={busy}
+              className={cn(
+                'group flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors disabled:opacity-60',
+                linked
+                  ? 'border-emerald-100 bg-emerald-50/50 hover:border-emerald-200 hover:bg-emerald-50'
+                  : 'border-red-100 bg-red-50/50 hover:border-red-200 hover:bg-red-50',
+              )}
+              title={linked ? `Linked to ${linked.name}` : 'This sign-in is not linked to an employee record'}
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" />
+              ) : linked ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2} />
+              ) : (
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" strokeWidth={2} />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold text-slate-800">
+                  {linked ? linked.name : 'Not linked'}
+                </span>
+                <span
+                  className={cn(
+                    'block text-[11px] font-semibold',
+                    linked ? 'text-emerald-700' : 'text-red-600',
+                  )}
+                >
+                  {linked ? 'Change now' : 'Link now'}
+                </span>
+              </span>
+            </button>
           </div>
         );
       },
@@ -722,6 +769,123 @@ export default function UsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Employee record picker.
+          A dialog rather than an inline dropdown: this is a deliberate act with
+          real consequences (it decides whose leave, attendance and documents a
+          login can see), the list can be long enough to need searching, and a
+          dropdown inside a horizontally scrolling table row is awkward to hit
+          on a phone. */}
+      {linkTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+            onClick={closeLinkDialog}
+            aria-hidden
+          />
+          <div
+            ref={linkTrapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Link employee record"
+            onKeyDown={(e) => { if (e.key === 'Escape') closeLinkDialog(); }}
+            className="surface relative flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 sm:max-h-[80dvh] sm:rounded-2xl"
+          >
+            <div className="flex flex-none items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
+                  <UserRoundCheck className="h-4.5 w-4.5" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="font-display text-base font-bold text-slate-900">
+                    {linkedEmployeeId(linkTarget) ? 'Change employee record' : 'Link employee record'}
+                  </h2>
+                  <p className="truncate text-xs text-slate-400">{linkTarget.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={closeLinkDialog}
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Close"
+              >
+                <X className="h-4.5 w-4.5" strokeWidth={1.75} />
+              </button>
+            </div>
+
+            <div className="flex-none border-b border-slate-100 px-5 py-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+              {linkResults.length === 0 ? (
+                <p className="px-3 py-8 text-center text-sm text-slate-500">
+                  No employee matches “{linkSearch.trim()}”.
+                </p>
+              ) : (
+                <ul className="space-y-0.5">
+                  {linkResults.map((e) => {
+                    const isCurrent = linkedEmployeeId(linkTarget) === e.id;
+                    const office = 'officeEmail' in e ? e.officeEmail : undefined;
+                    return (
+                      <li key={e.id}>
+                        <button
+                          type="button"
+                          onClick={() => linkEmployee(linkTarget, e.id)}
+                          disabled={linkingFor === linkTarget.username}
+                          className={cn(
+                            'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors disabled:opacity-60',
+                            isCurrent ? 'bg-emerald-50' : 'hover:bg-slate-50',
+                          )}
+                        >
+                          <Avatar name={e.name} className="h-8 w-8 shrink-0" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-slate-800">{e.name}</span>
+                            <span className="block truncate text-xs text-slate-400">
+                              {[e.type, office || e.personalEmail].filter(Boolean).join(' · ')}
+                            </span>
+                          </span>
+                          {isCurrent && (
+                            <span className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+                              Linked
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex flex-none items-center justify-between gap-2 border-t border-slate-100 px-5 py-3">
+              {linkedEmployeeId(linkTarget) ? (
+                <button
+                  onClick={() => linkEmployee(linkTarget, '')}
+                  disabled={linkingFor === linkTarget.username}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Unlink
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400">Sets whose records this login can see.</span>
+              )}
+              <button onClick={closeLinkDialog} className="btn-ghost px-4 py-2 text-sm">Cancel</button>
+            </div>
           </div>
         </div>
       )}
