@@ -214,17 +214,18 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
       />
       )}
 
-      {embedded && (
-        <div className="flex justify-end">
-          <button onClick={() => setModalState({ isOpen: true, mode: 'create' })} className="btn-primary">
-            <Plus className="h-4 w-4" /> Mark Attendance
-          </button>
-        </div>
-      )}
+      {/* No action button when embedded: the host page's header already carries
+          "Add Attendance", and two buttons opening the same modal on one screen
+          reads as two different things. */}
 
-      {/* Stats — hidden in embedded mode so the host page's common KPI strip is the single source */}
-      {!embedded && (
-        <>
+      {/* Stats and the view switcher render in embedded mode too.
+          They used to be gated on `!embedded` on the theory that the host page
+          owned one shared KPI strip. That was not true: /leaves hides its own
+          leave KPIs whenever the Attendance tab is open, so the tab showed no
+          KPIs and no calendar at all — and since /attendance is not in the
+          sidebar, that embedded tab is the only way admin and HR reach
+          attendance. Only the page header belongs to the standalone route. */}
+      <>
           <StatGrid cols={4}>
             <StatCard
               label="Clocked in"
@@ -300,14 +301,12 @@ export default function AttendancePage({ embedded = false }: { embedded?: boolea
               </p>
             )}
           </div>
-        </>
-      )}
+      </>
 
       {/* Table card. Hidden while the month grid is up: the two answer the same
           question at different resolutions, and showing both makes the page
-          scroll past a calendar to reach a table filtered to one day. Embedded
-          hosts render no view switcher, so they always get the table. */}
-      {(embedded || view === 'day') && (
+          scroll past a calendar to reach a table filtered to one day. */}
+      {view === 'day' && (
       <div className="surface">
         {/* Toolbar */}
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
