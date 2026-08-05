@@ -574,8 +574,11 @@ export default function UsersPage() {
       {inviteOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200" onClick={closeInvite} aria-hidden />
-          <div ref={inviteTrapRef} role="dialog" aria-modal="true" aria-label="Invite user" onKeyDown={(e) => { if (e.key === 'Escape' && !submitting) closeInvite(); }} className="surface relative w-full max-w-md overflow-hidden p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 sm:rounded-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          {/* max-h + a scrolling body, not overflow-hidden: this form is tall
+              enough that on a phone the Send invite button fell off the bottom
+              of the screen with no way to reach it. The header stays put. */}
+          <div ref={inviteTrapRef} role="dialog" aria-modal="true" aria-label="Invite user" onKeyDown={(e) => { if (e.key === 'Escape' && !submitting) closeInvite(); }} className="surface relative flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden p-0 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 sm:max-h-[85dvh] sm:rounded-2xl">
+            <div className="flex flex-none items-center justify-between border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-600">
                   <UserPlus className="h-4.5 w-4.5" strokeWidth={1.75} />
@@ -589,7 +592,7 @@ export default function UsersPage() {
                 <X className="h-4.5 w-4.5" strokeWidth={1.75} />
               </button>
             </div>
-            <form onSubmit={handleInvite} className="space-y-4 px-5 py-5">
+            <form onSubmit={handleInvite} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
               <div className="space-y-1.5">
                 <label htmlFor="invite-email" className="block text-sm font-medium text-slate-700">Email <span className="text-red-500">*</span></label>
                 <input

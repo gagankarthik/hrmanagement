@@ -84,7 +84,9 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className="surface relative z-10 w-full max-w-md p-5 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+        // A long description (a delete confirmation listing what goes with it)
+        // must not push the action buttons off a short screen.
+        className="surface relative z-10 max-h-[90dvh] w-full max-w-md overflow-y-auto p-5 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200"
       >
         <div className="flex items-start gap-3">
           <div className={cn('grid h-9 w-9 flex-none place-items-center rounded-[8px]', styles.iconBg)}>

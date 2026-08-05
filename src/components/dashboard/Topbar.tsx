@@ -3,12 +3,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Search, Menu, Bell, LogOut,
+  Search, Menu, Bell, LogOut, Eye, EyeOff,
   UsersRound, Building2, Package, UserRoundCheck, CornerDownLeft, UserRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useAccess } from '@/hooks/useAccess';
+import { useEmployeeView } from '@/hooks/useEmployeeView';
+import { SELF_SERVICE_HOME } from '@/config/access';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useClients } from '@/context/ClientContext';
 import { useVendors } from '@/context/VendorContext';
@@ -55,6 +57,26 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   const name = user?.name ?? user?.email?.split('@')[0] ?? 'User';
   const email = user?.email ?? '';
+
+  // Employee view: only meaningful for admin/hr, since a self-service user is
+  // already looking at the employee portal and has nothing to switch to.
+  const { employeeView, setEmployeeView } = useEmployeeView();
+  const canUseEmployeeView = !selfServiceOnly;
+  /** True whenever the shell should look like the employee portal. */
+  const showEssShell = selfServiceOnly || employeeView;
+
+  const toggleEmployeeView = useCallback(() => {
+    const next = !employeeView;
+    setEmployeeView(next);
+    // Land somewhere that belongs to the mode being entered, otherwise the nav
+    // changes under a page that is not in it.
+    router.push(next ? SELF_SERVICE_HOME : '/dashboard');
+  }, [employeeView, setEmployeeView, router]);
+
+  const exitEmployeeView = useCallback(() => {
+    setEmployeeView(false);
+    router.push('/dashboard');
+  }, [setEmployeeView, router]);
 
   const searchRef = useClickOutside<HTMLDivElement>(open, useCallback(() => setOpen(false), []));
   const menuRef = useClickOutside<HTMLDivElement>(menuOpen, useCallback(() => setMenuOpen(false), []));
@@ -118,8 +140,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
       {/* Center — absolutely centered global search (full-access only;
           self-service users have no records to search and shouldn't see
-          other people's data). */}
-      {!selfServiceOnly && (
+          other people's data). Hidden in employee view too, so the mode is the
+          whole shell rather than just the sidebar. */}
+      {!showEssShell && (
       <div className="absolute left-1/2 top-1/2 hidden w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 px-14 md:block">
       <div ref={searchRef} className="relative mx-auto w-full max-w-lg">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--adm-ink-subtle)]" strokeWidth={1.75} />
@@ -192,8 +215,24 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       )}
 
       <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2.5">
+        {/* Employee view is a mode, so it has to be visible while it is on and
+            leaving has to be one tap. On narrow screens the label drops and the
+            icon carries it, rather than crowding out the bell and avatar. */}
+        {canUseEmployeeView && employeeView && (
+          <button
+            onClick={exitEmployeeView}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--adm-accent)]/10 px-2.5 py-1.5 text-[12.5px] font-semibold text-[var(--adm-accent)] transition-colors hover:bg-[var(--adm-accent)]/15"
+            title="Return to the full HR console"
+          >
+            <Eye className="h-4 w-4" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Employee view</span>
+            <span className="hidden sm:inline text-[var(--adm-ink-subtle)]">·</span>
+            <span className="hidden sm:inline font-medium text-[var(--adm-ink-mute)]">Exit</span>
+          </button>
+        )}
+
         {/* Notifications → anchored dropdown panel (full-access only) */}
-        {!selfServiceOnly && (
+        {!showEssShell && (
         <div ref={notifRef} className="relative">
           <button
             onClick={() => setActivityOpen((v) => !v)}
@@ -265,6 +304,20 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                       >
                         <IconLeave className="h-4 w-4" />
                         My Leave
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100" />
+
+                      {/* Switches the whole shell to the employee portal so an
+                          admin or HR can work their own record, and see exactly
+                          what their colleagues see. Presentation only: their
+                          permissions do not change. */}
+                      <button
+                        onClick={() => { setMenuOpen(false); toggleEmployeeView(); }}
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        {employeeView ? <EyeOff className="h-4 w-4" strokeWidth={1.75} /> : <Eye className="h-4 w-4" strokeWidth={1.75} />}
+                        {employeeView ? 'Back to HR console' : 'Employee view'}
                       </button>
                     </>
                   )}

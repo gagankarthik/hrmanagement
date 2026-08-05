@@ -13,6 +13,7 @@ import {
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useAccess } from '@/hooks/useAccess';
+import { useEmployeeView } from '@/hooks/useEmployeeView';
 
 type NavItem = { label: string; href: string; icon: React.ElementType; exact?: boolean; adminOnly?: boolean };
 type NavSection = { heading: string; items: NavItem[] };
@@ -76,11 +77,17 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const { selfServiceOnly, admin } = useAccess();
+  const { employeeView } = useEmployeeView();
 
   // Self-service (employee) users get the limited portal nav. Full-access
   // users see the full nav, with admin-only items (e.g. Backups) hidden from
   // non-admins (hr) and any section left empty by that filter dropped.
-  const navSections = (selfServiceOnly ? selfServiceSections : sections)
+  //
+  // Admin and HR can also switch into employee view to work their own leave,
+  // attendance and documents. That only swaps this nav: their permissions are
+  // unchanged, so it is presentation, not a sandbox.
+  const showEssNav = selfServiceOnly || employeeView;
+  const navSections = (showEssNav ? selfServiceSections : sections)
     .map((s) => ({ ...s, items: s.items.filter((i) => !i.adminOnly || admin) }))
     .filter((s) => s.items.length > 0);
 
