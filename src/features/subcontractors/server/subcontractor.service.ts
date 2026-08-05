@@ -46,6 +46,7 @@ function normalize(input: SubcontractorFormData): Omit<Subcontractor, 'id' | 'cr
     contactPerson: input.contactPerson || '',
     email: input.email || '',
     phone: input.phone || '',
+    phoneExtension: input.phoneExtension || '',
     address: input.address || '',
     status: input.status || 'Active',
     coiEffectiveDate: input.coiEffectiveDate || '',

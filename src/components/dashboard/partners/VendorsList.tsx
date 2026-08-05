@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { formatDate } from '@/lib/format';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { VENDOR_IMPORT } from '@/lib/bulk-import/configs';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -68,12 +69,21 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
     [validVendors, employees]
   );
 
+
   const filtered = enriched.filter((v) => {
     const q = searchQuery.toLowerCase();
-    const matchSearch = !q || v.name?.toLowerCase().includes(q) || v.contactPerson?.toLowerCase().includes(q) || v.email?.toLowerCase().includes(q);
+    const matchSearch = !q ||
+      v.name?.toLowerCase().includes(q) ||
+      v.contactPerson?.toLowerCase().includes(q) ||
+      v.email?.toLowerCase().includes(q) ||
+      v.phone?.toLowerCase().includes(q) ||
+      v.phoneExtension?.toLowerCase().includes(q) ||
+      v.address?.toLowerCase().includes(q);
     const matchStatus = statusFilter === 'all' || v.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const filtersActive = Boolean(searchQuery) || statusFilter !== 'all';
 
   const totalActive = enriched.filter((v) => v.status === 'Active').length;
   const totalInactive = enriched.filter((v) => v.status === 'Inactive').length;
@@ -85,13 +95,19 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
 
   const handleExport = () => {
     if (filtered.length === 0) return;
-    exportToCsv('vendors', filtered, [
+    exportToCsv<VendorRow>('vendors', filtered, [
+      { key: 'id', label: 'Vendor ID' },
       { key: 'name', label: 'Name' },
       { key: 'contactPerson', label: 'Contact Person' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
+      { key: 'phoneExtension', label: 'Phone Extension' },
+      { key: 'address', label: 'Address' },
       { key: 'status', label: 'Status' },
+      { key: 'autoInactive', label: 'Auto Inactive', value: (v) => (v.autoInactive ? 'Yes' : 'No') },
       { key: 'empCount', label: 'Employees' },
+      { key: 'createdAt', label: 'Created', value: (v) => formatDate(v.createdAt, { fallback: '' }) },
+      { key: 'updatedAt', label: 'Last Updated', value: (v) => formatDate(v.updatedAt, { fallback: '' }) },
     ]);
   };
 
@@ -153,7 +169,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
       hideBelow: 'lg',
       cell: (v) =>
         v.phone ? (
-          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{v.phone}</span>
+          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{v.phone}{v.phoneExtension ? ` ext. ${v.phoneExtension}` : ''}</span>
         ) : (
           <span className="text-slate-300">—</span>
         ),
@@ -233,13 +249,13 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
 
       {/* Table card */}
       <div className="surface">
-        {/* Toolbar — Search · All/Active/Inactive · Columns (single row) */}
+        {/* Toolbar — Search · status filter · Display menu (pinned right) */}
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
           <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search vendors..."
+              placeholder="Search name, contact, email, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
@@ -255,7 +271,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
               { value: 'Inactive', label: 'Inactive' },
             ]}
           />
-          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
+          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} className="ml-auto" />
         </div>
 
         <DataTable<VendorRow>
@@ -266,7 +282,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
           isLoading={isLoading}
           error={error}
           onRetry={fetchVendors}
-          onRowClick={(v) => router.push(`/vendors/${v.id}`)}
+          onRowClick={(v) => router.push(`/vendors/${v.id}?from=${embedded ? 'partners' : 'list'}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{
             selectedIds,
@@ -278,7 +294,7 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/vendors/${vendor.id}`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/vendors/${vendor.id}?from=${embedded ? 'partners' : 'list'}`) },
                   { label: 'Edit', icon: Pencil, onClick: () => router.push(`/vendors/${vendor.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ vendor, isDeleting: false }) },
                 ]}
@@ -289,13 +305,12 @@ export default function VendorsPage({ embedded = false }: { embedded?: boolean }
           empty={{
             icon: Package,
             tone: 'purple',
-            title: searchQuery || statusFilter !== 'all' ? 'No vendors match your filters' : 'No vendors yet',
-            description:
-              searchQuery || statusFilter !== 'all'
-                ? 'Try different keywords or clear filters.'
-                : 'Add your first vendor to start tracking partnerships.',
+            title: filtersActive ? 'No vendors match your filters' : 'No vendors yet',
+            description: filtersActive
+              ? 'Try different keywords or clear filters.'
+              : 'Add your first vendor to start tracking partnerships.',
             action:
-              !searchQuery && statusFilter === 'all' ? (
+              !filtersActive ? (
                 <button onClick={() => router.push('/vendors/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add Vendor
                 </button>

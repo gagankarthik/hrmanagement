@@ -11,7 +11,7 @@ function escapeCell(v: unknown): string {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export function exportToCsv<T extends Record<string, unknown>>(
+export function exportToCsv<T>(
   filename: string,
   rows: T[],
   columns: CsvColumn<T>[],

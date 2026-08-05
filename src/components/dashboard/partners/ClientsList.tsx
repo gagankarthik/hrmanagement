@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Phone, Mail, MapPin, ChevronRight, Download, Upload
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/export';
+import { formatDate } from '@/lib/format';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { CLIENT_IMPORT } from '@/lib/bulk-import/configs';
 import { PageHeader } from '@/components/dashboard/PageHeader';
@@ -57,12 +58,19 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
 
   const valid = useMemo(() => clients.filter((c) => c && c.id), [clients]);
 
+
   const rows: ClientRow[] = useMemo(
     () =>
       valid
         .filter((c) => {
           const q = searchQuery.toLowerCase();
-          const matchSearch = !q || c.name?.toLowerCase().includes(q) || c.contactPerson?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q);
+          const matchSearch = !q ||
+            c.name?.toLowerCase().includes(q) ||
+            c.contactPerson?.toLowerCase().includes(q) ||
+            c.email?.toLowerCase().includes(q) ||
+            c.phone?.toLowerCase().includes(q) ||
+            c.phoneExtension?.toLowerCase().includes(q) ||
+            c.address?.toLowerCase().includes(q);
           const matchStatus = statusFilter === 'all' || c.status === statusFilter;
           return matchSearch && matchStatus;
         })
@@ -70,6 +78,8 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [valid, employees, searchQuery, statusFilter],
   );
+
+  const filtersActive = Boolean(searchQuery) || statusFilter !== 'all';
 
   const totalActive = valid.filter((c) => c.status === 'Active').length;
   const totalInactive = valid.filter((c) => c.status === 'Inactive').length;
@@ -90,13 +100,18 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
 
   const handleExport = () => {
     if (rows.length === 0) return;
-    exportToCsv('clients', rows as unknown as Record<string, unknown>[], [
+    exportToCsv<ClientRow>('clients', rows, [
+      { key: 'id', label: 'Client ID' },
       { key: 'name', label: 'Name' },
       { key: 'contactPerson', label: 'Contact Person' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
+      { key: 'phoneExtension', label: 'Phone Extension' },
+      { key: 'address', label: 'Address' },
       { key: 'status', label: 'Status' },
       { key: 'empCount', label: 'Employees' },
+      { key: 'createdAt', label: 'Created', value: (c) => formatDate(c.createdAt, { fallback: '' }) },
+      { key: 'updatedAt', label: 'Last Updated', value: (c) => formatDate(c.updatedAt, { fallback: '' }) },
     ]);
   };
 
@@ -158,7 +173,7 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
       hideBelow: 'lg',
       cell: (c) =>
         c.phone ? (
-          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{c.phone}</span>
+          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{c.phone}{c.phoneExtension ? ` ext. ${c.phoneExtension}` : ''}</span>
         ) : (
           <span className="text-slate-300">—</span>
         ),
@@ -218,13 +233,13 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
       <PartnerBulkBar source="clients" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
 
       <div className="surface">
-        {/* Toolbar — Search · All/Active/Inactive · Columns (single row) */}
+        {/* Toolbar — Search · status filter · Display menu (pinned right) */}
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
           <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="Search name, contact, email, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
@@ -240,7 +255,7 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
               { value: 'Inactive', label: 'Inactive' },
             ]}
           />
-          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
+          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} className="ml-auto" />
         </div>
 
         <DataTable<ClientRow>
@@ -251,14 +266,14 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
           isLoading={isLoading}
           error={error}
           onRetry={fetchClients}
-          onRowClick={(c) => router.push(`/clients/${c.id}`)}
+          onRowClick={(c) => router.push(`/clients/${c.id}?from=${embedded ? 'partners' : 'list'}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
           rowActions={(client) => (
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/clients/${client.id}`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/clients/${client.id}?from=${embedded ? 'partners' : 'list'}`) },
                   { label: 'Edit', icon: Pencil, onClick: () => router.push(`/clients/${client.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ client, isDeleting: false }) },
                 ]}
@@ -269,13 +284,12 @@ export default function ClientsPage({ embedded = false }: { embedded?: boolean }
           empty={{
             icon: Building2,
             tone: 'emerald',
-            title: searchQuery || statusFilter !== 'all' ? 'No clients match your filters' : 'No clients yet',
-            description:
-              searchQuery || statusFilter !== 'all'
-                ? 'Try different keywords or clear filters.'
-                : 'Add your first client to start tracking relationships.',
+            title: filtersActive ? 'No clients match your filters' : 'No clients yet',
+            description: filtersActive
+              ? 'Try different keywords or clear filters.'
+              : 'Add your first client to start tracking relationships.',
             action:
-              !searchQuery && statusFilter === 'all' ? (
+              !filtersActive ? (
                 <button onClick={() => router.push('/clients/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add Client
                 </button>

@@ -13,6 +13,7 @@ function partnerColumns(): ImportColumn[] {
     { field: 'contactPerson', header: 'Contact Person', type: 'text', aliases: ['contact', 'poc'], example: 'Jane Doe' },
     { field: 'email', header: 'Email', type: 'email', example: 'jane@acme.com' },
     { field: 'phone', header: 'Phone', type: 'tel', aliases: ['phone number', 'contact number'], example: '+1 (555) 000-0000' },
+    { field: 'phoneExtension', header: 'Phone Extension', type: 'text', aliases: ['ext', 'extension'], example: '204' },
     { field: 'address', header: 'Address', type: 'text', example: '500 Market St, San Francisco, CA' },
     {
       field: 'status',

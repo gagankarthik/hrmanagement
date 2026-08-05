@@ -11,6 +11,8 @@ export interface Subcontractor {
   contactPerson?: string;
   email?: string;
   phone?: string;
+  /** Optional phone extension, e.g. "204". Stored separately from `phone`. */
+  phoneExtension?: string;
   address?: string;
   status: 'Active' | 'Inactive';
   /** Certificate of Insurance — policy effective date (ISO yyyy-mm-dd) */
@@ -27,6 +29,7 @@ export interface SubcontractorFormData {
   contactPerson?: string;
   email?: string;
   phone?: string;
+  phoneExtension?: string;
   address?: string;
   status: 'Active' | 'Inactive';
   coiEffectiveDate?: string;

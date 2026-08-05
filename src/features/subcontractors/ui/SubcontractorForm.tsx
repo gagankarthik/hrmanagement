@@ -23,12 +23,13 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
           contactPerson: initial.contactPerson || '',
           email: initial.email || '',
           phone: initial.phone || '',
+          phoneExtension: initial.phoneExtension || '',
           address: initial.address || '',
           status: initial.status,
           coiEffectiveDate: initial.coiEffectiveDate || '',
           coiExpiryDate: initial.coiExpiryDate || '',
         }
-      : { name: '', contactPerson: '', email: '', phone: '', address: '', status: 'Active', coiEffectiveDate: '', coiExpiryDate: '' }
+      : { name: '', contactPerson: '', email: '', phone: '', phoneExtension: '', address: '', status: 'Active', coiEffectiveDate: '', coiExpiryDate: '' }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -107,7 +108,17 @@ export default function SubcontractorForm({ mode, initial }: { mode: 'create' | 
               <Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="contact@subcontractor.com" />
             </FormField>
             <FormField label="Phone">
-              <Input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" />
+              <div className="flex gap-2">
+                <Input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+1 (555) 000-0000" className="flex-1" />
+                <Input
+                  type="text"
+                  value={form.phoneExtension}
+                  onChange={(e) => set('phoneExtension', e.target.value)}
+                  placeholder="Ext."
+                  aria-label="Phone extension (optional)"
+                  className="w-24 flex-none"
+                />
+              </div>
             </FormField>
           </div>
 

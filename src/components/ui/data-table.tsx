@@ -256,11 +256,11 @@ export function DataTable<T>({
             aria-expanded={colMenuOpen}
             className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-dashed border-[var(--adm-line-strong)] bg-transparent px-2.5 text-[13px] font-medium text-[var(--adm-ink-mute)] transition-colors hover:border-[var(--adm-ink-subtle)] hover:text-[var(--adm-ink)]"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Columns
+            <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} /> Display
           </button>
           {colMenuOpen && (
             <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-[8px] border border-[var(--adm-line)] bg-white p-1 shadow-[var(--adm-shadow-pop)] animate-in fade-in zoom-in-95 duration-100">
-              <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Show columns</p>
+              <p className="px-2 pb-1 pt-1.5 text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--adm-ink-subtle)]">Display columns</p>
               {hideableCols.map((c) => {
                 const shown = !hidden.has(c.id);
                 return (

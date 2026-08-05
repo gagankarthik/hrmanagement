@@ -54,6 +54,7 @@ function buildPartnerItem(kind: PartnerKind, row: Row): Row {
     contactPerson: str(row.contactPerson),
     email: str(row.email),
     phone: str(row.phone),
+    phoneExtension: str(row.phoneExtension),
     address: str(row.address),
     status: str(row.status) || 'Active',
     PK: `${kind}#${id}`,

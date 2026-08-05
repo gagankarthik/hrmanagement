@@ -33,6 +33,7 @@ function normalize(input: ClientFormData): Omit<Client, 'id' | 'createdAt' | 'up
     contactPerson: input.contactPerson || '',
     email: input.email || '',
     phone: input.phone || '',
+    phoneExtension: input.phoneExtension || '',
     address: input.address || '',
     status: input.status || 'Active',
   };

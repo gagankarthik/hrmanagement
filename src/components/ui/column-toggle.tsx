@@ -12,13 +12,13 @@ export interface ColumnToggleItem {
 }
 
 /**
- * ColumnToggle — a reusable "Columns" dropdown that shows/hides table columns.
+ * ColumnToggle — a reusable "Display" dropdown that shows/hides table columns.
  *
  * Controlled: the parent owns the `hidden` set and filters its columns before
- * passing them to the table. A button labeled "Columns" (with a
+ * passing them to the table. A button labeled "Display" (with a
  * SlidersHorizontal icon) opens a popover listing each column with a checkbox.
  * Closes on outside click or Escape. Styling mirrors the DataTable internal
- * column menu so every list page looks identical.
+ * display menu so every list page looks identical.
  */
 export function ColumnToggle({
   columns,
@@ -62,7 +62,7 @@ export function ColumnToggle({
         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
       >
         <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.75} />
-        Columns
+        Display
         <span className="rounded-full bg-slate-100 px-1.5 text-[10px] font-semibold text-slate-500">
           {shownCount}/{columns.length}
         </span>
@@ -74,7 +74,7 @@ export function ColumnToggle({
           className="surface absolute right-0 top-full z-30 mt-1 w-52 overflow-hidden p-1.5 animate-in fade-in zoom-in-95 duration-100"
         >
           <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            Show columns
+            Display columns
           </p>
           {columns.map((c) => {
             const shown = !hidden.has(c.id);

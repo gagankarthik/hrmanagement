@@ -20,6 +20,7 @@ import { ColumnToggle } from '@/components/ui/column-toggle';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { FilterSelect } from '@/components/ui/filter-select';
 import { exportToCsv } from '@/lib/export';
+import { formatDate } from '@/lib/format';
 import { PartnerBulkBar, PartnerRecord } from '@/components/dashboard/PartnerBulkBar';
 import { BulkImportModal } from '@/components/dashboard/BulkImportModal';
 import { SUBCONTRACTOR_IMPORT } from '@/lib/bulk-import/configs';
@@ -68,16 +69,25 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
     [validSubcontractors, employees],
   );
 
+
   const rows = useMemo(
     () =>
       enriched.filter((s) => {
         const q = searchQuery.toLowerCase();
-        const matchSearch = !q || s.name?.toLowerCase().includes(q) || s.contactPerson?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
+        const matchSearch = !q ||
+          s.name?.toLowerCase().includes(q) ||
+          s.contactPerson?.toLowerCase().includes(q) ||
+          s.email?.toLowerCase().includes(q) ||
+          s.phone?.toLowerCase().includes(q) ||
+          s.phoneExtension?.toLowerCase().includes(q) ||
+          s.address?.toLowerCase().includes(q);
         const matchStatus = statusFilter === 'all' || s.status === statusFilter;
         return matchSearch && matchStatus;
       }),
     [enriched, searchQuery, statusFilter],
   );
+
+  const filtersActive = Boolean(searchQuery) || statusFilter !== 'all';
 
   const totalActive = enriched.filter((s) => s.status === 'Active').length;
   const totalInactive = enriched.filter((s) => s.status === 'Inactive').length;
@@ -89,13 +99,21 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
 
   const handleExport = () => {
     if (rows.length === 0) return;
-    exportToCsv('subcontractors', rows as unknown as Record<string, unknown>[], [
+    exportToCsv<SubcontractorRow>('subcontractors', rows, [
+      { key: 'id', label: 'Subcontractor ID' },
       { key: 'name', label: 'Name' },
       { key: 'contactPerson', label: 'Contact Person' },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Phone' },
+      { key: 'phoneExtension', label: 'Phone Extension' },
+      { key: 'address', label: 'Address' },
       { key: 'status', label: 'Status' },
+      { key: 'autoInactive', label: 'Auto Inactive', value: (s) => (s.autoInactive ? 'Yes' : 'No') },
       { key: 'empCount', label: 'Employees' },
+      { key: 'coiEffectiveDate', label: 'COI Effective', value: (s) => formatDate(s.coiEffectiveDate, { fallback: '' }) },
+      { key: 'coiExpiryDate', label: 'COI Expiry', value: (s) => formatDate(s.coiExpiryDate, { fallback: '' }) },
+      { key: 'createdAt', label: 'Created', value: (s) => formatDate(s.createdAt, { fallback: '' }) },
+      { key: 'updatedAt', label: 'Last Updated', value: (s) => formatDate(s.updatedAt, { fallback: '' }) },
     ]);
   };
 
@@ -157,7 +175,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       hideBelow: 'lg',
       cell: (s) =>
         s.phone ? (
-          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{s.phone}</span>
+          <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-300" />{s.phone}{s.phoneExtension ? ` ext. ${s.phoneExtension}` : ''}</span>
         ) : (
           <span className="text-slate-300">—</span>
         ),
@@ -227,13 +245,13 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
       <PartnerBulkBar source="subcontractors" selected={selectedRecords} onDone={() => setSelectedIds(new Set())} />
 
       <div className="surface">
-        {/* Toolbar — Search · All/Active/Inactive · Columns (single row) */}
+        {/* Toolbar — Search · status filter · Display menu (pinned right) */}
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
           <div className="relative min-w-[200px] flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search subcontractors..."
+              placeholder="Search name, contact, email, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-50 transition-all"
@@ -249,7 +267,7 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
               { value: 'Inactive', label: 'Inactive' },
             ]}
           />
-          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} />
+          <ColumnToggle columns={columnItems} hidden={hiddenCols} onToggle={toggleCol} className="ml-auto" />
         </div>
 
         <DataTable<SubcontractorRow>
@@ -260,14 +278,14 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           isLoading={isLoading}
           error={error}
           onRetry={fetchSubcontractors}
-          onRowClick={(s) => router.push(`/subcontractors/${s.id}`)}
+          onRowClick={(s) => router.push(`/subcontractors/${s.id}?from=${embedded ? 'partners' : 'list'}`)}
           initialSort={{ columnId: 'name', dir: 'asc' }}
           selection={{ selectedIds, allSelected: allOnPageSelected, onToggleRow: toggleOne, onToggleAll: toggleAll }}
           rowActions={(subcontractor) => (
             <div className="flex items-center justify-end gap-1">
               <ActionMenu
                 items={[
-                  { label: 'View', icon: Eye, onClick: () => router.push(`/subcontractors/${subcontractor.id}`) },
+                  { label: 'View', icon: Eye, onClick: () => router.push(`/subcontractors/${subcontractor.id}?from=${embedded ? 'partners' : 'list'}`) },
                   { label: 'Edit', icon: Pencil, onClick: () => router.push(`/subcontractors/${subcontractor.id}/edit`) },
                   { label: 'Delete', icon: Trash2, danger: true, separatorBefore: true, onClick: () => setDeleteState({ subcontractor, isDeleting: false }) },
                 ] satisfies ActionMenuItem[]}
@@ -278,13 +296,12 @@ export default function SubcontractorsPage({ embedded = false }: { embedded?: bo
           empty={{
             icon: UserCheck,
             tone: 'default',
-            title: searchQuery || statusFilter !== 'all' ? 'No subcontractors match your filters' : 'No subcontractors yet',
-            description:
-              searchQuery || statusFilter !== 'all'
-                ? 'Try different keywords or clear filters.'
-                : 'Add your first subcontractor to start assigning employees.',
+            title: filtersActive ? 'No subcontractors match your filters' : 'No subcontractors yet',
+            description: filtersActive
+              ? 'Try different keywords or clear filters.'
+              : 'Add your first subcontractor to start assigning employees.',
             action:
-              !searchQuery && statusFilter === 'all' ? (
+              !filtersActive ? (
                 <button onClick={() => router.push('/subcontractors/new')} className="btn-primary">
                   <Plus className="h-4 w-4" /> Add Subcontractor
                 </button>

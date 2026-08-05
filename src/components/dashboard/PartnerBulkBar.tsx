@@ -21,6 +21,7 @@ export interface PartnerRecord {
   contactPerson?: string;
   email?: string;
   phone?: string;
+  phoneExtension?: string;
   address?: string;
   status: 'Active' | 'Inactive';
 }
@@ -91,6 +92,7 @@ export function PartnerBulkBar({
     contactPerson: r.contactPerson,
     email: r.email,
     phone: r.phone,
+    phoneExtension: r.phoneExtension,
     address: r.address,
     status: r.status,
   });

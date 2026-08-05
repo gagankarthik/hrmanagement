@@ -32,6 +32,7 @@ function normalize(input: VendorFormData): Omit<Vendor, 'id' | 'createdAt' | 'up
     contactPerson: input.contactPerson || '',
     email: input.email || '',
     phone: input.phone || '',
+    phoneExtension: input.phoneExtension || '',
     address: input.address || '',
     status: input.status || 'Active',
   };
